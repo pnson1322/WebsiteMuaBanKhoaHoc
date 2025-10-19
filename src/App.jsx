@@ -1,7 +1,7 @@
 import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import "./App.css";
-import { Route, Router, Routes } from "react-router-dom";
+import { Route, BrowserRouter, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
@@ -12,11 +12,11 @@ function App() {
     <AuthProvider>
       <AppProvider>
         <ToastProvider>
-          <Router>
+          <BrowserRouter>
             <Routes>
-              <Route path="/" element="<Layout/>"></Route>
+              <Route path="/" element={<Layout />}></Route>
             </Routes>
-          </Router>
+          </BrowserRouter>
         </ToastProvider>
       </AppProvider>
     </AuthProvider>
