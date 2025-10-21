@@ -1,11 +1,9 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import "./App.css";
-import { Route, BrowserRouter, Routes } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
 import { ToastProvider } from "./contexts/ToastContext";
+import LoginPage from "./pages/LoginPage";
 
 function App() {
   return (
@@ -14,7 +12,21 @@ function App() {
         <ToastProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Layout />}></Route>
+              {/* Layout chính */}
+              <Route path="/" element={<Layout />}>
+                <Route path="login" element={<LoginPage />} />
+                <Route path="register" element={<LoginPage />} />
+              </Route>
+
+              {/* Route fallback */}
+              <Route
+                path="*"
+                element={
+                  <h2 style={{ textAlign: "center" }}>
+                    404 - Không tìm thấy trang
+                  </h2>
+                }
+              />
             </Routes>
           </BrowserRouter>
         </ToastProvider>
