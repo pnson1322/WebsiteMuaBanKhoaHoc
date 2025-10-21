@@ -6,8 +6,8 @@
 .footer-container {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 50px 100px;
+  align-items: center;
+  padding: 20px 100px;
   color: white;
   gap: 40px;
   flex-wrap: wrap;
@@ -65,6 +65,7 @@
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 15px;
+  text-align: center;
 }
 
 .category-columns {

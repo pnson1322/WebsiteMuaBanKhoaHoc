@@ -4,6 +4,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import LoginPage from "./pages/LoginPage";
+import UserInfo from "./pages/UserInfo";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
               <Route path="/" element={<Layout />}>
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<LoginPage />} />
+                <Route path="user-info" element={<UserInfo />} />
               </Route>
 
               {/* Route fallback */}

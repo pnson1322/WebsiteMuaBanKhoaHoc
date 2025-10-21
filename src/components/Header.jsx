@@ -9,21 +9,21 @@ import {
   Menu,
   X,
   BookOpen,
-  Bot,
   User,
   LogOut,
-  Sparkles,
   List,
   DollarSign,
   Server,
   Users,
 } from "lucide-react";
+import { useState } from "react";
 
-const Header = ({ onOpenChatbox }) => {
+const Header = () => {
   const navigate = useNavigate();
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
   const { isLoggedIn, user, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   function handleLogoClick() {
     navigate("/");
@@ -39,8 +39,6 @@ const Header = ({ onOpenChatbox }) => {
   function handleSearchChange(e) {
     dispatch({ type: actionTypes.SET_SEARCH_TERM, payload: e.target.value });
   }
-
-  function handleAISuggestionsClick() {}
 
   function handleLearnerCoursesClick() {
     navigate("/learner-courses");
@@ -75,7 +73,7 @@ const Header = ({ onOpenChatbox }) => {
   }
 
   function handleInfo() {
-    navigate("user-info");
+    navigate("/user-info");
   }
 
   function handleLogout() {
@@ -83,7 +81,15 @@ const Header = ({ onOpenChatbox }) => {
     navigate("/");
   }
 
-  function handleLoginClick() {}
+  function handleLoginClick() {
+    navigate("/login");
+  }
+
+  function toggleMenu() {
+    setIsMenuOpen(!isMenuOpen);
+  }
+
+  function handleRegisterClick() {}
 
   return (
     <header className="header">
@@ -118,26 +124,6 @@ const Header = ({ onOpenChatbox }) => {
           {/* Admin */}
           {isLoggedIn && user && user.role === "admin" ? (
             <>
-              {/* AI Chatbot */}
-              <button
-                className="nav-button"
-                onClick={onOpenChatbox}
-                title="AI Tư vấn"
-              >
-                <Bot className="nav-icon" />
-                <span className="nav-label">AI Tư vấn</span>
-              </button>
-
-              {/* AI Suggestions */}
-              <button
-                className="nav-button"
-                onClick={handleAISuggestionsClick}
-                title="AI Gợi ý"
-              >
-                <Sparkles className="nav-icon" />
-                <span className="nav-label">AI Gợi ý</span>
-              </button>
-
               {/* Courses */}
               <button
                 className="nav-button"
@@ -198,26 +184,6 @@ const Header = ({ onOpenChatbox }) => {
           {/* Learner */}
           {!isLoggedIn || (user && user.role === "learner") ? (
             <>
-              {/* AI Chatbot */}
-              <button
-                className="nav-button"
-                onClick={onOpenChatbox}
-                title="AI Tư vấn"
-              >
-                <Bot className="nav-icon" />
-                <span className="nav-label">AI Tư vấn</span>
-              </button>
-
-              {/* AI Suggestions */}
-              <button
-                className="nav-button"
-                onClick={handleAISuggestionsClick}
-                title="AI Gợi ý"
-              >
-                <Sparkles className="nav-icon" />
-                <span className="nav-label">AI Gợi ý</span>
-              </button>
-
               {/* Courses */}
               <button
                 className="nav-button"
@@ -297,7 +263,70 @@ const Header = ({ onOpenChatbox }) => {
               <span className="nav-label">Đăng nhập</span>
             </button>
           )}
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className="mobile-menu-toggle mobile-only"
+            onClick={toggleMenu}
+          >
+            {isMenuOpen ? <X /> : <Menu />}
+          </button>
         </nav>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="mobile-menu">
+            <form className="mobile-search" onSubmit={handleSearchSubmit}>
+              <Search className="search-icon" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm khóa học..."
+                value={state.searchTerm}
+                onChange={handleSearchChange}
+                className="search-input"
+              />
+            </form>
+
+            {/* Mobile User Actions */}
+            <div className="mobile-user-actions">
+              {isLoggedIn ? (
+                <div className="mobile-user-info">
+                  <div className="mobile-user-profile">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="user-avatar"
+                      />
+                    ) : (
+                      <User className="nav-icon" />
+                    )}
+                    <span>{user?.name}</span>
+                  </div>
+                  <button onClick={handleLogout} className="mobile-logout-btn">
+                    <LogOut className="nav-icon" />
+                    Đăng xuất
+                  </button>
+                </div>
+              ) : (
+                <div className="mobile-auth-buttons">
+                  <button
+                    onClick={handleLoginClick}
+                    className="mobile-auth-btn"
+                  >
+                    Đăng nhập
+                  </button>
+                  <button
+                    onClick={handleRegisterClick}
+                    className="mobile-auth-btn secondary"
+                  >
+                    Đăng ký
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Auth Moadl */}
