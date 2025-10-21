@@ -135,8 +135,8 @@ export const InputContainer = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-  width: calc(100% + 1.5rem);
-  margin-left: -1.5rem;
+  width: calc(100%);
+  margin-left: 0;
   overflow: hidden;
   .input-icon {
     position: absolute;
@@ -341,29 +341,45 @@ export const BenefitsContent = styled.div`
 
 export const BenefitItem = styled.div`
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 1.25rem;
+  line-height: 1.5;
 
   .benefit-icon {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    padding: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
+    svg {
+      width: 22px;
+      height: 22px;
+      color: #fff;
+    }
+  }
+
+  .benefit-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   h3 {
     font-size: 1.1rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    color: #fff;
+    margin: 0 0 0.25rem 0; /* ✅ nhỏ gọn */
   }
 
   p {
     font-size: 0.95rem;
     opacity: 0.9;
-    line-height: 1.4;
+    color: #fff;
+    margin: 0;
   }
 `;
 
@@ -384,5 +400,125 @@ export const Testimonial = styled.div`
     font-size: 0.85rem;
     opacity: 0.8;
     font-style: normal;
+  }
+`;
+// ForgotPasswordLink
+export const ForgotPasswordLink = styled.a`
+  display: block;
+  text-align: right;
+  color: #667eea;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 0.5rem;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #5a67d8;
+    text-decoration: underline;
+  }
+`;
+
+export const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+export const ModalContainer = styled.div`
+  width: 455px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  animation: fadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95); /* ✅ scale nhẹ khi xuất hiện */
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+`;
+
+export const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  .icon-wrap {
+    background: linear-gradient(90deg, #667de9 0%, #7258b5 100%);
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+  }
+
+  h2 {
+    font-size: 18px;
+    font-weight: 500;
+    color: #1f2937;
+  }
+`;
+
+export const ModalBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  label {
+    font-size: 14px;
+    color: #374151;
+  }
+
+  input {
+    height: 50px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0 1rem;
+    font-size: 16px;
+    color: #000;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+
+    button {
+      flex: 1;
+      height: 42px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .cancel {
+      border: 1px solid #d1d5db;
+      background: #fff;
+      color: #374151;
+    }
+
+    .send {
+      background: linear-gradient(90deg, #667de9 0%, #7258b5 100%);
+      border: none;
+      color: #fff;
+    }
+
+    .send:hover {
+      opacity: 0.9;
+    }
   }
 `;
