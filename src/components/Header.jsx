@@ -74,6 +74,17 @@ const Header = ({ onOpenChatbox }) => {
     navigate("/users");
   }
 
+  function handleInfo() {
+    navigate("user-info");
+  }
+
+  function handleLogout() {
+    logout();
+    navigate("/");
+  }
+
+  function handleLoginClick() {}
+
   return (
     <header className="header">
       <div className="header-container">
@@ -249,8 +260,47 @@ const Header = ({ onOpenChatbox }) => {
           ) : null}
 
           {/* User */}
+          {isLoggedIn ? (
+            <div className="user-menu destop-only">
+              <button className="nav-button user-button" title={user?.name}>
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="user-avatar"
+                  />
+                ) : (
+                  <User className="nav-icon" />
+                )}
+                <span className="nav-label">{user?.name}</span>
+              </button>
+
+              <div className="user-dropdown">
+                <button className="dropdown-item" onClick={handleInfo}>
+                  <User className="dropdown-icon" />
+                  Thông tin cá nhân
+                </button>
+
+                <button className="dropdown-item" onClick={handleLogout}>
+                  <LogOut className="dropdown-icon" />
+                  Đăng xuất
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="nav-button login-button desktop-only"
+              onClick={handleLoginClick}
+              title="Đăng nhập"
+            >
+              <User className="nav-icon" />
+              <span className="nav-label">Đăng nhập</span>
+            </button>
+          )}
         </nav>
       </div>
+
+      {/* Auth Moadl */}
     </header>
   );
 };

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import "./Layout.css";
+import Footer from "./Footer";
 
 export const Layout = () => {
   const [showChatbot, setShowChatbot] = useState(false);
@@ -16,7 +17,7 @@ export const Layout = () => {
 
       {/* Chatbox */}
 
-      {/* Footer */}
+      <Footer />
     </div>
   );
 };
