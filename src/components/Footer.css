@@ -1,0 +1,161 @@
+.footer {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+/* Main content */
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 50px 100px;
+  color: white;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.footer-container > div {
+  flex: 1;
+  min-width: 250px;
+}
+
+/* Description column */
+.footer-logo-label {
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-logo-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.footer-text {
+  color: #d1d5db;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 26px;
+  margin: 18px 0px;
+}
+
+.footer-logos {
+  display: flex;
+  gap: 15px;
+}
+
+.outside-logo {
+  cursor: pointer;
+  border-radius: 50px;
+}
+
+/* Categories column */
+.column-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.category-columns {
+  display: flex;
+  justify-content: space-around;
+  gap: 60px;
+}
+
+.category-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-item {
+  color: #d1d5db;
+  cursor: pointer;
+}
+
+.category-item:hover {
+  color: white;
+}
+
+/* Information column */
+.contact-item {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  margin-bottom: 15px;
+  color: #d1d5db;
+}
+
+.contact-icon {
+  width: 20px;
+  height: 20px;
+  color: #6fa5ff;
+  flex-shrink: 0;
+}
+
+.contact-text {
+  margin: 0;
+  line-height: 1.4;
+  text-decoration: none;
+  color: #d1d5db;
+}
+
+.contact-text:hover {
+  color: white;
+}
+
+/* Right and policys */
+.right-policy {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 100px;
+  border-top: 1px solid #374151;
+  font-size: 14;
+  font-weight: 400;
+}
+
+.right {
+  color: white;
+}
+
+.policy {
+  display: flex;
+  justify-content: space-between;
+  color: #9ca3af;
+  gap: 25px;
+}
+
+.policy-item {
+  transition: color 0.5s;
+  cursor: pointer;
+}
+
+.policy-item:hover {
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .footer-container {
+    flex-direction: column;
+    padding: 30px;
+  }
+
+  .right-policy {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 15px 30px;
+  }
+}
