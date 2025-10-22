@@ -25,22 +25,71 @@ const Header = ({ onOpenLoginPopup }) => {
   const { isLoggedIn, user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // 🔹 Các hàm điều hướng cơ bản
-  const handleLogoClick = () => navigate("/");
-  const handleSearchSubmit = (e) => {
+  function handleLogoClick() {
+    navigate("/");
+  }
+
+  function handleSearchSubmit(e) {
     e.preventDefault();
     if (state.searchTerm.trim()) {
       navigate(`/?search=${encodeURIComponent(state.searchTerm.trim())}`);
     }
-  };
-  const handleSearchChange = (e) =>
+  }
+
+  function handleSearchChange(e) {
     dispatch({ type: actionTypes.SET_SEARCH_TERM, payload: e.target.value });
-  const handleLogout = () => {
+  }
+
+  function handleLearnerCoursesClick() {
+    navigate("/learner-courses");
+  }
+
+  function handleAdminCoursesClick() {
+    navigate("/admin-courses");
+  }
+
+  function handleSellerCoursesClick() {
+    navigate("/seller-courses");
+  }
+
+  function handleFavoritesClick() {
+    navigate("/favorites");
+  }
+
+  function handleCartClick() {
+    navigate("/cart");
+  }
+
+  function handleTransactionsClick() {
+    navigate("/transactions");
+  }
+
+  function handleCategoriesClick() {
+    navigate("/categories");
+  }
+
+  function handleUsersClick() {
+    navigate("/users");
+  }
+
+  function handleInfo() {
+    navigate("/user-info");
+  }
+
+  function handleLogout() {
     logout();
     navigate("/");
-  };
-  const handleInfo = () => navigate("/user-info");
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  }
+
+  function handleLoginClick() {
+    navigate("/login");
+  }
+
+  function toggleMenu() {
+    setIsMenuOpen(!isMenuOpen);
+  }
+
+  function handleRegisterClick() {}
 
   return (
     <header className="header">
@@ -55,7 +104,7 @@ const Header = ({ onOpenLoginPopup }) => {
           <span className="logo-text">EduMart</span>
         </div>
 
-        {/* Thanh tìm kiếm */}
+        {/* Search bar - Desktop */}
         <form
           className="search-container desktop-only"
           onSubmit={handleSearchSubmit}
@@ -70,52 +119,75 @@ const Header = ({ onOpenLoginPopup }) => {
           />
         </form>
 
-        {/* Thanh điều hướng */}
+        {/* Navigation Icons */}
         <nav className="nav-icons">
-          {/* Quản trị viên */}
-          {isLoggedIn && user?.role === "admin" && (
+          {/* Admin */}
+          {isLoggedIn && user && user.role === "admin" ? (
             <>
+              {/* Courses */}
               <button
                 className="nav-button"
-                onClick={() => navigate("/admin-courses")}
+                onClick={handleAdminCoursesClick}
                 title="Khóa học"
               >
                 <List className="nav-icon" />
                 <span className="nav-label">Khóa học</span>
               </button>
+
+              {/* Transactions */}
               <button
                 className="nav-button"
-                onClick={() => navigate("/transactions")}
-                title="Giao dịch"
+                onClick={handleTransactionsClick}
+                title="Quản lý giao dịch"
               >
                 <DollarSign className="nav-icon" />
                 <span className="nav-label">Giao dịch</span>
               </button>
+
+              {/* Categories */}
               <button
                 className="nav-button"
-                onClick={() => navigate("/categories")}
-                title="Danh mục"
+                onClick={handleCategoriesClick}
+                title="Quản lý danh mục"
               >
                 <Server className="nav-icon" />
                 <span className="nav-label">Danh mục</span>
               </button>
+
+              {/* Users */}
               <button
                 className="nav-button"
-                onClick={() => navigate("/users")}
-                title="Người dùng"
+                onClick={handleUsersClick}
+                title="Quản lý người dùng"
               >
                 <Users className="nav-icon" />
                 <span className="nav-label">Người dùng</span>
               </button>
             </>
-          )}
+          ) : null}
 
-          {/* Học viên */}
-          {(!isLoggedIn || user?.role === "learner") && (
+          {/* Seller */}
+          {isLoggedIn && user && user.role === "seller" ? (
             <>
+              {/* Courses */}
               <button
                 className="nav-button"
-                onClick={() => navigate("/learner-courses")}
+                onClick={handleSellerCoursesClick}
+                title="Khóa học"
+              >
+                <List className="nav-icon" />
+                <span className="nav-label">Khóa học</span>
+              </button>
+            </>
+          ) : null}
+
+          {/* Learner */}
+          {!isLoggedIn || (user && user.role === "learner") ? (
+            <>
+              {/* Courses */}
+              <button
+                className="nav-button"
+                onClick={handleLearnerCoursesClick}
                 title="Khóa học"
               >
                 <List className="nav-icon" />
@@ -125,9 +197,10 @@ const Header = ({ onOpenLoginPopup }) => {
                 <span className="nav-label">Khóa học</span>
               </button>
 
+              {/* Favorites */}
               <button
                 className="nav-button"
-                onClick={() => navigate("/favorites")}
+                onClick={handleFavoritesClick}
                 title="Yêu thích"
               >
                 <Heart className="nav-icon" />
@@ -137,9 +210,10 @@ const Header = ({ onOpenLoginPopup }) => {
                 <span className="nav-label">Yêu thích</span>
               </button>
 
+              {/* Cart */}
               <button
                 className="nav-button"
-                onClick={() => navigate("/cart")}
+                onClick={handleCartClick}
                 title="Giỏ hàng"
               >
                 <ShoppingCart className="nav-icon" />
@@ -149,11 +223,11 @@ const Header = ({ onOpenLoginPopup }) => {
                 <span className="nav-label">Giỏ hàng</span>
               </button>
             </>
-          )}
+          ) : null}
 
-          {/* User info / Đăng nhập */}
+          {/* User */}
           {isLoggedIn ? (
-            <div className="user-menu desktop-only">
+            <div className="user-menu destop-only">
               <button className="nav-button user-button" title={user?.name}>
                 {user?.avatar ? (
                   <img
@@ -172,6 +246,7 @@ const Header = ({ onOpenLoginPopup }) => {
                   <User className="dropdown-icon" />
                   Thông tin cá nhân
                 </button>
+
                 <button className="dropdown-item" onClick={handleLogout}>
                   <LogOut className="dropdown-icon" />
                   Đăng xuất
@@ -189,7 +264,7 @@ const Header = ({ onOpenLoginPopup }) => {
             </button>
           )}
 
-          {/* Menu di động */}
+          {/* Mobile Menu Toggle */}
           <button
             className="mobile-menu-toggle mobile-only"
             onClick={toggleMenu}
@@ -198,7 +273,7 @@ const Header = ({ onOpenLoginPopup }) => {
           </button>
         </nav>
 
-        {/* Mobile menu */}
+        {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="mobile-menu">
             <form className="mobile-search" onSubmit={handleSearchSubmit}>
@@ -212,6 +287,7 @@ const Header = ({ onOpenLoginPopup }) => {
               />
             </form>
 
+            {/* Mobile User Actions */}
             <div className="mobile-user-actions">
               {isLoggedIn ? (
                 <div className="mobile-user-info">
@@ -228,19 +304,20 @@ const Header = ({ onOpenLoginPopup }) => {
                     <span>{user?.name}</span>
                   </div>
                   <button onClick={handleLogout} className="mobile-logout-btn">
-                    <LogOut className="nav-icon" /> Đăng xuất
+                    <LogOut className="nav-icon" />
+                    Đăng xuất
                   </button>
                 </div>
               ) : (
                 <div className="mobile-auth-buttons">
                   <button
-                    onClick={onOpenLoginPopup}
+                    onClick={handleLoginClick}
                     className="mobile-auth-btn"
                   >
                     Đăng nhập
                   </button>
                   <button
-                    onClick={() => navigate("/register")}
+                    onClick={handleRegisterClick}
                     className="mobile-auth-btn secondary"
                   >
                     Đăng ký
@@ -251,6 +328,8 @@ const Header = ({ onOpenLoginPopup }) => {
           </div>
         )}
       </div>
+
+      {/* Auth Moadl */}
     </header>
   );
 };
