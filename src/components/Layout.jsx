@@ -6,24 +6,20 @@ import Footer from "./Footer";
 import LoginPopup from "./Auth/LoginPopup";
 
 export const Layout = () => {
-  const [showChatbot, setShowChatbot] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+
   return (
     <div className="app">
-      <Header
-        onOpenChatbox={() => setShowChatbot(true)}
-        onOpenLoginPopup={() => setShowLoginPopup(true)}
-      />
+      <Header onOpenLoginPopup={() => setShowLoginPopup(true)} />
 
       <main className="main-content">
         <Outlet />
       </main>
 
-      {/* ✅ Hiển thị popup đăng nhập */}
+      {/* Popup đăng nhập */}
       {showLoginPopup && (
         <LoginPopup onClose={() => setShowLoginPopup(false)} />
       )}
-      {/* Chatbox */}
 
       <Footer />
     </div>
