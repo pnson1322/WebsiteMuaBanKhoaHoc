@@ -19,7 +19,7 @@ import {
   Users,
 } from "lucide-react";
 
-const Header = ({ onOpenChatbox }) => {
+const Header = ({ onOpenChatbox, onOpenLoginPopup }) => {
   const navigate = useNavigate();
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
@@ -290,7 +290,7 @@ const Header = ({ onOpenChatbox }) => {
           ) : (
             <button
               className="nav-button login-button desktop-only"
-              onClick={handleLoginClick}
+              onClick={onOpenLoginPopup}
               title="Đăng nhập"
             >
               <User className="nav-icon" />
