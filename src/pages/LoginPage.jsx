@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AuthLayout from "../components/Auth/AuthLayout";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -7,12 +7,12 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   // Xác định mode dựa trên URL path hoặc search params
   const getInitialMode = () => {
     const path = window.location.pathname;
     const modeParam = searchParams.get("mode");
-    
+
     if (path === "/register" || modeParam === "register") {
       return "register";
     }
@@ -29,6 +29,15 @@ const LoginPage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const mode = getInitialMode();
+    if (mode === "register") {
+      setMode("register");
+    } else {
+      setMode("login");
+    }
+  }, [window.location.pathname, searchParams]);
 
   // ✅ Hàm validateForm (dùng chung cho cả login và register)
   const validateForm = () => {
@@ -103,7 +112,7 @@ const LoginPage = () => {
     setMode(newMode);
     setFormData({ name: "", email: "", password: "", confirmPassword: "" });
     setErrors({});
-    
+
     // Navigate dựa trên mode mới
     if (newMode === "register") {
       navigate("/register");

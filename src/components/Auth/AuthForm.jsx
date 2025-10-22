@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import LoginPopup from "./LoginPopup";
 import {
   AuthFormWrapper,
   FormGroup,
@@ -48,6 +49,7 @@ const AuthForm = ({
   const [showReset, setShowReset] = useState(false); // ✅ popup đặt lại mật khẩu
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
 
   return (
     <>

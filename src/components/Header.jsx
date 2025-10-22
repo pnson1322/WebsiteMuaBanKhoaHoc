@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-const Header = () => {
+const Header = ({ onOpenLoginPopup }) => {
   const navigate = useNavigate();
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
@@ -256,7 +256,7 @@ const Header = () => {
           ) : (
             <button
               className="nav-button login-button desktop-only"
-              onClick={handleLoginClick}
+              onClick={onOpenLoginPopup}
               title="Đăng nhập"
             >
               <User className="nav-icon" />
