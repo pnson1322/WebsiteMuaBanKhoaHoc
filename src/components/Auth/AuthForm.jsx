@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import LoginPopup from "./LoginPopup";
+import ForgotPasswordPopup from "./ForgotPasswordPopup";
 import {
   AuthFormWrapper,
   FormGroup,
@@ -14,10 +14,6 @@ import {
   SwitchButton,
   ErrorText,
   ForgotPasswordLink,
-  ModalOverlay,
-  ModalContainer,
-  ModalHeader,
-  ModalBody,
 } from "./Auth.styled";
 import {
   Eye,
@@ -25,10 +21,11 @@ import {
   User,
   Mail,
   Lock,
+  Users,
   CheckCircle,
-  Edit3,
+  ChevronDown,
+  ArrowRight,
 } from "lucide-react";
-import styled from "styled-components";
 
 const AuthForm = ({
   mode,
@@ -43,18 +40,11 @@ const AuthForm = ({
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [showVerify, setShowVerify] = useState(false); // ✅ popup thứ 2
-  const [otpCode, setOtpCode] = useState(""); // ✅ input OTP
-  const [showReset, setShowReset] = useState(false); // ✅ popup đặt lại mật khẩu
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showLoginPopup, setShowLoginPopup] = useState(false);
 
   return (
     <>
       <AuthFormWrapper onSubmit={(e) => onSubmit(e, formData)}>
-        {/* Họ và tên (chỉ có khi register) */}
+        {/* ==== HỌ VÀ TÊN ==== */}
         {mode === "register" && (
           <FormGroup>
             <Label>Họ và tên</Label>
@@ -72,7 +62,7 @@ const AuthForm = ({
           </FormGroup>
         )}
 
-        {/* Email */}
+        {/* ==== EMAIL ==== */}
         <FormGroup>
           <Label>Email</Label>
           <InputContainer>
@@ -89,7 +79,7 @@ const AuthForm = ({
           {errors.email && <ErrorText>{errors.email}</ErrorText>}
         </FormGroup>
 
-        {/* Mật khẩu */}
+        {/* ==== MẬT KHẨU ==== */}
         <FormGroup>
           <Label>Mật khẩu</Label>
           <InputContainer>
@@ -110,6 +100,7 @@ const AuthForm = ({
             </TogglePassword>
           </InputContainer>
           {errors.password && <ErrorText>{errors.password}</ErrorText>}
+
           {mode === "login" && (
             <ForgotPasswordLink
               href="#"
@@ -123,34 +114,55 @@ const AuthForm = ({
           )}
         </FormGroup>
 
-        {/* Xác nhận mật khẩu */}
+        {/* ==== XÁC NHẬN MẬT KHẨU ==== */}
         {mode === "register" && (
-          <FormGroup>
-            <Label>Xác nhận mật khẩu</Label>
-            <InputContainer>
-              <Lock className="input-icon" />
-              <Input
-                name="confirmPassword"
-                type={showConfirm ? "text" : "password"}
-                value={formData.confirmPassword}
-                onChange={onChange}
-                placeholder="Nhập lại mật khẩu"
-                className={errors.confirmPassword ? "error" : ""}
-              />
-              <TogglePassword
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-              >
-                {showConfirm ? <EyeOff /> : <Eye />}
-              </TogglePassword>
-            </InputContainer>
-            {errors.confirmPassword && (
-              <ErrorText>{errors.confirmPassword}</ErrorText>
-            )}
-          </FormGroup>
+          <>
+            <FormGroup>
+              <Label>Xác nhận mật khẩu</Label>
+              <InputContainer>
+                <Lock className="input-icon" />
+                <Input
+                  name="confirmPassword"
+                  type={showConfirm ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={onChange}
+                  placeholder="Nhập lại mật khẩu"
+                  className={errors.confirmPassword ? "error" : ""}
+                />
+                <TogglePassword
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                >
+                  {showConfirm ? <EyeOff /> : <Eye />}
+                </TogglePassword>
+              </InputContainer>
+              {errors.confirmPassword && (
+                <ErrorText>{errors.confirmPassword}</ErrorText>
+              )}
+            </FormGroup>
+
+            {/* ==== VAI TRÒ ==== */}
+            <FormGroup>
+              <Label>Vai trò</Label>
+              <InputContainer>
+                <Users className="input-icon" />
+                <Input
+                  as="select"
+                  name="role"
+                  value={formData.role}
+                  onChange={onChange}
+                >
+                  <option>Học viên</option>
+                  <option>Người bán</option>
+                  <option>Admin</option>
+                </Input>
+                <ChevronDown className="select-arrow" size={18} />
+              </InputContainer>
+            </FormGroup>
+          </>
         )}
 
-        {/* Hiển thị khi đăng ký thành công */}
+        {/* ==== THÔNG BÁO ĐĂNG KÝ THÀNH CÔNG ==== */}
         {success && mode === "register" && (
           <RegisterSuccess>
             <CheckCircle />
@@ -161,18 +173,24 @@ const AuthForm = ({
           </RegisterSuccess>
         )}
 
-        {/* Nút Đăng nhập / Đăng ký */}
+        {/* ==== NÚT SUBMIT ==== */}
         <SubmitButton type="submit" disabled={loading}>
           {loading ? (
             <LoadingSpinner />
           ) : mode === "login" ? (
-            "Đăng nhập"
+            <>
+              Đăng nhập
+              <ArrowRight size={20} className="arrow-icon" />
+            </>
           ) : (
-            "Tạo tài khoản"
+            <>
+              Tạo tài khoản
+              <ArrowRight size={20} className="arrow-icon" />
+            </>
           )}
         </SubmitButton>
 
-        {/* Nút chuyển chế độ */}
+        {/* ==== NÚT CHUYỂN CHẾ ĐỘ ==== */}
         <AuthSwitch>
           <p>
             {mode === "login" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}
@@ -183,131 +201,9 @@ const AuthForm = ({
         </AuthSwitch>
       </AuthFormWrapper>
 
-      {/* Popup Quên mật khẩu */}
+      {/* ==== POPUP QUÊN MẬT KHẨU ==== */}
       {showForgot && (
-        <ModalOverlay>
-          <ModalContainer>
-            <ModalHeader>
-              <div className="icon-wrap">
-                <Edit3 size={20} color="#fff" />
-              </div>
-              <h2>Quên mật khẩu</h2>
-            </ModalHeader>
-
-            <ModalBody>
-              <label>Nhập địa chỉ email của bạn</label>
-              <input
-                type="email"
-                placeholder="Nhập email của bạn"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-              />
-              <div className="actions">
-                <button className="cancel" onClick={() => setShowForgot(false)}>
-                  Hủy
-                </button>
-                <button
-                  className="send"
-                  onClick={() => {
-                    // Khi bấm Gửi OTP → mở popup xác thực
-                    setShowForgot(false);
-                    setShowVerify(true);
-                  }}
-                >
-                  Gửi OTP
-                </button>
-              </div>
-            </ModalBody>
-          </ModalContainer>
-        </ModalOverlay>
-      )}
-      {/* Popup Xác thực email */}
-      {showVerify && (
-        <ModalOverlay>
-          <ModalContainer>
-            <ModalHeader>
-              <div className="icon-wrap">
-                <Edit3 size={20} color="#fff" />
-              </div>
-              <h2>Xác thực email</h2>
-            </ModalHeader>
-
-            <ModalBody>
-              <label>Nhập mã OTP vừa được gửi tới email của bạn</label>
-              <input
-                type="text"
-                placeholder="Nhập mã OTP"
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value)}
-              />
-              <div className="actions">
-                <button className="cancel" onClick={() => setShowVerify(false)}>
-                  Hủy
-                </button>
-                <button
-                  className="send"
-                  onClick={() => {
-                    // ✅ Khi xác thực xong → mở popup đặt lại mật khẩu
-                    setShowVerify(false);
-                    setShowReset(true);
-                  }}
-                >
-                  Xác nhận
-                </button>
-              </div>
-            </ModalBody>
-          </ModalContainer>
-        </ModalOverlay>
-      )}
-      {showReset && (
-        <ModalOverlay>
-          <ModalContainer>
-            <ModalHeader>
-              <div className="icon-wrap">
-                <Edit3 size={20} color="#fff" />
-              </div>
-              <h2>Đặt lại mật khẩu</h2>
-            </ModalHeader>
-
-            <ModalBody>
-              <label>Nhập mật khẩu mới</label>
-              <input
-                type="password"
-                placeholder="Nhập mật khẩu mới"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-
-              <label>Xác thực mật khẩu</label>
-              <input
-                type="password"
-                placeholder="Nhập lại mật khẩu"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-
-              <div className="actions">
-                <button className="cancel" onClick={() => setShowReset(false)}>
-                  Hủy
-                </button>
-                <button
-                  className="send"
-                  onClick={() => {
-                    alert("Mật khẩu đã được đặt lại thành công!");
-                    setShowReset(false);
-                    setTimeout(() => {
-                      if (mode !== "login") {
-                        onSwitchMode(); // chuyển sang chế độ đăng nhập
-                      }
-                    }, 2000);
-                  }}
-                >
-                  Xác nhận
-                </button>
-              </div>
-            </ModalBody>
-          </ModalContainer>
-        </ModalOverlay>
+        <ForgotPasswordPopup onClose={() => setShowForgot(false)} />
       )}
     </>
   );
