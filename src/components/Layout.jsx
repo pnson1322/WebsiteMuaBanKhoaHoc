@@ -15,11 +15,9 @@ export const Layout = () => {
         <Outlet />
       </main>
 
-      {/* ✅ Hiển thị popup đăng nhập */}
       {showLoginPopup && (
         <LoginPopup onClose={() => setShowLoginPopup(false)} />
       )}
-      {/* Chatbox */}
 
       <Footer />
     </div>
