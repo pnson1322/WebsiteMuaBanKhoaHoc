@@ -40,7 +40,8 @@ const AuthBenefits = () => (
 
     <Testimonial>
       <blockquote>
-        “AI giúp tôi tìm được đúng khóa học mình cần. Rất tuyệt vời!”
+        “Khóa học rất thực tế và dễ hiểu — mình học được nhiều kỹ năng áp dụng
+        ngay!”
       </blockquote>
       <cite>- Học viên EduMart</cite>
     </Testimonial>

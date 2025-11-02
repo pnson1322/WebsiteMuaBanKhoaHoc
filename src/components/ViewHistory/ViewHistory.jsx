@@ -1,0 +1,56 @@
+import React, { useState, useEffect } from "react";
+import { useAppState, useAppDispatch } from "../../contexts/AppContext";
+import { coursesAPI } from "../../services/api";
+import "./ViewHistory.css";
+import HistoryHeader from "./HistoryHeader";
+import HistoryList from "./HistoryList";
+import EmptyHistory from "./EmptyHistory";
+
+const ViewHistory = ({ onViewDetails }) => {
+  const state = useAppState();
+  const { dispatch, actionTypes } = useAppDispatch();
+  const [viewHistoryCourses, setViewHistoryCourses] = useState([]);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      const recentIds = state.viewHistory.slice(-4).reverse();
+      const courses = await Promise.all(
+        recentIds.map((id) => coursesAPI.getCourseById(id).catch(() => null))
+      );
+      setViewHistoryCourses(courses.filter(Boolean));
+    };
+    loadHistory();
+  }, [state.viewHistory]);
+
+  const handleClearHistory = () => {
+    dispatch({ type: actionTypes.CLEAR_VIEW_HISTORY });
+  };
+
+  if (viewHistoryCourses.length === 0) {
+    return (
+      <div className="view-history-section">
+        <HistoryHeader 
+          showClearButton={false}
+          onClearHistory={handleClearHistory}
+        />
+        <EmptyHistory />
+      </div>
+    );
+  }
+
+  return (
+    <div className="view-history-section">
+      <HistoryHeader 
+        showClearButton={true}
+        onClearHistory={handleClearHistory}
+        historyCount={viewHistoryCourses.length}
+      />
+      <HistoryList 
+        courses={viewHistoryCourses}
+        onViewDetails={onViewDetails}
+      />
+    </div>
+  );
+};
+
+export default ViewHistory;
