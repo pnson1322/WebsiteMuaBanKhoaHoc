@@ -89,7 +89,9 @@ const Header = ({ onOpenLoginPopup }) => {
     setIsMenuOpen(!isMenuOpen);
   }
 
-  function handleRegisterClick() {}
+  function handleRegisterClick() {
+    navigate("/register");
+  }
 
   return (
     <header className="header">
@@ -328,8 +330,6 @@ const Header = ({ onOpenLoginPopup }) => {
           </div>
         )}
       </div>
-
-      {/* Auth Moadl */}
     </header>
   );
 };
