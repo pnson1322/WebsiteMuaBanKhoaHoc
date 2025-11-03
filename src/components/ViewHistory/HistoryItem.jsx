@@ -30,3 +30,7 @@ const HistoryItem = ({ course, index, onViewDetails }) => {
 };
 
 export default HistoryItem;
+
+
+
+

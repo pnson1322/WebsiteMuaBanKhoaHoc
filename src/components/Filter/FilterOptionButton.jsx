@@ -12,3 +12,4 @@ const FilterOptionButton = ({ label, isActive, onClick }) => {
 };
 
 export default FilterOptionButton;
+

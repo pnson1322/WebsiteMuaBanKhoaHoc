@@ -64,12 +64,21 @@ const appReducer = (state, action) => {
       localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
       return { ...state, favorites: updatedFavorites };
 
-    case actionTypes.ADD_TO_VIEW_HISTORY:
+    case actionTypes.ADD_TO_VIEW_HISTORY: {
       const courseId = action.payload;
-      const filteredHistory = state.viewHistory.filter((id) => id !== courseId);
-      const newHistory = [courseId, ...filteredHistory].slice(0, 10);
+
+      // 1️⃣ Xóa khóa học nếu đã tồn tại (tránh trùng ID)
+      const updatedHistory = state.viewHistory.filter((id) => id !== courseId);
+
+      // 2️⃣ Đưa khóa học mới lên đầu danh sách
+      const newHistory = [courseId, ...updatedHistory].slice(0, 10); // giới hạn 10 khóa gần nhất
+
+      // 3️⃣ Lưu vào localStorage để giữ lại sau khi refresh
       localStorage.setItem("viewHistory", JSON.stringify(newHistory));
+
+      // 4️⃣ Cập nhật state
       return { ...state, viewHistory: newHistory };
+    }
 
     case actionTypes.SET_SUGGESTIONS:
       return { ...state, suggestions: action.payload };

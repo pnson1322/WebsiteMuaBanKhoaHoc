@@ -48,19 +48,22 @@ const CourseCard = ({ course, onViewDetails }) => {
       />
 
       <div className="course-content">
-        <CourseContent course={course} />
-        <CourseStats course={course} />
-        <CourseFooter
-          course={course}
-          isInCart={isInCart}
-          onAddToCart={handleAddToCart}
-          onViewDetails={handleViewDetails}
-        />
+        <div className="course-main">
+          <CourseContent course={course} />
+        </div>
+
+        <div className="course-bottom">
+          <CourseStats course={course} />
+          <CourseFooter
+            course={course}
+            isInCart={isInCart}
+            onAddToCart={handleAddToCart}
+            onViewDetails={handleViewDetails}
+          />
+        </div>
       </div>
     </div>
   );
 };
 
 export default CourseCard;
-
-
