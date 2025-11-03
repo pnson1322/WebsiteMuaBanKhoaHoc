@@ -14,6 +14,8 @@ import LoginPage from "./pages/LoginPage";
 import UserInfo from "./pages/UserInfo";
 import Favorites from "./pages/Favorites";
 import HistoryPage from "./pages/HistoryPage/HistoryPage";
+import CourseDetail from "./pages/CourseDetail";
+
 const CourseDetail = () => (
   <div style={{ padding: "2rem", textAlign: "center" }}>
     <h1>📘 Chi tiết khóa học</h1>
@@ -37,7 +39,7 @@ function App() {
                 <Route path="history" element={<HistoryPage />} />
 
                 {/* Trang chi tiết khóa học */}
-                <Route path="course/:id" element={<CourseDetail />} />
+                <Route path="course" element={<CourseDetail />} />
 
                 {/* Đăng nhập / đăng ký */}
                 <Route path="login" element={<LoginPage />} />

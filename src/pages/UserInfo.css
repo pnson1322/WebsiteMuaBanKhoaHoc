@@ -207,8 +207,15 @@
   align-items: center;
 }
 
-.strength-bar-fill {
+.strength-bar-wrapper {
   height: 50%;
+  width: 70%;
+  border-radius: 4px;
+  background: gray;
+}
+
+.strength-bar-fill {
+  height: 100%;
   border-radius: 4px;
   width: 0%;
   transition: width 0.4s ease, background-color 0.3s ease;
