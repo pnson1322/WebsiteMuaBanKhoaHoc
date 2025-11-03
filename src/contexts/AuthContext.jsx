@@ -54,11 +54,25 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
   };
 
+  const updateUser = (updates) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const nextUser = { ...prev, ...updates };
+      try {
+        localStorage.setItem("currentUser", JSON.stringify(nextUser));
+      } catch (error) {
+        console.error("Error persisting updated user:", error);
+      }
+      return nextUser;
+    });
+  };
+
   const value = {
     isLoggedIn,
     user,
     login,
     logout,
+    updateUser,
     loading,
   };
 

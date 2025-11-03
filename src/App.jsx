@@ -5,6 +5,7 @@ import { AppProvider } from "./contexts/AppContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import LoginPage from "./pages/LoginPage";
 import UserInfo from "./pages/UserInfo";
+import CourseDetail from "./pages/CourseDetail";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<LoginPage />} />
                 <Route path="user-info" element={<UserInfo />} />
+                <Route path="course" element={<CourseDetail />} />
               </Route>
 
               {/* Route fallback */}
