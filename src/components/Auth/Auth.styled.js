@@ -18,10 +18,11 @@ export const AuthPage = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 0;
+  padding: 2rem;
 
-  @media (max-width: 768px) {
-    padding: 1rem 0;
+  @media (min-width: 1200px) {
+    min-height: ${({ $mode }) => ($mode === "register" ? "1000px" : "800px")};
+    padding: 2rem;
   }
 `;
 
@@ -29,10 +30,12 @@ export const AuthContainer = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 2 2rem;
 
-  @media (max-width: 768px) {
-    padding: 0 1rem;
+  @media (min-width: 1200px) {
+    max-width: ${({ $mode }) => ($mode === "register" ? "1100px" : "1000")};
+    min-height: ${({ $mode }) => ($mode === "register" ? "850px" : "700px")};
+    padding: 2rem;
   }
 `;
 
@@ -147,6 +150,16 @@ export const InputContainer = styled.div`
     width: 20px;
     height: 20px;
   }
+  .select-arrow {
+    padding: 1rem 1rem 1rem 3.5rem;
+
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    pointer-events: none;
+  }
 `;
 
 export const Input = styled.input`
@@ -158,6 +171,7 @@ export const Input = styled.input`
   background: #f8f9fa;
   color: #2d3748;
   transition: all 0.3s ease;
+  appearance: none;
 
   &:focus {
     outline: none;
@@ -224,6 +238,15 @@ export const SubmitButton = styled.button`
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+  }
+
+  /* ⚡ hiệu ứng cho icon */
+  .arrow-icon {
+    transition: transform 0.25s ease;
+  }
+
+  &:hover:not(:disabled) .arrow-icon {
+    transform: translateX(5px); /* icon trượt nhẹ sang phải khi hover */
   }
 `;
 

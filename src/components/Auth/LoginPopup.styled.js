@@ -1,5 +1,16 @@
 import styled, { keyframes } from "styled-components";
-
+import {
+  Input,
+  InputContainer,
+  SubmitButton as AuthSubmitButton,
+  FormGroup as AuthFormGroup,
+  Label,
+  TogglePassword,
+  ForgotPasswordLink,
+  SwitchButton,
+  ErrorText,
+} from "./Auth.styled";
+export { ErrorText };
 /* Hiệu ứng mờ popup */
 const fadeIn = keyframes`
   from { opacity: 0; }
@@ -13,14 +24,14 @@ export const Overlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+  z-index: 1001;
   animation: ${fadeIn} 0.25s ease;
 `;
 
 export const PopupContainer = styled.div`
   position: relative;
   width: 450px;
-  max-height: ${({ $isRegister }) => ($isRegister ? "920px" : "760px")};
+  max-height: ${({ $isRegister }) => ($isRegister ? "760px" : "760px")};
   background: #fff;
   border-radius: 24px;
   padding: 32px;
@@ -93,82 +104,25 @@ export const HighlightDesc = styled.p`
   margin-top: 6px;
 `;
 
-export const InputGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 1.2rem;
+// Sử dụng Label từ Auth.styled.js
+export { Label };
 
-  label {
-    font-weight: 700;
-    font-size: 15px;
-    color: #2d3748;
-  }
+// Sử dụng Input, InputContainer, TogglePassword từ Auth.styled.js
+export { Input, InputContainer, TogglePassword };
 
-  .input-wrapper {
-    position: relative;
-  }
+// Sử dụng ForgotPasswordLink từ Auth.styled.js
+export { ForgotPasswordLink };
 
-  .forgot {
-    color: #667de9;
-    font-size: 14px;
-    background: none;
-    border: none;
-    margin-top: 6px;
-    text-align: right;
-    cursor: pointer;
-  }
+// Tùy chỉnh FormGroup cho LoginPopup với spacing lớn hơn
+export const FormGroup = styled(AuthFormGroup)`
+  margin-bottom: 1.5rem;
+  gap: 0.75rem;
 `;
 
-export const InputIcon = styled.div`
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.6;
-`;
-
-export const InputField = styled.input`
+// Tùy chỉnh SubmitButton cho LoginPopup với width 100%
+export const SubmitButton = styled(AuthSubmitButton)`
   width: 100%;
-  height: 54px;
-  background: #f8f9fa;
-  border: 2px solid rgba(226, 232, 240, 0.53);
-  border-radius: 12px;
-  padding: 0 40px;
-  font-size: 16px;
-  outline: none;
-  color: #2d3748;
-  &:focus {
-    border-color: #667de9;
-  }
-`;
-
-export const ToggleEye = styled.button`
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0.7;
-`;
-
-export const SubmitButton = styled.button`
-  width: 100%;
-  height: 60px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 700;
-  color: white;
-  font-size: 17px;
-  background: linear-gradient(90deg, #667de9 0%, #7258b5 100%);
-  cursor: pointer;
-  margin-top: 12px;
-
-  &:hover {
-    opacity: 0.9;
-  }
+  margin-top: 1rem;
 `;
 
 export const Divider = styled.hr`
@@ -182,29 +136,26 @@ export const FooterText = styled.p`
   font-size: 15px;
 `;
 
-export const LinkText = styled.a`
-  color: #667de9;
-  margin-left: 4px;
-  text-decoration: none;
-  font-weight: 500;
-  &:hover {
-    text-decoration: underline;
-  }
-`;
+// Sử dụng SwitchButton từ Auth.styled.js cho các link
+export { SwitchButton as LinkText };
 
 export const FullPageButton = styled.button`
   display: block;
-  width: 150px;
-  height: 40px;
+  width: 160px;
+  height: 44px;
   margin: 1.5rem auto 0;
-  border: 2px solid rgba(226, 232, 240, 0.53);
-  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   background: #f8f9fa;
   font-weight: 600;
   color: #4a5568;
   cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
 
   &:hover {
     background: #edf2f7;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
   }
 `;

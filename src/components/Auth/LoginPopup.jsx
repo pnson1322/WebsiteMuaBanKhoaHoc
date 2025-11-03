@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext"; // ✅ dùng AuthContext
+import useAuthForm from "../../hooks/useAuthForm";
+import ForgotPasswordPopup from "./ForgotPasswordPopup";
 import {
   Overlay,
   PopupContainer,
@@ -10,83 +11,59 @@ import {
   HighlightBox,
   HighlightTitle,
   HighlightDesc,
-  InputGroup,
-  InputIcon,
-  InputField,
-  ToggleEye,
+  FormGroup,
+  Label,
+  InputContainer,
+  Input,
+  TogglePassword,
   SubmitButton,
   FooterText,
   LinkText,
   Divider,
   FullPageButton,
   ScrollArea,
+  ForgotPasswordLink,
+  ErrorText,
 } from "./LoginPopup.styled";
-import { X, Mail, Lock, Eye, EyeOff, User, Users } from "lucide-react";
+import {
+  X,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  Users,
+  ChevronDown,
+} from "lucide-react";
 
-const LoginPopup = ({ onClose, setShowForgot }) => {
-  const { login } = useAuth(); // ✅ Lấy hàm login từ context
+const LoginPopup = ({ onClose }) => {
   const navigate = useNavigate();
-
-  const [isRegister, setIsRegister] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState("Học viên");
+  const [showForgot, setShowForgot] = useState(false);
 
-  // ✅ Điều hướng đến trang đầy đủ
+  // ✅ Sử dụng hook useAuthForm
+  const {
+    mode,
+    formData,
+    errors,
+    loading,
+    handleChange,
+    handleSubmit,
+    switchMode,
+    setMode: setIsRegister,
+  } = useAuthForm("login", onClose);
+  const isRegister = mode === "register";
+  // ✅ Mở trang đầy đủ
   const handleFullPage = () => {
     onClose();
-    if (isRegister) navigate("/register");
-    else navigate("/login");
-  };
-
-  // ✅ Hàm đăng nhập thực tế
-  const handleLogin = () => {
-    if (!email || !password) {
-      alert("Vui lòng nhập đầy đủ email và mật khẩu");
-      return;
-    }
-
-    const userData = {
-      name: fullName || "Người dùng",
-      email,
-      role: "learner",
-    };
-
-    login(userData); // ✅ Cập nhật AuthContext
-    alert("Đăng nhập thành công!");
-    onClose(); // ✅ Đóng popup
-  };
-
-  // ✅ Hàm đăng ký thực tế
-  const handleRegister = () => {
-    if (!fullName || !email || !password || !confirmPassword) {
-      alert("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-    if (password !== confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp");
-      return;
-    }
-
-    const newUser = {
-      name: fullName,
-      email,
-      role: role === "Giảng viên" ? "seller" : "learner",
-    };
-
-    login(newUser); // ✅ Cho đăng nhập luôn sau khi đăng ký
-    alert("Đăng ký thành công!");
-    onClose();
+    navigate(isRegister ? "/register" : "/login");
   };
 
   return (
     <Overlay>
       <PopupContainer $isRegister={isRegister}>
-        {/* Header */}
+        {/* ==== HEADER ==== */}
         <Header>
           <Title>{isRegister ? "Đăng ký" : "Đăng nhập"}</Title>
           <CloseButton onClick={onClose}>
@@ -94,71 +71,67 @@ const LoginPopup = ({ onClose, setShowForgot }) => {
           </CloseButton>
         </Header>
 
-        {/* Highlight Box */}
+        {/* ==== HIGHLIGHT ==== */}
         <HighlightBox>
           <HighlightTitle>🚀 Mở khóa tính năng đặc biệt!</HighlightTitle>
           <HighlightDesc>
             {isRegister
-              ? "Tạo tài khoản để khám phá AI gợi ý khóa học phù hợp nhất với bạn"
-              : "Đăng nhập để sử dụng AI gợi ý khóa học phù hợp với bạn"}
+              ? "Từng bước chinh phục kỹ năng bạn cần, từ cơ bản đến nâng cao"
+              : "Từng bước chinh phục kỹ năng bạn cần, từ cơ bản đến nâng cao"}
           </HighlightDesc>
         </HighlightBox>
 
-        {/* Scroll nội dung */}
+        {/* ==== FORM ==== */}
         <ScrollArea>
           {!isRegister ? (
             <>
               {/* ==== LOGIN ==== */}
-              <InputGroup>
-                <label>Email</label>
-                <div className="input-wrapper">
-                  <InputIcon>
-                    <Mail size={18} />
-                  </InputIcon>
-                  <InputField
+              <FormGroup>
+                <Label>Email</Label>
+                <InputContainer>
+                  <Mail className="input-icon" size={18} />
+                  <Input
+                    name="email"
                     type="email"
                     placeholder="Nhập email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={errors.email ? "error" : ""}
                   />
-                </div>
-              </InputGroup>
+                </InputContainer>
+                {errors.email && <ErrorText>{errors.email}</ErrorText>}
+              </FormGroup>
 
-              <InputGroup>
-                <label>Mật khẩu</label>
-                <div className="input-wrapper">
-                  <InputIcon>
-                    <Lock size={18} />
-                  </InputIcon>
-                  <InputField
+              <FormGroup>
+                <Label>Mật khẩu</Label>
+                <InputContainer>
+                  <Lock className="input-icon" size={18} />
+                  <Input
+                    name="password"
                     type={showPass ? "text" : "password"}
                     placeholder="Nhập mật khẩu"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={handleChange}
+                    className={errors.password ? "error" : ""}
                   />
-                  <ToggleEye onClick={() => setShowPass(!showPass)}>
+                  <TogglePassword onClick={() => setShowPass(!showPass)}>
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </ToggleEye>
-                </div>
-
-                <button
-                  type="button"
-                  className="forgot"
-                  onClick={() => {
-                    onClose();
-                    setShowForgot(true);
-                  }}
-                >
+                  </TogglePassword>
+                </InputContainer>
+                {errors.password && <ErrorText>{errors.password}</ErrorText>}
+                <ForgotPasswordLink onClick={() => setShowForgot(true)}>
                   Quên mật khẩu?
-                </button>
-              </InputGroup>
+                </ForgotPasswordLink>
+              </FormGroup>
 
-              <SubmitButton onClick={handleLogin}>Đăng nhập</SubmitButton>
+              <SubmitButton onClick={handleSubmit} disabled={loading}>
+                {loading ? "Đang xử lý..." : "Đăng nhập"}
+              </SubmitButton>
 
               <Divider />
               <FooterText>
                 Chưa có tài khoản?
-                <LinkText as="button" onClick={() => setIsRegister(true)}>
+                <LinkText as="button" onClick={() => switchMode("register")}>
                   Đăng ký ngay
                 </LinkText>
               </FooterText>
@@ -166,95 +139,104 @@ const LoginPopup = ({ onClose, setShowForgot }) => {
           ) : (
             <>
               {/* ==== REGISTER ==== */}
-              <InputGroup>
-                <label>Họ và tên</label>
-                <div className="input-wrapper">
-                  <InputIcon>
-                    <User size={18} />
-                  </InputIcon>
-                  <InputField
+              <FormGroup>
+                <Label>Họ và tên</Label>
+                <InputContainer>
+                  <User className="input-icon" size={18} />
+                  <Input
+                    name="name"
                     type="text"
                     placeholder="Nhập họ và tên"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={formData.name}
+                    onChange={handleChange}
+                    className={errors.name ? "error" : ""}
                   />
-                </div>
-              </InputGroup>
+                </InputContainer>
+                {errors.name && <ErrorText>{errors.name}</ErrorText>}
+              </FormGroup>
 
-              <InputGroup>
-                <label>Email</label>
-                <div className="input-wrapper">
-                  <InputIcon>
-                    <Mail size={18} />
-                  </InputIcon>
-                  <InputField
+              <FormGroup>
+                <Label>Email</Label>
+                <InputContainer>
+                  <Mail className="input-icon" size={18} />
+                  <Input
+                    name="email"
                     type="email"
                     placeholder="Nhập email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={errors.email ? "error" : ""}
                   />
-                </div>
-              </InputGroup>
+                </InputContainer>
+                {errors.email && <ErrorText>{errors.email}</ErrorText>}
+              </FormGroup>
 
-              <InputGroup>
-                <label>Mật khẩu</label>
-                <div className="input-wrapper">
-                  <InputIcon>
-                    <Lock size={18} />
-                  </InputIcon>
-                  <InputField
+              <FormGroup>
+                <Label>Mật khẩu</Label>
+                <InputContainer>
+                  <Lock className="input-icon" size={18} />
+                  <Input
+                    name="password"
                     type={showPass ? "text" : "password"}
                     placeholder="Nhập mật khẩu"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={handleChange}
+                    className={errors.password ? "error" : ""}
                   />
-                  <ToggleEye onClick={() => setShowPass(!showPass)}>
+                  <TogglePassword onClick={() => setShowPass(!showPass)}>
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </ToggleEye>
-                </div>
-              </InputGroup>
+                  </TogglePassword>
+                </InputContainer>
+                {errors.password && <ErrorText>{errors.password}</ErrorText>}
+              </FormGroup>
 
-              <InputGroup>
-                <label>Xác nhận mật khẩu</label>
-                <div className="input-wrapper">
-                  <InputIcon>
-                    <Lock size={18} />
-                  </InputIcon>
-                  <InputField
+              <FormGroup>
+                <Label>Xác nhận mật khẩu</Label>
+                <InputContainer>
+                  <Lock className="input-icon" size={18} />
+                  <Input
+                    name="confirmPassword"
                     type={showConfirm ? "text" : "password"}
                     placeholder="Nhập lại mật khẩu"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className={errors.confirmPassword ? "error" : ""}
                   />
-                  <ToggleEye onClick={() => setShowConfirm(!showConfirm)}>
+                  <TogglePassword onClick={() => setShowConfirm(!showConfirm)}>
                     {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </ToggleEye>
-                </div>
-              </InputGroup>
+                  </TogglePassword>
+                </InputContainer>
+                {errors.confirmPassword && (
+                  <ErrorText>{errors.confirmPassword}</ErrorText>
+                )}
+              </FormGroup>
 
-              <InputGroup>
-                <label>Vai trò</label>
-                <div className="input-wrapper">
-                  <InputIcon>
-                    <Users size={18} />
-                  </InputIcon>
-                  <InputField
+              <FormGroup>
+                <Label>Vai trò</Label>
+                <InputContainer>
+                  <Users className="input-icon" size={18} />
+                  <Input
                     as="select"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
                   >
                     <option>Học viên</option>
-                    <option>Giảng viên</option>
-                  </InputField>
-                </div>
-              </InputGroup>
+                    <option>Người bán</option>
+                    <option>Admin</option>
+                  </Input>
+                  <ChevronDown className="select-arrow" size={18} />
+                </InputContainer>
+              </FormGroup>
 
-              <SubmitButton onClick={handleRegister}>Đăng ký</SubmitButton>
+              <SubmitButton onClick={handleSubmit} disabled={loading}>
+                {loading ? "Đang xử lý..." : "Đăng ký"}
+              </SubmitButton>
 
               <Divider />
               <FooterText>
                 Đã có tài khoản?
-                <LinkText as="button" onClick={() => setIsRegister(false)}>
+                <LinkText as="button" onClick={() => switchMode("login")}>
                   Đăng nhập
                 </LinkText>
               </FooterText>
@@ -266,6 +248,11 @@ const LoginPopup = ({ onClose, setShowForgot }) => {
           Mở trang đầy đủ
         </FullPageButton>
       </PopupContainer>
+
+      {/* ==== FORGOT PASSWORD POPUP ==== */}
+      {showForgot && (
+        <ForgotPasswordPopup onClose={() => setShowForgot(false)} />
+      )}
     </Overlay>
   );
 };

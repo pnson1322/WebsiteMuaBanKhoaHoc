@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
+import { coursesAPI } from "../services/api"; // ✅ thêm import API
 
 // Initial state
 const initialState = {
@@ -65,9 +66,8 @@ const appReducer = (state, action) => {
 
     case actionTypes.ADD_TO_VIEW_HISTORY:
       const courseId = action.payload;
-      // Remove if already exists to avoid duplicates, then add to beginning
       const filteredHistory = state.viewHistory.filter((id) => id !== courseId);
-      const newHistory = [courseId, ...filteredHistory].slice(0, 10); // Keep only last 10
+      const newHistory = [courseId, ...filteredHistory].slice(0, 10);
       localStorage.setItem("viewHistory", JSON.stringify(newHistory));
       return { ...state, viewHistory: newHistory };
 
@@ -99,36 +99,36 @@ const appReducer = (state, action) => {
   }
 };
 
-// Create contexts
+// Contexts
 const AppContext = createContext();
 const AppDispatchContext = createContext();
 
-// Custom hooks
-export const useAppState = () => {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error("useAppState must be used within AppProvider");
-  }
-  return context;
-};
+// Hooks
+export const useAppState = () => useContext(AppContext);
+export const useAppDispatch = () => useContext(AppDispatchContext);
 
-export const useAppDispatch = () => {
-  const context = useContext(AppDispatchContext);
-  if (!context) {
-    throw new Error("useAppDispatch must be used within AppProvider");
-  }
-  return context;
-};
-
-// Provider component
+// Provider
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Filter courses whenever search term, category, or price range changes
+  // ✅ Fetch danh sách khoá học từ API một lần
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await coursesAPI.getCoursesWithPagination(1, 200);
+        dispatch({ type: actionTypes.SET_COURSES, payload: res.courses });
+      } catch (err) {
+        dispatch({ type: actionTypes.SET_ERROR, payload: err.message });
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  // ✅ Tự động lọc khi state thay đổi
   useEffect(() => {
     let filtered = state.courses;
 
-    // Filter by search term
+    // Tìm kiếm
     if (state.searchTerm) {
       filtered = filtered.filter(
         (course) =>
@@ -140,14 +140,14 @@ export const AppProvider = ({ children }) => {
       );
     }
 
-    // Filter by category
+    // Danh mục
     if (state.selectedCategory !== "Tất cả") {
       filtered = filtered.filter(
         (course) => course.category === state.selectedCategory
       );
     }
 
-    // Filter by price range
+    // Khoảng giá
     if (state.selectedPriceRange.label !== "Tất cả") {
       filtered = filtered.filter(
         (course) =>
