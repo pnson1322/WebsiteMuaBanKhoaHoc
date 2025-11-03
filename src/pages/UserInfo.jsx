@@ -11,13 +11,15 @@ import {
   UserRoundPen,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import "./UserInfo.css";
 import { useState } from "react";
 
 const UserInfo = () => {
-  const { user } = useAuth();
-  const [name, setName] = useState(user?.name);
-  const [phone, setPhone] = useState(user?.phone);
+  const { user, updateUser } = useAuth();
+  const { showSuccess, showError } = useToast();
+  const [name, setName] = useState(user?.name || "");
+  const [phone, setPhone] = useState(user?.phone || "");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,7 +36,7 @@ const UserInfo = () => {
 
     let percent = (score / 4) * 100;
 
-    if (score === 0) return { label: "", color: "#ddd", percent: 0 };
+    if (score === 0) return { label: "Yếu", color: "#ddd", percent: 0 };
     if (score === 1) return { label: "Yếu", color: "#667eea", percent };
     if (score === 2)
       return {
@@ -52,9 +54,47 @@ const UserInfo = () => {
 
   const strength = calculateStrength(newPassword);
 
-  function handleSaveInfoClick() {}
+  function handleSaveInfoClick(e) {
+    e.preventDefault?.();
+    if (!user) {
+      showError("Bạn chưa đăng nhập");
+      return;
+    }
+    const trimmedName = (name || "").trim();
+    const trimmedPhone = (phone || "").trim();
+    if (!trimmedName) {
+      showError("Vui lòng nhập họ và tên");
+      return;
+    }
+    updateUser({ name: trimmedName, phone: trimmedPhone });
+    showSuccess("Cập nhật thông tin thành công");
+  }
 
-  function handleSavePasswordClick() {}
+  function handleSavePasswordClick(e) {
+    e.preventDefault?.();
+    if (!user) {
+      showError("Bạn chưa đăng nhập");
+      return;
+    }
+    if (!password || !newPassword || !confirmPassword) {
+      showError("Vui lòng điền đầy đủ thông tin mật khẩu");
+      return;
+    }
+    if (password === newPassword) {
+      showError("Mật khẩu mới không được trùng với mật khẩu hiện tại");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showError("Mật khẩu mới không khớp");
+      return;
+    }
+    if (newPassword.length < 6) {
+      showError("Mật khẩu mới phải có ít nhất 6 ký tự");
+      return;
+    }
+    updateUser({ password: newPassword });
+    showSuccess("Yêu cầu đổi mật khẩu đã được ghi nhận");
+  }
 
   return (
     <div className="user-info">
@@ -209,13 +249,15 @@ const UserInfo = () => {
             </div>
 
             <div className="strength-bar-container">
-              <div
-                className="strength-bar-fill"
-                style={{
-                  width: `${strength.percent}%`,
-                  background: strength.color,
-                }}
-              ></div>
+              <div className="strength-bar-wrapper">
+                <div
+                  className="strength-bar-fill"
+                  style={{
+                    width: `${strength.percent}%`,
+                    background: strength.color,
+                  }}
+                ></div>
+              </div>
               <div className="strength-text">{strength.label}</div>
             </div>
 

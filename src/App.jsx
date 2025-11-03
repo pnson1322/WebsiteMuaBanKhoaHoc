@@ -12,6 +12,7 @@ import { ToastProvider } from "./contexts/ToastContext";
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage";
 import UserInfo from "./pages/UserInfo";
+import CourseDetail from "./pages/CourseDetail";
 
 const CourseDetail = () => (
   <div style={{ padding: "2rem", textAlign: "center" }}>
@@ -34,7 +35,7 @@ function App() {
                 <Route index element={<HomePage />} />
 
                 {/* Trang chi tiết khóa học */}
-                <Route path="course/:id" element={<CourseDetail />} />
+                <Route path="course" element={<CourseDetail />} />
 
                 {/* Đăng nhập / đăng ký */}
                 <Route path="login" element={<LoginPage />} />
@@ -42,6 +43,7 @@ function App() {
 
                 {/* Thông tin người dùng */}
                 <Route path="user-info" element={<UserInfo />} />
+              </Route>
 
                 {/* Fallback 404 */}
                 <Route
