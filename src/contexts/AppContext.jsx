@@ -3,6 +3,7 @@ import { coursesAPI } from "../services/api"; // ✅ thêm import API
 
 // Initial state
 const initialState = {
+  myCourses: JSON.parse(localStorage.getItem("myCourses")) || [],
   courses: [],
   filteredCourses: [],
   favorites: JSON.parse(localStorage.getItem("favorites")) || [],

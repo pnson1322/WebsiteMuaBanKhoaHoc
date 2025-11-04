@@ -39,6 +39,8 @@
 }
 
 .card {
+  display: flex;
+  flex-direction: column;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   padding: 20px 32px;
@@ -145,7 +147,8 @@
 .save-btn {
   width: 100%;
   height: 48px;
-  margin: 12px 0 20px 0;
+  margin-top: auto;
+  margin-bottom: 0;
   padding: 12px 24px;
   border: none;
   border-radius: 12px;
@@ -172,7 +175,6 @@
 
 .password-btn {
   background: linear-gradient(90deg, #ef4444 0%, #db2777 100%);
-  margin-top: 55px;
 }
 
 .toggle-password {
@@ -241,4 +243,18 @@ input[type="password"]::-webkit-reveal {
 
 input[type="password"] {
   -webkit-text-security: disc !important;
+}
+
+.forgot-password {
+  background: transparent;
+  border: none;
+  font-size: 0.9rem;
+  padding-bottom: 0.5rem;
+  color: #667eea;
+  cursor: pointer;
+}
+
+.forgot-password:hover {
+  color: #2d4fe7;
+  text-decoration: underline;
 }
