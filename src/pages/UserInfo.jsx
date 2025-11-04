@@ -14,6 +14,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import "./UserInfo.css";
 import { useState } from "react";
+import ForgotPasswordPopup from "../components/Auth/ForgotPasswordPopup";
 
 const UserInfo = () => {
   const { user, updateUser } = useAuth();
@@ -26,6 +27,7 @@ const UserInfo = () => {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const calculateStrength = (pwd) => {
     let score = 0;
@@ -222,7 +224,19 @@ const UserInfo = () => {
               </button>
             </div>
 
-            <div>Bạn quên mật khẩu?</div>
+            <button
+              type="button"
+              className="forgot-password"
+              onClick={() => setShowForgotPassword(true)}
+            >
+              Bạn quên mật khẩu?
+            </button>
+
+            {showForgotPassword && (
+              <ForgotPasswordPopup
+                onClose={() => setShowForgotPassword(false)}
+              />
+            )}
 
             <label className="user-info-form-label">
               <Lock className="user-info-form-icon" />

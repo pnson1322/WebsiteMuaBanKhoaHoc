@@ -193,8 +193,8 @@ const Header = ({ onOpenLoginPopup }) => {
                 title="Khóa học"
               >
                 <List className="nav-icon" />
-                {state.courses.length > 0 && (
-                  <span className="badge">{state.courses.length}</span>
+                {state.myCourses.length > 0 && (
+                  <span className="badge">{state.myCourses.length}</span>
                 )}
                 <span className="nav-label">Khóa học</span>
               </button>

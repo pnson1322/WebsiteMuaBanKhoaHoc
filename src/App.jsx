@@ -15,15 +15,7 @@ import UserInfo from "./pages/UserInfo";
 import Favorites from "./pages/Favorites";
 import HistoryPage from "./pages/HistoryPage/HistoryPage";
 import CourseDetail from "./pages/CourseDetail";
-
-const CourseDetail = () => (
-  <div style={{ padding: "2rem", textAlign: "center" }}>
-    <h1>📘 Chi tiết khóa học</h1>
-    <p>
-      Trang này sẽ hiển thị thông tin chi tiết của khóa học (UI trước, API sau).
-    </p>
-  </div>
-);
+import Cart from "./pages/Cart";
 
 function App() {
   return (
@@ -39,7 +31,7 @@ function App() {
                 <Route path="history" element={<HistoryPage />} />
 
                 {/* Trang chi tiết khóa học */}
-                <Route path="course" element={<CourseDetail />} />
+                <Route path="course/:id" element={<CourseDetail />} />
 
                 {/* Đăng nhập / đăng ký */}
                 <Route path="login" element={<LoginPage />} />
@@ -51,16 +43,19 @@ function App() {
                 {/* Trang yêu thích */}
                 <Route path="favorites" element={<Favorites />} />
 
-                {/* Fallback 404 */}
-                <Route
-                  path="*"
-                  element={
-                    <h2 style={{ textAlign: "center", marginTop: "2rem" }}>
-                      404 - Không tìm thấy trang
-                    </h2>
-                  }
-                />
+                {/* Giỏ hàng */}
+                <Route path="cart" element={<Cart />} />
               </Route>
+
+              {/* Fallback 404 */}
+              <Route
+                path="*"
+                element={
+                  <h2 style={{ textAlign: "center", marginTop: "2rem" }}>
+                    404 - Không tìm thấy trang
+                  </h2>
+                }
+              />
             </Routes>
           </BrowserRouter>
         </ToastProvider>

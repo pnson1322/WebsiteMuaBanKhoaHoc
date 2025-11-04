@@ -88,10 +88,10 @@ const ForgotPasswordPopup = ({ onClose }) => {
                 onChange={(e) => setForgotEmail(e.target.value)}
               />
               <div className="actions">
-                <button className="cancel" onClick={handleCancel}>
+                <button type="button" className="cancel" onClick={handleCancel}>
                   Hủy
                 </button>
-                <button className="send" onClick={handleSendOTP}>
+                <button type="button" className="send" onClick={handleSendOTP}>
                   Gửi OTP
                 </button>
               </div>
@@ -108,10 +108,10 @@ const ForgotPasswordPopup = ({ onClose }) => {
                 onChange={(e) => setOtpCode(e.target.value)}
               />
               <div className="actions">
-                <button className="cancel" onClick={handleCancel}>
+                <button type="button" className="cancel" onClick={handleCancel}>
                   Hủy
                 </button>
-                <button className="send" onClick={handleVerifyOTP}>
+                <button type="button" className="send" onClick={handleVerifyOTP}>
                   Xác nhận
                 </button>
               </div>
@@ -137,10 +137,10 @@ const ForgotPasswordPopup = ({ onClose }) => {
               />
 
               <div className="actions">
-                <button className="cancel" onClick={handleCancel}>
+                <button type="button" className="cancel" onClick={handleCancel}>
                   Hủy
                 </button>
-                <button className="send" onClick={handleResetPassword}>
+                <button type="button" className="send" onClick={handleResetPassword}>
                   Đặt lại mật khẩu
                 </button>
               </div>
