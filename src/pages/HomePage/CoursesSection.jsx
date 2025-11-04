@@ -15,3 +15,7 @@ const CoursesSection = ({ onViewDetails }) => {
 };
 
 export default CoursesSection;
+
+
+
+

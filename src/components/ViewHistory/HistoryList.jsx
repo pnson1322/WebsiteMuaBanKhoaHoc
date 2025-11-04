@@ -17,3 +17,7 @@ const HistoryList = ({ courses, onViewDetails }) => {
 };
 
 export default HistoryList;
+
+
+
+
