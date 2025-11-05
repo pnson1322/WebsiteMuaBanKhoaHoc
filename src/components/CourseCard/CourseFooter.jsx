@@ -4,6 +4,9 @@ import { ShoppingCart, Eye } from "lucide-react";
 const CourseFooter = ({ course, isInCart, onAddToCart, onViewDetails }) => {
   return (
     <div className="course-footer">
+      <div className="course-instructor">
+        <span className="instructor-badge">👨‍🏫 {course.instructor}</span>
+      </div>
       <div className="course-price-level">
         <p className="course-price">{course.price.toLocaleString()} VNĐ</p>
         <span className="level-badge">{course.level || "Cơ bản"}</span>
@@ -28,5 +31,3 @@ const CourseFooter = ({ course, isInCart, onAddToCart, onViewDetails }) => {
 };
 
 export default CourseFooter;
-
-

@@ -17,7 +17,7 @@
   border-color: #667eea;
 }
 
-/* Image Container */
+/* Image */
 .course-image-container {
   position: relative;
   height: 200px;
@@ -91,7 +91,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-bottom: 0rem !important;
+  justify-content: space-between; /* ✅ giữ các phần thẳng hàng */
 }
 
 .course-title {
@@ -117,28 +117,44 @@
   overflow: hidden;
 }
 
+/* Giảng viên */
 .course-instructor {
+  background: #f0f3ff;
+  border-left: 4px solid #667eea;
+  border-radius: 12px;
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
   margin-bottom: 1rem;
-  font-size: 0.85rem;
-  color: #4a5568;
-  font-weight: 500;
+}
+
+.instructor-badge {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #2d3748;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 /* Stats */
 .course-stats {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.2rem; /* ✅ Không giãn quá xa */
   margin-bottom: 1rem;
-  grid-template-columns: repeat(3, 1fr) !important;
-  flex-wrap: wrap;
+  color: #718096;
+  font-size: 0.85rem;
 }
 
 .stat {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.8rem;
-  color: #718096;
 }
 
 .stat-icon {
@@ -147,7 +163,7 @@
   color: #667eea;
 }
 
-/* Level Badge */
+/* Level badge */
 .level-badge {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   color: white;
@@ -162,7 +178,6 @@
   margin-top: auto;
 }
 
-/* Price and Level Row */
 .course-price-level {
   display: flex;
   justify-content: space-between;
@@ -181,10 +196,10 @@
   margin: 0;
 }
 
+/* Buttons */
 .course-actions {
   display: flex;
   gap: 0.4rem;
-  flex-direction: row;
 }
 
 .view-details-btn,
@@ -240,7 +255,7 @@
   height: 14px;
 }
 
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 768px) {
   .course-card {
     border-radius: 12px;
@@ -253,7 +268,17 @@
   .course-content {
     padding: 1rem;
   }
+  .course-main {
+    flex: 1;
+  }
 
+  /* Phần dưới luôn nằm đáy */
+  .course-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
   .course-title {
     font-size: 1rem;
   }
@@ -304,5 +329,3 @@
     font-size: 0.7rem;
   }
 }
-
-

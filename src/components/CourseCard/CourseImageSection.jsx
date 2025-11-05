@@ -19,3 +19,4 @@ const CourseImageSection = ({ course, isFavorite, onToggleFavorite }) => {
 export default CourseImageSection;
 
 
+

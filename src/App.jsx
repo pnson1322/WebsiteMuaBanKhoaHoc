@@ -12,6 +12,8 @@ import { ToastProvider } from "./contexts/ToastContext";
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage";
 import UserInfo from "./pages/UserInfo";
+import Favorites from "./pages/Favorites";
+import HistoryPage from "./pages/HistoryPage/HistoryPage";
 import CourseDetail from "./pages/CourseDetail";
 import Cart from "./pages/Cart";
 
@@ -25,6 +27,8 @@ function App() {
               <Route path="/" element={<Layout />}>
                 {/* Trang chủ */}
                 <Route index element={<HomePage />} />
+                {/* Trang lịch sử xem */}
+                <Route path="history" element={<HistoryPage />} />
 
                 {/* Trang chi tiết khóa học */}
                 <Route path="course/:id" element={<CourseDetail />} />
@@ -35,6 +39,9 @@ function App() {
 
                 {/* Thông tin người dùng */}
                 <Route path="user-info" element={<UserInfo />} />
+
+                {/* Trang yêu thích */}
+                <Route path="favorites" element={<Favorites />} />
 
                 {/* Giỏ hàng */}
                 <Route path="cart" element={<Cart />} />
