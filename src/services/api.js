@@ -9,7 +9,7 @@ const mockCourses = [
     instructor: "Nguyễn Văn A",
     price: 599000,
     image:
-      "https://scontent.fsgn19-1.fna.fbcdn.net/v/t39.30808-6/571104562_1236012621904810_8318776170876559608_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=127cfc&_nc_ohc=jF39-UQOIhoQ7kNvwHtoceb&_nc_oc=AdlDJkRevqvtgruO4S3JuqCfmLod38iwBnIxlq8NltKxsxs6RTR2ueuFleG6GqWc75Y0O4EX5jgRTGzrHYSXSM7B&_nc_zt=23&_nc_ht=scontent.fsgn19-1.fna&_nc_gid=NPPDH5TB3ZgXCj6ppXgKcg&oh=00_Afc0gns-8Rs1OMriBrYwwXO8m988wlfnnCaiRZvOW4uM4w&oe=6905895B", // code theme
+      "https://scontent.fsgn19-1.fna.fbcdn.net/v/t39.30808-6/571104562_1236012621904810_8318776170876559608_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=127cfc&_nc_ohc=jF39-UQOIhoQ7kNvwHtoceb&_nc_oc=AdlDJkRevqvtgruO4S3JuqCfmLod38iwBnIxlq8NltKxsxs6RTR2ueuFleG6GqWc75Y0O4EX5jgRTGzrHYSXSM7B&_nc_zt=23&_nc_ht=scontent.fsgn19-1.fna&_nc_gid=NPPDH5TB3ZgXCj6ppXgKcg&oh=00_Afc0gns-8Rs1OMriBrYwwXO8m988wlfnnCaiRZvOW4uM4w&oe=6905895B",
     category: "Lập trình",
     rating: 4.8,
     students: 1250,
@@ -21,7 +21,7 @@ const mockCourses = [
     shortDescription: "Thiết kế giao diện người dùng chuyên nghiệp với Figma",
     instructor: "Trần Thị B",
     price: 799000,
-    image: "https://picsum.photos/id/1005/400/250", // design theme
+    image: "https://picsum.photos/id/1005/400/250",
     category: "Thiết kế",
     rating: 4.6,
     students: 890,
@@ -33,7 +33,7 @@ const mockCourses = [
     shortDescription: "Luyện nói tiếng Anh tự tin trong 30 ngày",
     instructor: "John Smith",
     price: 299000,
-    image: "https://picsum.photos/id/1027/400/250", // language theme
+    image: "https://picsum.photos/id/1027/400/250",
     category: "Ngoại ngữ",
     rating: 4.9,
     students: 2100,
@@ -45,7 +45,7 @@ const mockCourses = [
     shortDescription: "Chiến lược marketing hiệu quả cho doanh nghiệp hiện đại",
     instructor: "Lê Văn C",
     price: 999000,
-    image: "https://picsum.photos/id/1015/400/250", // marketing theme
+    image: "https://picsum.photos/id/1015/400/250",
     category: "Marketing",
     rating: 4.7,
     students: 1560,
@@ -58,7 +58,7 @@ const mockCourses = [
       "Cập nhật kiến thức JavaScript hiện đại, async/await và module",
     instructor: "Phạm Thị D",
     price: 449000,
-    image: "https://picsum.photos/id/1016/400/250", // coding theme
+    image: "https://picsum.photos/id/1016/400/250",
     category: "Lập trình",
     rating: 4.5,
     students: 980,
@@ -71,7 +71,7 @@ const mockCourses = [
       "Học chỉnh sửa ảnh chuyên nghiệp và thiết kế banner quảng cáo",
     instructor: "Hoàng Văn E",
     price: 349000,
-    image: "https://picsum.photos/id/1037/400/250", // creative theme
+    image: "https://picsum.photos/id/1037/400/250",
     category: "Thiết kế",
     rating: 4.4,
     students: 750,
@@ -83,7 +83,7 @@ const mockCourses = [
     shortDescription: "Học Python căn bản qua ví dụ thực tế và mini project",
     instructor: "Nguyễn Hoàng F",
     price: 550000,
-    image: "https://picsum.photos/id/1050/400/250", // code theme
+    image: "https://picsum.photos/id/1050/400/250",
     category: "Lập trình",
     rating: 4.7,
     students: 1650,
@@ -95,7 +95,7 @@ const mockCourses = [
     shortDescription: "Nắm vững SEO và quảng cáo Google để tăng doanh thu",
     instructor: "Phạm Đức G",
     price: 899000,
-    image: "https://picsum.photos/id/1044/400/250", // marketing theme
+    image: "https://picsum.photos/id/1044/400/250",
     category: "Marketing",
     rating: 4.8,
     students: 1420,
@@ -108,7 +108,7 @@ const mockCourses = [
       "Tạo logo và bộ nhận diện thương hiệu với Adobe Illustrator",
     instructor: "Trần Mai H",
     price: 650000,
-    image: "https://picsum.photos/id/1062/400/250", // design theme
+    image: "https://picsum.photos/id/1062/400/250",
     category: "Thiết kế",
     rating: 4.6,
     students: 860,
@@ -121,12 +121,21 @@ const mockCourses = [
       "Sử dụng hàm, Pivot Table và biểu đồ nâng cao trong Excel",
     instructor: "Lưu Thành I",
     price: 490000,
-    image: "https://picsum.photos/id/1074/400/250", // business/data theme
+    image: "https://picsum.photos/id/1074/400/250",
     category: "Marketing",
     rating: 4.5,
     students: 970,
     level: "Nâng cao",
   },
+];
+
+// ---------------------- MOCK PURCHASED COURSES ----------------------
+const mockPurchasedCourses = [
+  { ...mockCourses[0], purchaseDate: "2025-10-10" },
+  { ...mockCourses[2], purchaseDate: "2025-10-15" },
+  { ...mockCourses[5], purchaseDate: "2025-10-18" },
+  { ...mockCourses[7], purchaseDate: "2025-10-20" },
+  { ...mockCourses[8], purchaseDate: "2025-10-22" },
 ];
 
 // ---------------------- UTILITY ----------------------
@@ -187,9 +196,15 @@ export const coursesAPI = {
     return results;
   },
 
-  // 🔹 Lấy toàn bộ khóa học (dùng khi khởi động app)
+  // 🔹 Lấy toàn bộ khóa học
   async getAllCourses() {
     await delay(300);
     return mockCourses;
+  },
+
+  // 🔹 Lấy danh sách khóa học đã mua (mock)
+  async getPurchasedCourses() {
+    await delay(500);
+    return mockPurchasedCourses;
   },
 };

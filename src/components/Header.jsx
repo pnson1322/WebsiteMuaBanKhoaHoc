@@ -41,7 +41,7 @@ const Header = ({ onOpenLoginPopup }) => {
   }
 
   function handleLearnerCoursesClick() {
-    navigate("/learner-courses");
+    navigate("/purchased");
   }
 
   function handleAdminCoursesClick() {
