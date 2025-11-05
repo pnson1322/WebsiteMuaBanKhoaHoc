@@ -20,7 +20,9 @@ const PurchasedCourseCard = ({ course, onViewDetails }) => {
         {/* Footer */}
         <div className="course-footer">
           <div className="course-instructor">
-            <span className="instructor-badge">👨‍🏫 {course.instructor}</span>
+            <span className="instructor-badge">
+              👨‍🏫 {course.instructor.name}
+            </span>
           </div>
 
           <CourseStats course={course} />

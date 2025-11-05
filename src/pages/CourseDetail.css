@@ -68,13 +68,20 @@
 }
 
 .course-instructor {
-  margin-top: 43px;
+  margin-top: 20px;
   padding: 1rem;
   background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
   border-radius: 12px;
   border-left: 4px solid #667eea;
   font-size: 1rem;
   color: #2d3748;
+
+  /* ✅ Hiển thị theo hàng ngang */
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* căn đều 2 bên */
+  gap: 2rem; /* khoảng cách giữa các cột */
+  flex-wrap: wrap; /* nếu màn nhỏ thì tự xuống hàng */
 }
 
 .course-instructor a {
