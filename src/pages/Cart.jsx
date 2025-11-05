@@ -264,7 +264,10 @@ const Cart = () => {
                 <button
                   className="checkout-btn"
                   disabled={selectedIds.length === 0}
-                  style={{ cursor: selectedIds.length === 0 ? "not-allowed" : "pointer" }}
+                  style={{
+                    cursor:
+                      selectedIds.length === 0 ? "not-allowed" : "pointer",
+                  }}
                   onClick={() => {
                     if (selectedIds.length === 0) return;
                     setShowPayment(true);
