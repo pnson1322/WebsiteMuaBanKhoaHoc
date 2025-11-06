@@ -1,5 +1,4 @@
 import React from "react";
-import { ShoppingCart, Eye } from "lucide-react";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
 import { useToast } from "../../contexts/ToastContext";
 import "./CourseCard.css";

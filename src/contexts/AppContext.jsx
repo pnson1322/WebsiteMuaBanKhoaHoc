@@ -148,7 +148,7 @@ export const AppProvider = ({ children }) => {
       filtered = filtered.filter(
         (course) =>
           course.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-          course.shortDescription
+          course.description
             .toLowerCase()
             .includes(state.searchTerm.toLowerCase()) ||
           course.category.toLowerCase().includes(state.searchTerm.toLowerCase())

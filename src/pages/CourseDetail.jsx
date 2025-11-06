@@ -14,8 +14,8 @@ import { useAppState, useAppDispatch } from "../contexts/AppContext";
 import { useToast } from "../contexts/ToastContext";
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { coursesAPI } from "../services/api"; // ✅ Chỉ dùng coursesAPI, KHÔNG dùng mockCourses
 import test from "../assets/test.jpg";
-import test2 from "../assets/test2.jpg";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -25,104 +25,50 @@ const CourseDetail = () => {
   const { dispatch, actionTypes } = useAppDispatch();
   const { showSuccess, showFavorite, showUnfavorite } = useToast();
 
-  const [course, setCourse] = useState({
-    id: 1,
-    name: "Khóa học A",
-    description:
-      "Khóa học ngôn ngữ tiếng Anh dành cho học sinh mất gốc trong vòng 3 tháng.",
-    image: test,
-    category: "Ngoại ngữ",
-    instructor: {
-      id: 1,
-      name: "Trương Ngọc Sang",
-      email: "23521348@gm.uit.edu.vn",
-      phone: "+84 945 784 041",
-    },
-    rating: "4.4",
-    students: 852,
-    duration: "36 giờ",
-    level: "Cơ bản",
-    price: 1107400,
-    contentList: [
-      {
-        title: "Kiến thức cơ bản",
-        des: "Nắm vững các khái niệm và nguyên lý cơ bản của lĩnh vực",
-      },
-      {
-        title: "Thực hành dự án",
-        des: "Áp dụng kiến thức vào các dự án thực tế với sự hướng dẫn thực tế",
-      },
-      {
-        title: "Chứng chỉ hoàn thành",
-        des: "Nhận chứng chỉ được công nhận sau khi hoàn thành khóa học",
-      },
-    ],
-    intendedLearners: [
-      "Người mới bắt đầu muốn học từ cơ bản",
-      "Học viên có kinh nghiệm muốn nâng cao kỹ năng",
-      "Người làm việc muốn chuyển đổi ngành nghề",
-      "Sinh viên muốn bổ sung kiến thức thực tế",
-    ],
-    skillsAcquired: [
-      "Kiến thức chuyên môn",
-      "Kỹ năng thực hành",
-      "Tư duy logic",
-      "Giải quyết vấn đề",
-      "Làm việc nhóm",
-      "Thuyết trình",
-    ],
-    commentList: [
-      {
-        id: 1,
-        user: {
-          id: 1,
-          name: "Nguyễn Văn A",
-          image: test2,
-        },
-        date: "15/3/2024",
-        comment:
-          "Khóa học rất hay và dễ hiểu. Giảng viên giải thích rất chi tiết, từ cơ bản đến nâng cao. Tôi đã học được rất nhiều kiến thức hữu ích.",
-        rate: 5,
-      },
-      {
-        id: 2,
-        user: {
-          id: 2,
-          name: "Trần Thị B",
-          image: test,
-        },
-        date: "10/3/2024",
-        comment:
-          "Nội dung phong phú, ví dụ thực tế. Tuy nhiên một số phần hơi khó theo kịp với người mới bắt đầu.",
-        rate: 4,
-      },
-    ],
-  });
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ✅ Lấy dữ liệu từ mock API (không cần chỉnh api.js)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await coursesAPI.getCourseById(id);
+        setCourse(data);
+      } catch (err) {
+        setError("Không tìm thấy khóa học");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [ratingEdit, setRatingEdit] = useState(0);
   const [hoverEdit, setHoverEdit] = useState(0);
-
-  const [commentList, setCommentList] = useState(course.commentList);
+  const [commentList, setCommentList] = useState([]);
   const [sortMode, setSortMode] = useState("all-comment");
   const [editComment, setEditComment] = useState(0);
 
   useEffect(() => {
-    if (editComment !== 0) {
+    if (course?.commentList) {
+      setCommentList(course.commentList);
+    }
+  }, [course]);
+
+  useEffect(() => {
+    if (editComment !== 0 && course?.commentList) {
       const comment = course.commentList.find((c) => c.id === editComment);
-      if (comment) {
-        setRatingEdit(comment.rate);
-      }
+      if (comment) setRatingEdit(comment.rate);
     } else {
       setRatingEdit(0);
     }
-  }, [editComment, course.commentList]);
+  }, [editComment, course?.commentList]);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  //Thêm useEffect rồi sửa lại thành loading
-  if (!loading) {
+  if (loading) {
     return (
       <div className="course-detail-page">
         <div className="container">
@@ -157,7 +103,7 @@ const CourseDetail = () => {
   const handleToggleFavorite = () => {
     if (isFavorite) {
       dispatch({ type: actionTypes.REMOVE_FROM_FAVORITES, payload: course.id });
-      showUnfavorite(`Đã bỏ yêu thích "${course.name}"`);
+      showUnfavorite(`💔 Đã bỏ yêu thích "${course.name}"`);
     } else {
       dispatch({ type: actionTypes.ADD_TO_FAVORITES, payload: course.id });
       showFavorite(`❤️ Đã thêm "${course.name}" vào yêu thích!`);
@@ -244,95 +190,80 @@ const CourseDetail = () => {
   };
 
   const handleSortChange = (e) => {
-    setSortMode(e.target.value);
-    setCommentList(sortComments(commentList, sortMode));
+    const newMode = e.target.value;
+    setSortMode(newMode);
+    setCommentList(sortComments(commentList, newMode));
   };
 
   const sortComments = (list, mode) => {
     const sortedList = [...list];
-
     switch (mode) {
-      case "all-comment":
-        return list;
       case "star-asc":
         return sortedList.sort((a, b) => a.rate - b.rate);
       case "star-desc":
         return sortedList.sort((a, b) => b.rate - a.rate);
       case "date-asc":
-        return sortedList.sort((a, b) => {
-          const [dayA, monthA, yearA] = a.date.split("/").map(Number);
-          const [dayB, monthB, yearB] = b.date.split("/").map(Number);
-          return (
-            new Date(yearA, monthA - 1, dayA) -
-            new Date(yearB, monthB - 1, dayB)
-          );
-        });
+        return sortedList.sort(
+          (a, b) =>
+            new Date(a.date.split("/").reverse()) -
+            new Date(b.date.split("/").reverse())
+        );
       case "date-desc":
-        return sortedList.sort((a, b) => {
-          const [dayA, monthA, yearA] = a.date.split("/").map(Number);
-          const [dayB, monthB, yearB] = b.date.split("/").map(Number);
-          return (
-            new Date(yearB, monthB - 1, dayB) -
-            new Date(yearA, monthA - 1, dayA)
-          );
-        });
+        return sortedList.sort(
+          (a, b) =>
+            new Date(b.date.split("/").reverse()) -
+            new Date(a.date.split("/").reverse())
+        );
       default:
         return list;
     }
   };
 
   const handleCommentClick = (commentId, userId) => {
-    if (userId == 2)
-      //sau thay bằng user.id
-      setEditComment(commentId);
+    if (userId === 2) setEditComment(commentId);
   };
 
   return (
     <div className="course-detail-page">
       <div className="container">
-        {/* Back button */}
         <button onClick={() => navigate(-1)} className="back-btn">
           <ArrowLeft />
           <span>Quay lại</span>
         </button>
 
-        {/* Course Header*/}
+        {/* Header */}
         <div className="course-header">
-          {/* Image and instructor section */}
           <div className="course-image-section">
             <img
-              src={course?.image}
-              alt={course?.name}
+              src={course.image}
+              alt={course.name}
               className="course-main-image"
             />
-            <div className="course-category-badge">{course?.category}</div>
+            <div className="course-category-badge">{course.category}</div>
 
             <div className="course-instructor">
               <div>
-                👨‍🏫 Giảng viên: <strong>{course?.instructor.name}</strong>
+                👨‍🏫 Giảng viên: <strong>{course.instructor?.name}</strong>
               </div>
-
               <div>
                 📧 Email:{" "}
                 <strong>
-                  <a href={"mailto:" + course.instructor.email}>
-                    {course.instructor.email}
+                  <a href={"mailto:" + course.instructor?.email}>
+                    {course.instructor?.email}
                   </a>
                 </strong>
               </div>
-
               <div>
                 📞 Số điện thoại:{" "}
                 <strong>
-                  <a href={"tel:" + course.instructor.phone}>
-                    {course.instructor.phone}
+                  <a href={"tel:" + course.instructor?.phone}>
+                    {course.instructor?.phone}
                   </a>
                 </strong>
               </div>
             </div>
           </div>
 
-          {/* Information section */}
           <div className="course-info-section">
             <h1 className="course-title">{course.name}</h1>
             <p className="course-description">{course.description}</p>
@@ -370,13 +301,11 @@ const CourseDetail = () => {
               </div>
             </div>
 
-            {/* Price section */}
             <div className="course-price-section">
               <span className="price-label">Giá khóa học:</span>
               <span className="price-value">{formatPrice(course.price)}</span>
             </div>
 
-            {/* Actions section */}
             <div className="course-actions">
               <button
                 className={`favorite-btn ${isFavorite ? "favorited" : ""}`}
@@ -398,30 +327,28 @@ const CourseDetail = () => {
           </div>
         </div>
 
-        {/* Course Content */}
+        {/* Nội dung khóa học */}
         <div className="course-content">
           <div className="content-section">
             <h2>📖 Nội dung khóa học</h2>
             <div className="content-list">
-              {course.contentList.map((content) => {
-                return (
-                  <div className="content-item">
-                    <BookOpen className="content-icon" />
-                    <div>
-                      <h3>{content.title}</h3>
-                      <p>{content.des}</p>
-                    </div>
+              {course.contentList?.map((content, idx) => (
+                <div className="content-item" key={content.title + idx}>
+                  <BookOpen className="content-icon" />
+                  <div>
+                    <h3>{content.title}</h3>
+                    <p>{content.des}</p>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="content-section">
             <h2>🎯 Đối tượng học viên</h2>
             <ul className="target-list">
-              {course.intendedLearners.map((item, index) => (
-                <li id={index}>{item}</li>
+              {course.intendedLearners?.map((item, index) => (
+                <li key={index}>{item}</li>
               ))}
             </ul>
           </div>
@@ -429,14 +356,16 @@ const CourseDetail = () => {
           <div className="content-section">
             <h2>💪 Kỹ năng đạt được</h2>
             <div className="skills-grid">
-              {course.skillsAcquired.map((skill) => (
-                <span className="skill-tag">{skill}</span>
+              {course.skillsAcquired?.map((skill, idx) => (
+                <span className="skill-tag" key={skill + idx}>
+                  {skill}
+                </span>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Personal Comment and Rating */}
+        {/* Viết bình luận */}
         <div className="comment-section">
           <h3>💬 Viết đánh giá của bạn</h3>
           <form onSubmit={submitComment} className="comment-form">
@@ -473,20 +402,18 @@ const CourseDetail = () => {
           </form>
         </div>
 
-        {/* All Comment */}
+        {/* Danh sách bình luận */}
         <div className="all-comment-section">
           <div className="all-comment-header">
             <h3>💬 Bình luận học viên</h3>
-
             <select
               id="sort"
               name="sort"
               className="sort-btn"
               onChange={handleSortChange}
+              value={sortMode}
             >
-              <option value="all-comment" selected>
-                Tất cả đánh giá
-              </option>
+              <option value="all-comment">Tất cả đánh giá</option>
               <option value="star-asc">Số sao tăng dần</option>
               <option value="star-desc">Số sao giảm dần</option>
               <option value="date-asc">Cũ nhất</option>
@@ -507,13 +434,11 @@ const CourseDetail = () => {
                     alt={comment.user.name}
                     className="comment-image"
                   />
-
                   <div>
                     <div className="comment-user-name">{comment.user.name}</div>
                     <div className="comment-date">{comment.date}</div>
                   </div>
                 </div>
-
                 <p>{comment.comment}</p>
               </div>
 
@@ -533,7 +458,7 @@ const CourseDetail = () => {
                 })}
               </div>
 
-              {editComment == comment.id && (
+              {editComment === comment.id && (
                 <div className="comment-section comment-edit">
                   <form
                     onSubmit={(e) => {
@@ -570,9 +495,8 @@ const CourseDetail = () => {
                       rows="4"
                       cols="50"
                       placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
-                    >
-                      {comment.comment}
-                    </textarea>
+                      defaultValue={comment.comment}
+                    />
                     <div className="comment-btn">
                       <button
                         type="button"

@@ -10,8 +10,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { CourseCardSkeleton } from "../components/LoadingSkeleton";
-import test from "../assets/test.jpg";
-import test2 from "../assets/test2.jpg";
 import PaymentPopup from "../components/PaymentPopup";
 
 const Cart = () => {
@@ -19,43 +17,29 @@ const Cart = () => {
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
 
-  const [cartCourses, setCartCourses] = useState([
-    {
-      id: 1,
-      name: "Lập trình Web Frontend",
-      description: "Khóa học ngôn ngữ lập trình dành cho người mất gốc.",
-      image: test,
-      category: "Lập trình",
-      instructor: {
-        id: 1,
-        name: "Trương Ngọc Sang",
-        email: "23521348@gm.uit.edu.vn",
-        phone: "+84 945 784 041",
-      },
-      level: "Cơ bản",
-      price: 1107400,
-    },
-    {
-      id: 2,
-      name: "Tiếng Anh sơ cấp",
-      description:
-        "Khóa học ngôn ngữ tiếng Anh dành cho học sinh mất gốc trong vòng 3 tháng.",
-      image: test2,
-      category: "Ngoại ngữ",
-      instructor: {
-        id: 2,
-        name: "Đinh Phan Quốc Thắng",
-        email: "23521420@gm.uit.edu.vn",
-        phone: "+84 945 784 041",
-      },
-      level: "Cơ bản",
-      price: 675000,
-    },
-  ]);
+  // 🔹 Lấy danh sách khóa học trong giỏ từ state.courses (lọc theo ID trong state.cart)
+  const [cartCourses, setCartCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showPayment, setShowPayment] = useState(false);
+
+  // ✅ Khi danh sách courses hoặc giỏ hàng thay đổi, cập nhật lại
+  useEffect(() => {
+    try {
+      if (!state.courses || state.courses.length === 0) {
+        setLoading(true);
+        return;
+      }
+
+      const filtered = state.courses.filter((c) => state.cart.includes(c.id));
+      setCartCourses(filtered);
+      setLoading(false);
+    } catch (err) {
+      setError("Không thể tải giỏ hàng!");
+      setLoading(false);
+    }
+  }, [state.courses, state.cart]);
 
   const closePopup = () => setShowPayment(false);
 
@@ -81,12 +65,11 @@ const Cart = () => {
     });
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
+  const formatPrice = (price) =>
+    new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(price);
-  };
 
   const selectedCourses = cartCourses.filter((c) => selectedIds.includes(c.id));
   const selectedCount = selectedCourses.length;
@@ -95,8 +78,8 @@ const Cart = () => {
     0
   );
 
-  // thêm useEffect thì sửa lại loading
-  if (!loading) {
+  // 🔹 Loading khi chưa có dữ liệu
+  if (loading) {
     return (
       <div className="cart-page page-transition">
         <div className="container">
@@ -113,7 +96,7 @@ const Cart = () => {
           </div>
 
           <div className="cart-items">
-            {[1].map((i) => (
+            {[1, 2, 3].map((i) => (
               <CourseCardSkeleton key={i} />
             ))}
           </div>
@@ -122,6 +105,7 @@ const Cart = () => {
     );
   }
 
+  // 🔹 Nếu có lỗi
   if (error) {
     return (
       <div className="cart-page page-transition">
@@ -148,6 +132,7 @@ const Cart = () => {
     );
   }
 
+  // 🔹 Giao diện chính
   return (
     <div className="cart-page page-transition">
       <div className="container">
@@ -160,10 +145,10 @@ const Cart = () => {
           <div className="cart-title">
             <ShoppingCart className="cart-icon" />
             <h1>Giỏ hàng của bạn</h1>
-            <span className="cart-count">({state.cart.length})</span>
+            <span className="cart-count">({cartCourses.length})</span>
           </div>
 
-          {state.cart.length > 0 && (
+          {cartCourses.length > 0 && (
             <button className="clear-cart-btn" onClick={clearCart}>
               <Trash2 className="trash-icon" />
               Xóa tất cả
@@ -171,7 +156,7 @@ const Cart = () => {
           )}
         </div>
 
-        {cartCourses?.length === 0 ? (
+        {cartCourses.length === 0 ? (
           <div className="empty-cart">
             <ShoppingCart className="empty-icon" />
             <h3>Giỏ hàng trống</h3>
@@ -206,10 +191,10 @@ const Cart = () => {
                   <div className="cart-item-info">
                     <h3 className="cart-item-title">{course.name}</h3>
                     <p className="cart-item-instructor">
-                      👨‍🏫 {course.instructor?.name}
+                      👨‍🏫 {course.instructor.name}
                     </p>
                     <p className="cart-item-description">
-                      {course.description}
+                      {course.shortDescription}
                     </p>
                     <div className="cart-item-details">
                       <span className="cart-item-category">

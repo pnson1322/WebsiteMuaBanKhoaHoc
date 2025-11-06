@@ -11,7 +11,7 @@ const CourseStats = ({ course }) => {
         <Users className="stat-icon" /> {course.students}
       </div>
       <div className="stat">
-        <Clock className="stat-icon" /> {course.level}
+        <Clock className="stat-icon" /> {course.duration}
       </div>
     </div>
   );

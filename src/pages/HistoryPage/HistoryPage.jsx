@@ -59,7 +59,7 @@ const HistoryPage = () => {
       const filtered = allHistoryCourses.filter(
         (c) =>
           c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          c.instructor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           c.category.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredCourses(filtered);
