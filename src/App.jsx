@@ -16,6 +16,7 @@ import Favorites from "./pages/Favorites";
 import HistoryPage from "./pages/HistoryPage/HistoryPage";
 import CourseDetail from "./pages/CourseDetail";
 import Cart from "./pages/Cart";
+import AddNewCourse from "./pages/AddNewCourse";
 import PurchasedCoursesPage from "./pages/PurchasedCoursesPage/PurchasedCoursesPage";
 
 function App() {
@@ -47,6 +48,9 @@ function App() {
 
                 {/* Giỏ hàng */}
                 <Route path="cart" element={<Cart />} />
+
+                {/* Thêm khóa học mới */}
+                <Route path="add-new-course" element={<AddNewCourse />} />
               </Route>
 
               {/* Fallback 404 */}

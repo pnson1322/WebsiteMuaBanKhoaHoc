@@ -20,6 +20,7 @@ const initialState = {
 // Action types
 const actionTypes = {
   SET_COURSES: "SET_COURSES",
+  ADD_COURSE: "ADD_COURSE",
   SET_FILTERED_COURSES: "SET_FILTERED_COURSES",
   SET_SEARCH_TERM: "SET_SEARCH_TERM",
   SET_CATEGORY: "SET_CATEGORY",
@@ -40,6 +41,10 @@ const appReducer = (state, action) => {
   switch (action.type) {
     case actionTypes.SET_COURSES:
       return { ...state, courses: action.payload };
+
+    case actionTypes.ADD_COURSE:
+      const newCourses = [...state.courses, action.payload];
+      return { ...state, courses: newCourses };
 
     case actionTypes.SET_FILTERED_COURSES:
       return { ...state, filteredCourses: action.payload };
