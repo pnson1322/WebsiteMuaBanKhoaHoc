@@ -18,6 +18,7 @@ import CourseDetail from "./pages/CourseDetail";
 import Cart from "./pages/Cart";
 import AddNewCourse from "./pages/AddNewCourse";
 import PurchasedCoursesPage from "./pages/PurchasedCoursesPage/PurchasedCoursesPage";
+import SellerCoursesPage from "./pages/SellerCoursesPage/SellerCoursesPage";
 
 function App() {
   return (
@@ -33,6 +34,8 @@ function App() {
                 <Route path="history" element={<HistoryPage />} />
                 {/* Trang khóa học đã mua */}
                 <Route path="/purchased" element={<PurchasedCoursesPage />} />
+                {/* Trang quản lý khóa học (Seller) */}
+                <Route path="seller-courses" element={<SellerCoursesPage />} />
                 {/* Trang chi tiết khóa học */}
                 <Route path="course/:id" element={<CourseDetail />} />
 

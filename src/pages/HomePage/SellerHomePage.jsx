@@ -2,6 +2,8 @@ import { BookText, ChartArea, Star, UserRound } from "lucide-react";
 import "./SellerHomePage.css";
 import { useEffect, useRef, useState } from "react";
 import { BarChart, LineChart, PieChart } from "@mui/x-charts";
+import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
+import SellerStatsSummary from "../../components/Seller/SellerStatsSummary";
 
 // Simple hook to observe an element's width for responsive charts
 function useElementWidth(initialWidth = 500) {
@@ -47,79 +49,17 @@ const SellerHomePage = () => {
 
   return (
     <>
-      <section className="hero-section">
-        <div className="hero-content">
-          <h1>📊 Thống kê</h1>
-          <p>Thống kê thông tin giao dịch khóa học của bạn</p>
-        </div>
-      </section>
+      <SellerStatsHeader
+        title="📊 Thống kê"
+        subtitle="Thống kê thông tin giao dịch khóa học của bạn"
+      />
 
-      <div className="text-chart">
-        <div className="text-chart-item">
-          <div className="text-chart-stats">
-            <div className="text-chart-text">Tổng khóa học</div>
-            <div className="text-chart-number">3</div>
-          </div>
-
-          <div
-            className="text-chart-icon-wrapper"
-            style={{ background: "#dbeafe" }}
-          >
-            <BookText
-              className="text-chart-icon"
-              style={{ color: "#2563eb" }}
-            />
-          </div>
-        </div>
-
-        <div className="text-chart-item">
-          <div className="text-chart-stats">
-            <div className="text-chart-text">Học viên</div>
-            <div className="text-chart-number">1247</div>
-          </div>
-
-          <div
-            className="text-chart-icon-wrapper"
-            style={{ background: "#dcfce7" }}
-          >
-            <UserRound
-              className="text-chart-icon"
-              style={{ color: "#16a34a" }}
-            />
-          </div>
-        </div>
-
-        <div className="text-chart-item">
-          <div className="text-chart-stats">
-            <div className="text-chart-text">Doanh thu</div>
-            <div className="text-chart-number">{formatPrice(45200000)}</div>
-          </div>
-
-          <div
-            className="text-chart-icon-wrapper"
-            style={{ background: "#fef9c3" }}
-          >
-            <ChartArea
-              className="text-chart-icon"
-              style={{ color: "#ca8a04" }}
-            />
-          </div>
-        </div>
-
-        <div className="text-chart-item">
-          <div className="text-chart-stats">
-            <div className="text-chart-text">Đánh giá trung bình</div>
-            <div className="text-chart-number">4.8</div>
-          </div>
-
-          <div
-            className="text-chart-icon-wrapper"
-            style={{ background: "#f3e8ff" }}
-          >
-            <Star className="text-chart-icon" style={{ color: "#9333ea" }} />
-          </div>
-        </div>
-      </div>
+      <SellerStatsSummary
+        totalCourses={3}
+        totalStudents={1247}
+        totalRevenue={45200000}
+        averageRating={4.8}
+      />
 
       <div className="chart">
         <div className="chart-item">
