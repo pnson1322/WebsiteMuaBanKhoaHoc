@@ -20,7 +20,7 @@ import AddNewCourse from "./pages/AddNewCourse";
 import PurchasedCoursesPage from "./pages/PurchasedCoursesPage/PurchasedCoursesPage";
 import SellerCoursesPage from "./pages/SellerCoursesPage/SellerCoursesPage";
 import AdminCoursesPage from "./pages/AdminCoursesPage/AdminCoursesPage";
-
+import AdminTransactions from "./pages/AdminTransactionsPage/AdminTransactions";
 function App() {
   return (
     <AuthProvider>
@@ -41,7 +41,7 @@ function App() {
                 <Route path="admin-courses" element={<AdminCoursesPage />} />
                 {/* Trang chi tiết khóa học */}
                 <Route path="course/:id" element={<CourseDetail />} />
-
+                <Route path="/transactions" element={<AdminTransactions />} />
                 {/* Đăng nhập / đăng ký */}
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<LoginPage />} />

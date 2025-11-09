@@ -484,3 +484,76 @@ export const coursesAPI = {
     return mockPurchasedCourses;
   },
 };
+// ---------------------- MOCK TRANSACTIONS (AUTO-GENERATED) ----------------------
+
+// 🔧 Hàm tạo thời gian ngẫu nhiên gần đây
+function randomDateWithinDays(days) {
+  const now = new Date();
+  const offset = Math.floor(Math.random() * days); // số ngày ngẫu nhiên
+  const randomTime = new Date(now.getTime() - offset * 24 * 60 * 60 * 1000);
+  const hour = Math.floor(Math.random() * 12 + 8); // giờ từ 8h-20h
+  const minute = Math.floor(Math.random() * 60);
+  return `${randomTime.getFullYear()}-${String(
+    randomTime.getMonth() + 1
+  ).padStart(2, "0")}-${String(randomTime.getDate()).padStart(2, "0")} ${String(
+    hour
+  ).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+// 🔧 Sinh dữ liệu theo khóa học
+const mockTransactionsByCourse = mockCourses.map((c, i) => {
+  const totalPurchases = Math.floor(Math.random() * 50 + 20); // 20–70 lượt
+  const revenue = c.price * totalPurchases;
+  const lastTransaction = randomDateWithinDays(30); // trong 30 ngày gần nhất
+  return {
+    id: `COURSE${String(i + 1).padStart(3, "0")}`,
+    name: c.name,
+    totalPurchases,
+    revenue,
+    lastTransaction,
+  };
+});
+
+// 🔧 Sinh dữ liệu theo học viên (6 học viên nổi bật)
+const studentNames = [
+  "Trương Ngọc Sang",
+  "Phan Ngọc Sơn",
+  "Nguyễn Đình Huy",
+  "Đinh Phan Quốc Thắng",
+  "Trương Ngọc Thắng",
+  "Phan Ngọc Huy",
+  "Đinh Phan Quốc Sang",
+  "Nguyễn Đình Sơn",
+];
+
+const mockTransactionsByStudent = studentNames.map((name, i) => {
+  const totalPurchases = Math.floor(Math.random() * 40 + 10); // 10–50 khóa học
+  const revenue = totalPurchases * Math.floor(Math.random() * 700000 + 300000); // 300k–1tr mỗi khóa
+  const lastTransaction = randomDateWithinDays(20);
+  return {
+    id: i + 1,
+    name,
+    totalPurchases,
+    revenue,
+    lastTransaction,
+  };
+});
+
+// ---------------------- MOCK API: ADMIN ----------------------
+export const adminAPI = {
+  // 🔹 Lấy danh sách giao dịch theo khóa học
+  async getTransactionsByCourse() {
+    await delay(400);
+    return mockTransactionsByCourse.sort(
+      (a, b) => new Date(b.lastTransaction) - new Date(a.lastTransaction)
+    );
+  },
+
+  // 🔹 Lấy danh sách giao dịch theo học viên
+  async getTransactionsByStudent() {
+    await delay(400);
+    return mockTransactionsByStudent.sort(
+      (a, b) => new Date(b.lastTransaction) - new Date(a.lastTransaction)
+    );
+  },
+};

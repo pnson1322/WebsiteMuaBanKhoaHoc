@@ -1,0 +1,278 @@
+/* Wrapper “Group 188” tương đương: panel trắng giữa nền */
+.tx-wrapper {
+  min-height: 100vh;
+  padding: 72px 72px 40px;
+  background: radial-gradient(
+    1200px 500px at 50% 0%,
+    #eef2ff 0%,
+    #e9ecf6 40%,
+    #dde3f1 100%
+  );
+}
+
+.tx-panel {
+  max-width: 1136px;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  padding: 22px 24px 28px;
+  position: relative;
+}
+
+/* Tabs */
+.tx-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 22px;
+}
+
+.tx-tab {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  background: #fff;
+  color: #718096;
+  border: 0;
+  cursor: pointer;
+  position: relative;
+  font-family: Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  font-size: 16px;
+}
+
+.tx-tab.active {
+  color: #667eea;
+}
+
+.tx-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: #667eea;
+  border-radius: 2px 2px 0 0;
+}
+
+/* Filters block */
+.tx-filters {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  margin-bottom: 12px;
+}
+
+.tx-filter-group {
+  display: flex;
+  gap: 16px;
+}
+
+.tx-filter-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tx-filter-label {
+  font-family: Roboto, system-ui;
+  font-size: 12px;
+  line-height: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #718096;
+}
+
+.tx-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 40px;
+  min-width: 260px;
+  padding: 0 12px;
+  background: #ffffff;
+  border: 1.6px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.tx-input input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  font-size: 14px;
+  color: #2d3748;
+}
+
+.tx-date {
+  box-sizing: border-box;
+  height: 40px;
+  min-width: 190px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1.6px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2d3748;
+}
+
+/* Table */
+.tx-table-wrap {
+  border: 0.8px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 18px;
+}
+
+.tx-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-family: Roboto, system-ui;
+}
+
+.tx-table thead th {
+  height: 52px;
+  background: #f7fafc;
+  color: #2d3748;
+  font-weight: 600;
+  font-size: 16px;
+  border-bottom: 1px solid #edf2f7;
+  padding: 0 16px;
+}
+
+.tx-table tbody td {
+  height: 52px;
+  font-size: 16px;
+  color: #000;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0 16px;
+}
+
+.tx-table .left {
+  text-align: left;
+}
+
+.tx-table th,
+.tx-table td {
+  text-align: center;
+}
+
+.tx-table .revenue {
+  color: #38a169;
+  font-weight: 700;
+  text-align: left;
+}
+
+.tx-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tx-table .empty {
+  text-align: center;
+  padding: 18px 0;
+  color: #718096;
+}
+
+/* Pagination */
+.tx-pagination {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 26px;
+}
+
+.tx-page-btn {
+  box-sizing: border-box;
+  height: 35.2px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1.6px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13.33px;
+  color: #000;
+  cursor: pointer;
+}
+
+.tx-page-dot {
+  box-sizing: border-box;
+  width: 34.6px;
+  height: 35.2px;
+  background: #ffffff;
+  border: 1.6px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13.33px;
+  cursor: pointer;
+}
+
+.tx-page-dot.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .tx-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tx-input {
+    min-width: 100%;
+  }
+  .tx-filter-group {
+    width: 100%;
+  }
+  .tx-date {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+  .tx-panel {
+    padding: 18px;
+  }
+}
+/* ========== Skeleton Shimmer ========== */
+@keyframes sk-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.sk {
+  width: 100%;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #edf2f7 0%, #f7fafc 20%, #edf2f7 40%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.2s ease-in-out infinite;
+}
+
+/* Độ cao skeleton theo header/body */
+.sk-head {
+  height: 18px;
+  margin: 10px 0;
+}
+.sk-cell {
+  height: 14px;
+  margin: 12px 0;
+}
+
+/* Bo góc cho table khi skeleton */
+.tx-table-wrap .tx-table thead th {
+  background: #f7fafc;
+}
+.tx-table-wrap .tx-table tbody td {
+  border-bottom: 1px solid #f1f5f9;
+}
