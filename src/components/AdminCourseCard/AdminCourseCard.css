@@ -1,0 +1,104 @@
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.admin-status-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: not-allowed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.3s ease;
+}
+
+.admin-status-btn.approved {
+  background: #16a34a;
+  color: white;
+}
+
+.admin-status-btn.pending {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.admin-toggle-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.admin-toggle-btn.approve {
+  background: linear-gradient(270deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.admin-toggle-btn.approve:hover {
+  background: linear-gradient(270deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.admin-toggle-btn.restrict {
+  background: linear-gradient(270deg, #f87171 0%, #ef4444 100%);
+  color: white;
+}
+
+.admin-toggle-btn.restrict:hover {
+  background: linear-gradient(270deg, #ef4444 0%, #dc2626 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.admin-toggle-btn .action-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-status-btn .action-icon {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 768px) {
+  .admin-actions {
+    gap: 0.4rem;
+  }
+
+  .admin-status-btn,
+  .admin-toggle-btn {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-actions {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .admin-status-btn,
+  .admin-toggle-btn {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
+  }
+}
+

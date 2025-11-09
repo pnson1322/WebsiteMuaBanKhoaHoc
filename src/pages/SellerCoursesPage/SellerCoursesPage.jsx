@@ -18,7 +18,10 @@ const SellerCoursesPage = () => {
   // Lọc các khóa học mới thêm từ trang AddNewCourse: mặc định rating = 0, students = 0
   const sellerNewCourses = useMemo(() => {
     return (state.courses || []).filter(
-      (c) => Number(c?.rating) === 0 && Number(c?.students) === 0
+      (c) =>
+        Number(c?.rating) === 0 ||
+        Number(c?.students) === 0 ||
+        [1, 2, 3].includes(Number(c.id))
     );
   }, [state.courses]);
 

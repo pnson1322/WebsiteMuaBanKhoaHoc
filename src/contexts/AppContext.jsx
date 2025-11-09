@@ -34,6 +34,7 @@ const actionTypes = {
   ADD_TO_CART: "ADD_TO_CART",
   REMOVE_FROM_CART: "REMOVE_FROM_CART",
   CLEAR_VIEW_HISTORY: "CLEAR_VIEW_HISTORY",
+  TOGGLE_COURSE_APPROVAL: "TOGGLE_COURSE_APPROVAL",
 };
 
 // Reducer
@@ -108,6 +109,14 @@ const appReducer = (state, action) => {
     case actionTypes.CLEAR_VIEW_HISTORY:
       localStorage.removeItem("viewHistory");
       return { ...state, viewHistory: [] };
+
+    case actionTypes.TOGGLE_COURSE_APPROVAL: {
+      const { courseId, approved } = action.payload;
+      const updatedCourses = state.courses.map((course) =>
+        course.id === courseId ? { ...course, approved } : course
+      );
+      return { ...state, courses: updatedCourses };
+    }
 
     default:
       return state;
