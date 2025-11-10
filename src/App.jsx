@@ -42,6 +42,7 @@ function App() {
                 <Route path="admin-courses" element={<AdminCoursesPage />} />
                 {/* Trang chi tiết khóa học */}
                 <Route path="course/:id" element={<CourseDetail />} />
+                {/* Trang quản lý giao dịch (Admin) */}
                 <Route path="/transactions" element={<AdminTransactions />} />
                 {/* Đăng nhập / đăng ký */}
                 <Route path="login" element={<LoginPage />} />
@@ -58,7 +59,7 @@ function App() {
 
                 {/* Thêm khóa học mới */}
                 <Route path="add-new-course" element={<AddNewCourse />} />
-                {/* Trang chi tiết giao dịch tổng hợp (nằm trong Layout để có Header/Footer) */}
+                {/* Trang chi tiết giao dịch tổng hợp */}
                 <Route
                   path="course-transactions/details"
                   element={<CourseTransactionDetails />}
