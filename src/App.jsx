@@ -22,6 +22,8 @@ import SellerCoursesPage from "./pages/SellerCoursesPage/SellerCoursesPage";
 import AdminCoursesPage from "./pages/AdminCoursesPage/AdminCoursesPage";
 import AdminTransactions from "./pages/AdminTransactions/AdminTransactions";
 import CourseTransactionDetails from "./pages/CourseTransactionDetails/CourseTransactionDetails";
+import AdminCategories from "./pages/AdminCategories/AdminCategories";
+import AdminUsersPage from "./pages/AdminUsersPage/AdminUsersPage";
 function App() {
   return (
     <AuthProvider>
@@ -40,6 +42,8 @@ function App() {
                 <Route path="seller-courses" element={<SellerCoursesPage />} />
                 {/* Trang quản lý khóa học (Admin) */}
                 <Route path="admin-courses" element={<AdminCoursesPage />} />
+                <Route path="admin-categories" element={<AdminCategories />} />
+                <Route path="admin-users" element={<AdminUsersPage />} />
                 {/* Trang chi tiết khóa học */}
                 <Route path="course/:id" element={<CourseDetail />} />
                 {/* Trang quản lý giao dịch (Admin) */}
