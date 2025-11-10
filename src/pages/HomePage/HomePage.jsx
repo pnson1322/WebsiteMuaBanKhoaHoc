@@ -8,6 +8,7 @@ import CoursesSection from "./CoursesSection";
 import ViewHistory from "../../components/ViewHistory/ViewHistory";
 import Filter from "../../components/Filter/Filter";
 import SellerHomePage from "./SellerHomePage";
+import AdminHomePage from "./AdminHomePage";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -38,9 +39,9 @@ const HomePage = () => {
 
       {isLoggedIn && user?.role === "seller" ? <SellerHomePage /> : null}
 
-      {isLoggedIn && user?.role === "admin" ? <div></div> : null}
+      {isLoggedIn && user?.role === "admin" ? <AdminHomePage /> : null}
 
-      {/* {!isLoggedIn ? <SellerHomePage /> : null} */}
+      {/* {!isLoggedIn ? <AdminHomePage /> : null} */}
     </HomePageLayout>
   );
 };

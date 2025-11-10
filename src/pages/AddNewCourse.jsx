@@ -415,7 +415,7 @@ const AddNewCourse = () => {
                 <div className="list-section-title">Nội dung khóa học</div>
                 <div className="content-items">
                   {contentList.map((item, index) => (
-                    <div key={index} className="content-item">
+                    <div key={index} className="content-item-wrapper">
                       <div className="content-item-info">
                         <div className="content-item-title">{item.title}</div>
                         <div className="content-item-des">{item.des}</div>
