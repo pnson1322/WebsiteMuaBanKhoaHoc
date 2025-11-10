@@ -112,7 +112,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #f9fafb;
+  background: #667eea;
   font-weight: 600;
   color: #1f2937;
   padding: 10px 16px;
@@ -121,8 +121,16 @@
   border: 1px solid #d1d5db;
 }
 
+.upload-dropzone svg {
+  color: white;
+}
+
+.upload-dropzone span {
+  color: white;
+}
+
 .upload-dropzone:hover {
-  background: #dbdbdc;
+  background: #6366f1;
 }
 
 .image-preview {
@@ -258,7 +266,7 @@
   margin-bottom: 12px;
 }
 
-.content-item {
+.content-item-wrapper {
   display: flex;
   align-items: center;
   justify-content: space-between;
