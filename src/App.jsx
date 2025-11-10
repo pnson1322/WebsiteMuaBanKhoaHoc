@@ -20,7 +20,8 @@ import AddNewCourse from "./pages/AddNewCourse";
 import PurchasedCoursesPage from "./pages/PurchasedCoursesPage/PurchasedCoursesPage";
 import SellerCoursesPage from "./pages/SellerCoursesPage/SellerCoursesPage";
 import AdminCoursesPage from "./pages/AdminCoursesPage/AdminCoursesPage";
-import AdminTransactions from "./pages/AdminTransactionsPage/AdminTransactions";
+import AdminTransactions from "./pages/AdminTransactions/AdminTransactions";
+import CourseTransactionDetails from "./pages/CourseTransactionDetails/CourseTransactionDetails";
 function App() {
   return (
     <AuthProvider>
@@ -57,6 +58,11 @@ function App() {
 
                 {/* Thêm khóa học mới */}
                 <Route path="add-new-course" element={<AddNewCourse />} />
+                {/* Trang chi tiết giao dịch tổng hợp (nằm trong Layout để có Header/Footer) */}
+                <Route
+                  path="course-transactions/details"
+                  element={<CourseTransactionDetails />}
+                />
               </Route>
 
               {/* Fallback 404 */}

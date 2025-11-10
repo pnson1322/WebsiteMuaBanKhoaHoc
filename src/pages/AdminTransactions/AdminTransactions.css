@@ -1,0 +1,103 @@
+/* Wrapper "Group 188" tương đương: panel trắng giữa nền */
+.tx-wrapper {
+  min-height: 100vh;
+  padding: 40px 72px 40px;
+  background: radial-gradient(
+    1200px 500px at 50% 0%,
+    #eef2ff 0%,
+    #e9ecf6 40%,
+    #dde3f1 100%
+  );
+}
+
+.tx-panel {
+  max-width: 1136px;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  padding: 0px 24px 28px;
+  position: relative;
+}
+
+/* Tabs */
+.tx-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 22px;
+}
+
+.tx-tab {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  background: #fff;
+  color: #718096;
+  border: 0;
+  cursor: pointer;
+  position: relative;
+  font-family: Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  font-size: 16px;
+}
+
+.tx-tab.active {
+  color: #667eea;
+}
+
+.tx-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: #667eea;
+  border-radius: 2px 2px 0 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .tx-panel {
+    padding: 18px;
+  }
+}
+
+/* Chỉ áp dụng cho header trong trang AdminTransactions */
+.tx-wrapper .hero-section {
+  width: 100%;
+  max-width: 1136px; /* cùng độ rộng với .tx-panel */
+  margin: 0px auto 15px;
+  box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 0 0 20px 20px;
+  background: linear-gradient(
+    90deg,
+    #667eea 0%,
+    #764ba2 100%
+  ); /* gradient tím */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Canh nội dung bên trong */
+.tx-wrapper .hero-content {
+  padding: 36px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tx-wrapper .hero-content h1 {
+  font-size: 40px;
+  font-weight: 700;
+  color: #fff; /* chữ trắng cho dễ đọc */
+  margin: 0;
+}
+
+.tx-wrapper .hero-content p {
+  display: none; /* ẩn subtitle nếu không cần */
+}

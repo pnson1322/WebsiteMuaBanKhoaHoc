@@ -1,0 +1,103 @@
+/* Course Transaction Details Page */
+.course-tx-details-wrapper {
+  min-height: 100vh;
+  padding: 40px 20px 20px;
+  background: radial-gradient(
+    1200px 500px at 50% 0%,
+    #eef2ff 0%,
+    #e9ecf6 40%,
+    #dde3f1 100%
+  );
+}
+
+.course-tx-details-panel {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header with gradient */
+.course-tx-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px 40px;
+  color: #fff;
+  position: relative;
+}
+
+.course-tx-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  text-align: center;
+  font-family: Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+}
+
+/* Table header with gradient */
+/* Match AdminTransactions table styles */
+.course-tx-details-panel .tx-table-wrap .tx-table thead {
+  background: #f7fafc;
+}
+.course-tx-details-panel .tx-table-wrap .tx-table thead th {
+  color: #2d3748 !important;
+  font-weight: 600;
+  background: #f7fafc !important;
+  border-bottom: 1px solid #edf2f7;
+}
+
+/* Content area */
+.course-tx-content {
+  padding: 30px 40px 25px;
+}
+
+/* Close button */
+.course-tx-close-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: #e53e3e;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  transition: background 0.2s;
+}
+
+.course-tx-close-btn:hover {
+  background: #c53030;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .course-tx-details-wrapper {
+    padding: 20px 10px;
+  }
+
+  .course-tx-header {
+    padding: 20px;
+  }
+
+  .course-tx-title {
+    font-size: 20px;
+  }
+
+  .course-tx-content {
+    padding: 20px;
+  }
+
+  .course-tx-close-btn {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    width: 100%;
+    margin-top: 20px;
+  }
+}

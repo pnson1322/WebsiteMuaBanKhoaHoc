@@ -538,6 +538,45 @@ const mockTransactionsByStudent = studentNames.map((name, i) => {
     lastTransaction,
   };
 });
+// ---------------------- MOCK TRANSACTIONS DETAIL ----------------------
+
+// // 🔧 Format date to DD/MM/YYYY
+function formatDateDDMMYYYY(dateString) {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+// 🔧 Sinh dữ liệu giao dịch chi tiết cho một khóa học
+function generateCourseTransactionDetails(courseId, courseName, coursePrice) {
+  const transactionCount = Math.floor(Math.random() * 20 + 10); // 10-30 giao dịch
+  const transactions = [];
+
+  for (let i = 0; i < transactionCount; i++) {
+    const studentIndex = Math.floor(Math.random() * studentNames.length);
+    const dateStr = randomDateWithinDays(60).split(" ")[0];
+    const formattedDate = formatDateDDMMYYYY(dateStr);
+
+    transactions.push({
+      id: `TXN${String(i + 1).padStart(6, "0")}`,
+      transactionId: `TXN${String(i + 1).padStart(6, "0")}`,
+      studentName: studentNames[studentIndex],
+      price: coursePrice,
+      amount: coursePrice,
+      transactionDate: formattedDate,
+      date: formattedDate,
+    });
+  }
+
+  return transactions.sort((a, b) => {
+    // Convert DD/MM/YYYY back to Date for sorting
+    const dateA = a.transactionDate.split("/").reverse().join("-");
+    const dateB = b.transactionDate.split("/").reverse().join("-");
+    return new Date(dateB) - new Date(dateA);
+  });
+}
 
 // ---------------------- MOCK API: ADMIN ----------------------
 export const adminAPI = {
@@ -555,5 +594,70 @@ export const adminAPI = {
     return mockTransactionsByStudent.sort(
       (a, b) => new Date(b.lastTransaction) - new Date(a.lastTransaction)
     );
+  },
+
+  // 🔹 Lấy toàn bộ giao dịch (mỗi giao dịch có thể chứa 1 hoặc nhiều khóa học)
+  async getAllTransactions() {
+    await delay(500);
+    // Sinh 30 giao dịch ngẫu nhiên
+    const count = 30;
+    const transactions = [];
+
+    for (let i = 0; i < count; i++) {
+      const id = `TXN${String(i + 1).padStart(7, "0")}`;
+      const studentName =
+        studentNames[Math.floor(Math.random() * studentNames.length)];
+
+      // số khóa học trong giao dịch: 1-3
+      const courseCount = Math.floor(Math.random() * 3) + 1;
+      const shuffledCourses = [...mockCourses].sort(() => Math.random() - 0.5);
+      const selectedCourses = shuffledCourses.slice(0, courseCount);
+
+      const courseList = selectedCourses.map((c) => ({
+        id: c.id,
+        name: c.name,
+        price: c.price,
+      }));
+
+      const totalAmount = courseList.reduce((s, c) => s + c.price, 0);
+      const dateStr = randomDateWithinDays(45);
+      const dateOnly = dateStr.split(" ")[0];
+
+      transactions.push({
+        transactionId: id,
+        studentName,
+        transactionDate: `${formatDateDDMMYYYY(dateOnly)} ${dateStr.split(" ")[1]}`,
+        totalAmount,
+        courseList,
+      });
+    }
+
+    // Sắp xếp mới nhất trước
+    return transactions.sort((a, b) => {
+      const [dateA, timeA] = a.transactionDate.split(" ");
+      const [dateB, timeB] = b.transactionDate.split(" ");
+      const isoA = dateA.split("/").reverse().join("-") + "T" + (timeA || "00:00");
+      const isoB = dateB.split("/").reverse().join("-") + "T" + (timeB || "00:00");
+      return new Date(isoB) - new Date(isoA);
+    });
+  },
+
+  // 🔹 Lấy chi tiết giao dịch của một khóa học
+  async getCourseTransactionDetails(courseId) {
+    await delay(400);
+    const course = mockCourses.find((c) => c.id === parseInt(courseId));
+    if (!course) throw new Error("❌ Course not found");
+
+    return {
+      course: {
+        id: course.id,
+        name: course.name,
+      },
+      transactions: generateCourseTransactionDetails(
+        course.id,
+        course.name,
+        course.price
+      ),
+    };
   },
 };

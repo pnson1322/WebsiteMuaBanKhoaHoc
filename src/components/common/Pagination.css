@@ -1,0 +1,45 @@
+/* Pagination */
+.tx-pagination {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 26px;
+}
+
+.tx-page-btn {
+  box-sizing: border-box;
+  height: 35.2px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1.6px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13.33px;
+  color: #000;
+  cursor: pointer;
+}
+
+.tx-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tx-page-dot {
+  box-sizing: border-box;
+  width: 34.6px;
+  height: 35.2px;
+  background: #ffffff;
+  border: 1.6px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13.33px;
+  cursor: pointer;
+}
+
+.tx-page-dot.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+}
+
+
+

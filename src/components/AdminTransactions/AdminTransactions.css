@@ -1,0 +1,203 @@
+/* Filters block */
+.tx-filters {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  margin-bottom: 12px;
+}
+
+.tx-filter-group {
+  display: flex;
+  gap: 16px;
+}
+
+.tx-filter-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tx-filter-label {
+  font-family: Roboto, system-ui;
+  font-size: 12px;
+  line-height: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #718096;
+}
+
+.tx-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 40px;
+  min-width: 260px;
+  padding: 0 12px;
+  background: #ffffff;
+  border: 1.6px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.tx-input input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  font-size: 14px;
+  color: #2d3748;
+}
+
+.tx-date {
+  box-sizing: border-box;
+  height: 40px;
+  min-width: 190px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1.6px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2d3748;
+}
+
+/* Table */
+.tx-table-wrap {
+  border: 0.8px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 18px;
+}
+
+.tx-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-family: Roboto, system-ui;
+}
+
+.tx-table thead th {
+  height: 52px;
+  background: #f7fafc;
+  color: #2d3748;
+  font-weight: 600;
+  font-size: 16px;
+  border-bottom: 1px solid #edf2f7;
+  padding: 0 16px;
+}
+
+.tx-table tbody td {
+  height: 52px;
+  font-size: 16px;
+  color: #000;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0 16px;
+}
+
+.tx-table .left {
+  text-align: left;
+}
+
+.tx-table th,
+.tx-table td {
+  text-align: center;
+}
+
+.tx-table .revenue {
+  color: #38a169;
+  font-weight: 700;
+  text-align: left;
+}
+
+.tx-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tx-table .empty {
+  text-align: center;
+  padding: 18px 0;
+  color: #718096;
+}
+
+/* Bo góc cho table khi skeleton */
+.tx-table-wrap .tx-table thead th {
+  background: #f7fafc;
+}
+.tx-table-wrap .tx-table tbody td {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Course Transaction Filters */
+.tx-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.tx-open-btn {
+  background: #38a169;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(56, 161, 105, 0.3);
+  transition: transform 0.06s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.tx-open-btn:hover {
+  background: #2f855a;
+  box-shadow: 0 10px 24px rgba(47, 133, 90, 0.35);
+}
+.tx-open-btn:active {
+  transform: translateY(1px);
+}
+
+.tx-pagination-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* keep pagination centered */
+  margin-top: 16px;
+  gap: 12px;
+}
+.tx-pagination-row .tx-open-btn {
+  position: absolute;
+  right: 0; /* stick to right while pagination stays centered */
+}
+
+.course-tx-filters {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.course-tx-search {
+  min-width: 400px;
+  max-width: 600px;
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .tx-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tx-input {
+    min-width: 100%;
+  }
+  .tx-filter-group {
+    width: 100%;
+  }
+  .tx-date {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+  .course-tx-search {
+    min-width: 100%;
+  }
+}
+
