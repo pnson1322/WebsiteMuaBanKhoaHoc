@@ -1,0 +1,138 @@
+.cat-table {
+  border: 1px solid #e4e7f5;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.cat-table__header,
+.cat-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 160px 180px;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.cat-table__header {
+  background: #f4f6fb;
+  font-weight: 600;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.cat-table__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.cat-row:nth-child(even) {
+  background: #fff;
+}
+
+.cat-row:not(:last-child) {
+  border-bottom: 1px solid #edf1fb;
+}
+
+.cat-cell {
+  font-size: 15px;
+  color: #1f2937;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cat-cell--id {
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.cat-cell--name svg {
+  color: #6c63ff;
+}
+
+.cat-cell--date {
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.cat-cell--actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.cat-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cat-action svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cat-action--edit {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+}
+
+.cat-action--edit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(99, 102, 241, 0.25);
+}
+
+.cat-action--delete {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.cat-action--delete:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(239, 68, 68, 0.25);
+}
+
+.cat-empty {
+  padding: 32px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+@media (max-width: 720px) {
+  .cat-table__header,
+  .cat-row {
+    grid-template-columns: 80px 1fr;
+    grid-template-areas:
+      "id actions"
+      "name name"
+      "date date";
+    gap: 16px;
+  }
+
+  .cat-cell--id {
+    grid-area: id;
+  }
+
+  .cat-cell--name {
+    grid-area: name;
+  }
+
+  .cat-cell--date {
+    grid-area: date;
+  }
+
+  .cat-cell--actions {
+    grid-area: actions;
+    justify-content: flex-end;
+  }
+}
+

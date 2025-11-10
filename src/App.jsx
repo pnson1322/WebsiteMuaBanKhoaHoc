@@ -42,7 +42,9 @@ function App() {
                 <Route path="seller-courses" element={<SellerCoursesPage />} />
                 {/* Trang quản lý khóa học (Admin) */}
                 <Route path="admin-courses" element={<AdminCoursesPage />} />
+                {/* Trang quản lý danh mục (Admin) */}
                 <Route path="admin-categories" element={<AdminCategories />} />
+                {/* Trang quản lý người dùng (Admin) */}
                 <Route path="admin-users" element={<AdminUsersPage />} />
                 {/* Trang chi tiết khóa học */}
                 <Route path="course/:id" element={<CourseDetail />} />
