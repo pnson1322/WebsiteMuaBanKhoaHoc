@@ -29,7 +29,6 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Lấy dữ liệu từ mock API (không cần chỉnh api.js)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -103,17 +102,17 @@ const CourseDetail = () => {
   const handleToggleFavorite = () => {
     if (isFavorite) {
       dispatch({ type: actionTypes.REMOVE_FROM_FAVORITES, payload: course.id });
-      showUnfavorite(`💔 Đã bỏ yêu thích "${course.name}"`);
+      showUnfavorite(`💔 Đã bỏ yêu thích "${course.title}"`);
     } else {
       dispatch({ type: actionTypes.ADD_TO_FAVORITES, payload: course.id });
-      showFavorite(`❤️ Đã thêm "${course.name}" vào yêu thích!`);
+      showFavorite(`❤️ Đã thêm "${course.title}" vào yêu thích!`);
     }
   };
 
   const handleAddToCart = () => {
     if (!isInCart) {
       dispatch({ type: actionTypes.ADD_TO_CART, payload: course.id });
-      showSuccess(`🛒 Đã thêm "${course.name}" vào giỏ hàng!`);
+      showSuccess(`🛒 Đã thêm "${course.title}" vào giỏ hàng!`);
     }
   };
 
@@ -141,7 +140,7 @@ const CourseDetail = () => {
       id: Date.now(),
       user: {
         id: user?.id || 0,
-        name: user?.name || "Người dùng",
+        name: user?.fullName || "Người dùng",
         image: user?.image || test,
       },
       date: dateStr,
@@ -166,7 +165,7 @@ const CourseDetail = () => {
     if (!ratingEdit || !content) return;
 
     const updated = commentList.map((c) =>
-      c.id === editComment ? { ...c, comment: content, rate: ratingEdit } : c
+      c.id === editComment ? { ...c, comment: content, rating: ratingEdit } : c
     );
     const sorted = sortComments(updated, sortMode);
     setCommentList(sorted);
@@ -235,15 +234,15 @@ const CourseDetail = () => {
         <div className="course-header">
           <div className="course-image-section">
             <img
-              src={course.image}
-              alt={course.name}
+              src={course.imageUrl}
+              alt={course.title}
               className="course-main-image"
             />
-            <div className="course-category-badge">{course.category}</div>
+            <div className="course-category-badge">{course.categoryName}</div>
 
             <div className="course-instructor">
               <div>
-                👨‍🏫 Giảng viên: <strong>{course.instructor?.name}</strong>
+                👨‍🏫 Giảng viên: <strong>{course.teacherName}</strong>
               </div>
               <div>
                 📧 Email:{" "}
@@ -265,30 +264,28 @@ const CourseDetail = () => {
           </div>
 
           <div className="course-info-section">
-            <h1 className="course-title">{course.name}</h1>
+            <h1 className="course-title">{course.title}</h1>
             <p className="course-description">{course.description}</p>
 
             <div className="course-stats-grid">
               <div className="stat-item">
                 <Star className="stat-icon" />
                 <div>
-                  <span className="stat-value">{course.rating}</span>
+                  <span className="stat-value">{course.averageRating}</span>
                   <span className="stat-label">Đánh giá</span>
                 </div>
               </div>
               <div className="stat-item">
                 <Users className="stat-icon" />
                 <div>
-                  <span className="stat-value">
-                    {course.students.toLocaleString()}
-                  </span>
+                  <span className="stat-value">{course.totalPurchased}</span>
                   <span className="stat-label">Học viên</span>
                 </div>
               </div>
               <div className="stat-item">
                 <Clock className="stat-icon" />
                 <div>
-                  <span className="stat-value">{course.duration}</span>
+                  <span className="stat-value">{course.durationHours}</span>
                   <span className="stat-label">Thời lượng</span>
                 </div>
               </div>
@@ -332,12 +329,12 @@ const CourseDetail = () => {
           <div className="content-section">
             <h2>📖 Nội dung khóa học</h2>
             <div className="content-list">
-              {course.contentList?.map((content, idx) => (
+              {course.courseContents?.map((content, idx) => (
                 <div className="content-item" key={content.title + idx}>
                   <BookOpen className="content-icon" />
                   <div>
                     <h3>{content.title}</h3>
-                    <p>{content.des}</p>
+                    <p>{content.description}</p>
                   </div>
                 </div>
               ))}
@@ -348,7 +345,7 @@ const CourseDetail = () => {
             <h2>🎯 Đối tượng học viên</h2>
             <ul className="target-list">
               {course.intendedLearners?.map((item, index) => (
-                <li key={index}>{item}</li>
+                <li key={index}>{item.description}</li>
               ))}
             </ul>
           </div>
@@ -358,7 +355,7 @@ const CourseDetail = () => {
             <div className="skills-grid">
               {course.skillsAcquired?.map((skill, idx) => (
                 <span className="skill-tag" key={skill + idx}>
-                  {skill}
+                  {skill.description}
                 </span>
               ))}
             </div>

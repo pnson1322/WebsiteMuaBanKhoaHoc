@@ -19,8 +19,8 @@ import ForgotPasswordPopup from "../components/Auth/ForgotPasswordPopup";
 const UserInfo = () => {
   const { user, updateUser } = useAuth();
   const { showSuccess, showError } = useToast();
-  const [name, setName] = useState(user?.name || "");
-  const [phone, setPhone] = useState(user?.phone || "");
+  const [name, setName] = useState(user?.fullName || "");
+  const [phone, setPhone] = useState(user?.phoneNumber || "");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,6 +28,13 @@ const UserInfo = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  const role =
+    user?.role === "Admin"
+      ? "Quản lý"
+      : user?.role === "Buyer"
+      ? "Học viên"
+      : "Người bán";
 
   const calculateStrength = (pwd) => {
     let score = 0;
@@ -172,7 +179,7 @@ const UserInfo = () => {
               type="text"
               name="role"
               placeholder="Chọn vai trò"
-              value={user?.role}
+              value={role}
               className="user-info-form-input"
               disabled
             />

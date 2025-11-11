@@ -230,17 +230,17 @@ const Header = ({ onOpenLoginPopup }) => {
           {/* User */}
           {isLoggedIn ? (
             <div className="user-menu destop-only">
-              <button className="nav-button user-button" title={user?.name}>
+              <button className="nav-button user-button" title={user?.fullName}>
                 {user?.avatar ? (
                   <img
                     src={user.avatar}
-                    alt={user.name}
+                    alt={user.fullName}
                     className="user-avatar"
                   />
                 ) : (
                   <User className="nav-icon" />
                 )}
-                <span className="nav-label">{user?.name}</span>
+                <span className="nav-label">{user?.fullName}</span>
               </button>
 
               <div className="user-dropdown">
