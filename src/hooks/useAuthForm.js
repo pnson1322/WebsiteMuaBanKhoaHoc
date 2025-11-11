@@ -5,7 +5,7 @@ import { useToast } from "../contexts/ToastContext";
 import axios from "axios";
 
 // ⚙️ Cấu hình axios kết nối BE .NET (chạy ở cổng 5230)
-axios.defaults.baseURL = process.env.REACT_APP_API_BASE_URL;
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 axios.defaults.withCredentials = true;
 
 const useAuthForm = (initialMode = "login", onSuccess = null) => {

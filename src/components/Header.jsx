@@ -65,11 +65,11 @@ const Header = ({ onOpenLoginPopup }) => {
   }
 
   function handleCategoriesClick() {
-    navigate("/categories");
+    navigate("admin-categories");
   }
 
   function handleUsersClick() {
-    navigate("/users");
+    navigate("/admin-users");
   }
 
   function handleInfo() {
