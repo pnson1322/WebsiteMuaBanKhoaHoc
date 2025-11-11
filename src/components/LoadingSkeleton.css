@@ -334,3 +334,59 @@
     height: 50px;
   }
 }
+
+/* Users Table Skeleton */
+.skeleton-row {
+  pointer-events: none;
+}
+
+.skeleton-cell-id {
+  width: 40px;
+  height: 16px;
+}
+
+.skeleton-cell-name {
+  width: 150px;
+  height: 16px;
+}
+
+.skeleton-cell-email {
+  width: 200px;
+  height: 16px;
+}
+
+.skeleton-cell-role {
+  width: 80px;
+  height: 24px;
+  border-radius: 8px;
+}
+
+.skeleton-cell-date {
+  width: 100px;
+  height: 16px;
+}
+
+.skeleton-cell-action {
+  width: 70px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.users-cell--actions .skeleton-cell-action {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@media (max-width: 768px) {
+  .skeleton-cell-id,
+  .skeleton-cell-name,
+  .skeleton-cell-email,
+  .skeleton-cell-role,
+  .skeleton-cell-date {
+    width: 100%;
+  }
+
+  .skeleton-cell-action {
+    width: 80px;
+  }
+}

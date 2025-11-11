@@ -1,9 +1,14 @@
 import React from "react";
 import { Eye, Trash2 } from "lucide-react";
 import { formatDate, getRoleColor } from "../../../pages/AdminUsersPage/utils";
+import { UsersTableSkeleton } from "../../LoadingSkeleton";
 import "./UsersTable.css";
 
-const UsersTable = ({ users, onViewUser, onDeleteUser }) => {
+const UsersTable = ({ users, onViewUser, onDeleteUser, isLoading = false }) => {
+  if (isLoading) {
+    return <UsersTableSkeleton rows={5} />;
+  }
+
   return (
     <div className="users-table-container">
       <h3 className="users-table-title">Danh sách người dùng</h3>

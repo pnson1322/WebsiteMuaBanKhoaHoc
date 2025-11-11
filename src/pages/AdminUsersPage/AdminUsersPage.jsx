@@ -58,6 +58,7 @@ const AdminUsersPage = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [addAdminForm, setAddAdminForm] = useState({
     name: "",
     email: "",
@@ -228,6 +229,7 @@ const AdminUsersPage = () => {
           users={pageData}
           onViewUser={handleViewUser}
           onDeleteUser={handleDeleteUser}
+          isLoading={isLoading}
         />
 
         {totalPages > 1 && (
