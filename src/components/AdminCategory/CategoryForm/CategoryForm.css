@@ -1,0 +1,117 @@
+.cat-card {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 25px 55px rgba(15, 23, 42, 0.08);
+  padding: 28px;
+}
+
+.cat-card--form {
+  position: sticky;
+  top: 96px;
+}
+
+.cat-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.cat-card__header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1f36;
+  margin: 0 0 6px;
+}
+
+.cat-card__header p {
+  margin: 0;
+  color: #5f6b7a;
+  font-size: 14px;
+}
+
+.cat-card__icon {
+  height: 30px;
+  width: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7e8ce6, #9b6dd3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(118, 75, 162, 0.25);
+}
+
+.cat-form {
+  display: grid;
+  gap: 14px;
+}
+
+.cat-form label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a1f36;
+}
+
+.cat-form label span {
+  color: #ef4444;
+}
+
+.cat-form input {
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid #d6dcf5;
+  padding: 0 16px;
+  font-size: 15px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cat-form input:focus {
+  border-color: #7b61ff;
+  box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.15);
+  outline: none;
+}
+
+.cat-primary-btn {
+  margin-top: 8px;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(95deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 18px 30px rgba(118, 75, 162, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cat-primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 35px rgba(118, 75, 162, 0.35);
+}
+
+.cat-summary {
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  background: #f6f7ff;
+  border-radius: 16px;
+  font-size: 15px;
+  color: #4b5563;
+}
+
+.cat-summary strong {
+  font-size: 20px;
+  color: #4f46e5;
+}
+
+@media (max-width: 1150px) {
+  .cat-card--form {
+    position: relative;
+    top: 0;
+  }
+}
+

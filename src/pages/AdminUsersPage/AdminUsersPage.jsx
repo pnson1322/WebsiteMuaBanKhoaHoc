@@ -1,18 +1,12 @@
 import React, { useMemo, useState } from "react";
-import {
-  Eye,
-  Search,
-  Trash2,
-  UserPlus,
-  ChevronDown,
-  AlertTriangle,
-  User,
-  Mail,
-  Lock,
-  Save,
-} from "lucide-react";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
 import Pagination from "../../components/common/Pagination";
+import UsersStats from "../../components/AdminUser/UsersStats/UsersStats";
+import UsersToolbar from "../../components/AdminUser/UsersToolbar/UsersToolbar";
+import UsersTable from "../../components/AdminUser/UsersTable/UsersTable";
+import UserViewModal from "../../components/AdminUser/UserViewModal/UserViewModal";
+import AddAdminModal from "../../components/AdminUser/AddAdminModal/AddAdminModal";
+import DeleteUserModal from "../../components/AdminUser/DeleteUserModal/DeleteUserModal";
 import "./AdminUsersPage.css";
 
 const initialUsers = [
@@ -55,14 +49,6 @@ const initialUsers = [
 
 const PAGE_SIZE = 5;
 
-const formatDate = (date) => {
-  try {
-    return new Date(date).toLocaleDateString("vi-VN");
-  } catch (error) {
-    return date;
-  }
-};
-
 const AdminUsersPage = () => {
   const [users, setUsers] = useState(initialUsers);
   const [searchTerm, setSearchTerm] = useState("");
@@ -71,8 +57,8 @@ const AdminUsersPage = () => {
   const [viewingUser, setViewingUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [addAdminForm, setAddAdminForm] = useState({
     name: "",
     email: "",
@@ -216,37 +202,6 @@ const AdminUsersPage = () => {
     setAddAdminForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Lấy tên vai trò hiển thị
-  const getRoleLabel = (role) => {
-    const roleMap = {
-      all: "Tất cả vai trò",
-      BUYER: "Buyer",
-      SELLER: "Seller",
-      ADMIN: "Admin",
-    };
-    return roleMap[role] || role;
-  };
-
-  // Lấy tên vai trò tiếng Việt
-  const getRoleLabelVN = (role) => {
-    const roleMap = {
-      BUYER: "Người Mua",
-      SELLER: "Người Bán",
-      ADMIN: "Quản Trị Viên",
-    };
-    return roleMap[role] || role;
-  };
-
-  // Lấy màu cho tag vai trò
-  const getRoleColor = (role) => {
-    const colorMap = {
-      BUYER: "green",
-      SELLER: "blue",
-      ADMIN: "orange",
-    };
-    return colorMap[role] || "gray";
-  };
-
   // Reset page khi filter thay đổi
   React.useEffect(() => {
     setCurrentPage(1);
@@ -260,178 +215,23 @@ const AdminUsersPage = () => {
       />
 
       <div className="admin-users-content">
-        {/* Thẻ thống kê */}
-        <div className="users-stats">
-          <div className="stat-card stat-card--green">
-            <div className="stat-card__number">{stats.buyers}</div>
-            <div className="stat-card__label">Người mua</div>
-          </div>
-          <div className="stat-card stat-card--blue">
-            <div className="stat-card__number">{stats.sellers}</div>
-            <div className="stat-card__label">Người bán</div>
-          </div>
-          <div className="stat-card stat-card--orange">
-            <div className="stat-card__number">{stats.admins}</div>
-            <div className="stat-card__label">Quản trị viên</div>
-          </div>
-          <div className="stat-card stat-card--purple">
-            <div className="stat-card__number">{stats.total}</div>
-            <div className="stat-card__label">Tổng người dùng</div>
-          </div>
-        </div>
+        <UsersStats stats={stats} />
 
-        {/* Thanh tìm kiếm và bộ lọc */}
-        <div className="users-toolbar">
-          <div className="users-search">
-            <Search size={18} />
-            <input
-              type="search"
-              placeholder="Tìm kiếm theo tên, email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <UsersToolbar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          roleFilter={roleFilter}
+          onRoleFilterChange={setRoleFilter}
+          onAddAdmin={handleAddAdmin}
+        />
 
-          <div className="users-filters">
-            <div className="role-filter-wrapper">
-              <button
-                className="role-filter-btn"
-                onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-              >
-                {getRoleLabel(roleFilter)}
-                <ChevronDown size={16} />
-              </button>
-              {showRoleDropdown && (
-                <>
-                  <div
-                    className="role-dropdown-overlay"
-                    onClick={() => setShowRoleDropdown(false)}
-                  />
-                  <div className="role-dropdown">
-                    <button
-                      className={`role-option ${
-                        roleFilter === "all" ? "active" : ""
-                      }`}
-                      onClick={() => {
-                        setRoleFilter("all");
-                        setShowRoleDropdown(false);
-                      }}
-                    >
-                      Tất cả vai trò
-                    </button>
-                    <button
-                      className={`role-option ${
-                        roleFilter === "BUYER" ? "active" : ""
-                      }`}
-                      onClick={() => {
-                        setRoleFilter("BUYER");
-                        setShowRoleDropdown(false);
-                      }}
-                    >
-                      Buyer
-                    </button>
-                    <button
-                      className={`role-option ${
-                        roleFilter === "SELLER" ? "active" : ""
-                      }`}
-                      onClick={() => {
-                        setRoleFilter("SELLER");
-                        setShowRoleDropdown(false);
-                      }}
-                    >
-                      Seller
-                    </button>
-                    <button
-                      className={`role-option ${
-                        roleFilter === "ADMIN" ? "active" : ""
-                      }`}
-                      onClick={() => {
-                        setRoleFilter("ADMIN");
-                        setShowRoleDropdown(false);
-                      }}
-                    >
-                      Admin
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+        <UsersTable
+          users={pageData}
+          onViewUser={handleViewUser}
+          onDeleteUser={handleDeleteUser}
+          isLoading={isLoading}
+        />
 
-            <button className="add-admin-btn" onClick={handleAddAdmin}>
-              <UserPlus size={18} />
-              Thêm Admin
-            </button>
-          </div>
-        </div>
-
-        {/* Bảng danh sách người dùng */}
-        <div className="users-table-container">
-          <h3 className="users-table-title">Danh sách người dùng</h3>
-          <div className="users-table">
-            <div className="users-table__header">
-              <span>ID</span>
-              <span>Họ tên</span>
-              <span>Email</span>
-              <span>Vai trò</span>
-              <span>Ngày tạo</span>
-              <span>Thao tác</span>
-            </div>
-
-            <div className="users-table__body">
-              {pageData.length === 0 ? (
-                <div className="users-empty">
-                  Không tìm thấy người dùng phù hợp.
-                </div>
-              ) : (
-                pageData.map((user) => (
-                  <div className="users-row" key={user.id}>
-                    <span className="users-cell users-cell--id">
-                      {user.id}
-                    </span>
-                    <span className="users-cell users-cell--name">
-                      {user.name}
-                    </span>
-                    <span className="users-cell users-cell--email">
-                      {user.email}
-                    </span>
-                    <span className="users-cell users-cell--role">
-                      <span
-                        className={`role-badge role-badge--${getRoleColor(
-                          user.role
-                        )}`}
-                      >
-                        {user.role}
-                      </span>
-                    </span>
-                    <span className="users-cell users-cell--date">
-                      {formatDate(user.createdAt)}
-                    </span>
-                    <span className="users-cell users-cell--actions">
-                      <button
-                        type="button"
-                        className="users-action users-action--view"
-                        onClick={() => handleViewUser(user)}
-                      >
-                        <Eye size={16} />
-                        Xem
-                      </button>
-                      <button
-                        type="button"
-                        className="users-action users-action--delete"
-                        onClick={() => handleDeleteUser(user)}
-                      >
-                        <Trash2 size={16} />
-                        Xóa
-                      </button>
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="users-pagination">
             <Pagination
@@ -443,234 +243,27 @@ const AdminUsersPage = () => {
         )}
       </div>
 
-      {/* Modal xem và chỉnh sửa thông tin người dùng */}
-      {viewingUser && editingUser && (
-        <div
-          className="users-modal-overlay"
-          onClick={closeViewModal}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="users-modal users-modal--edit"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="users-modal__header">
-              <div>
-                <div className="users-modal__icon users-modal__icon--edit">
-                  <User size={20} />
-                </div>
-                <h3>Thông Tin Người Dùng</h3>
-              </div>
-              <button
-                className="users-modal__close"
-                onClick={closeViewModal}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
-            </header>
-            <form
-              className="users-modal__form"
-              onSubmit={handleUpdateUser}
-            >
-              <div className="users-form-group">
-                <label htmlFor="edit-name">
-                  <User size={16} />
-                  Họ và Tên
-                </label>
-                <input
-                  id="edit-name"
-                  type="text"
-                  value={editingUser.name}
-                  onChange={(e) =>
-                    handleEditFormChange("name", e.target.value)
-                  }
-                  placeholder="Nhập họ và tên..."
-                />
-              </div>
+      <UserViewModal
+        user={viewingUser}
+        editingUser={editingUser}
+        onClose={closeViewModal}
+        onUpdate={handleUpdateUser}
+        onFormChange={handleEditFormChange}
+      />
 
-              <div className="users-form-group">
-                <label htmlFor="edit-email">
-                  <Mail size={16} />
-                  Email
-                </label>
-                <input
-                  id="edit-email"
-                  type="email"
-                  value={editingUser.email}
-                  onChange={(e) =>
-                    handleEditFormChange("email", e.target.value)
-                  }
-                  placeholder="Nhập email..."
-                />
-              </div>
+      <AddAdminModal
+        isOpen={showAddAdminModal}
+        formData={addAdminForm}
+        onClose={closeAddAdminModal}
+        onSubmit={handleAddAdminSubmit}
+        onFormChange={handleAddAdminFormChange}
+      />
 
-              <div className="users-form-group">
-                <label htmlFor="edit-role">
-                  <User size={16} />
-                  Vai Trò
-                </label>
-                <select
-                  id="edit-role"
-                  value={editingUser.role}
-                  onChange={(e) =>
-                    handleEditFormChange("role", e.target.value)
-                  }
-                  className="users-form-select"
-                >
-                  <option value="BUYER">Người Mua</option>
-                  <option value="SELLER">Người Bán</option>
-                  <option value="ADMIN">Quản Trị Viên</option>
-                </select>
-              </div>
-
-              <button type="submit" className="users-btn users-btn--primary users-btn--full">
-                <Save size={18} />
-                Cập Nhật Thông Tin
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal thêm Admin */}
-      {showAddAdminModal && (
-        <div
-          className="users-modal-overlay"
-          onClick={closeAddAdminModal}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="users-modal users-modal--add"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="users-modal__header">
-              <div>
-                <div className="users-modal__icon users-modal__icon--add">
-                  <UserPlus size={20} />
-                </div>
-                <h3>Thêm Admin</h3>
-              </div>
-              <button
-                className="users-modal__close"
-                onClick={closeAddAdminModal}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
-            </header>
-            <form
-              className="users-modal__form"
-              onSubmit={handleAddAdminSubmit}
-            >
-              <div className="users-form-group">
-                <label htmlFor="add-name">
-                  <User size={16} />
-                  Họ và Tên
-                </label>
-                <input
-                  id="add-name"
-                  type="text"
-                  value={addAdminForm.name}
-                  onChange={(e) =>
-                    handleAddAdminFormChange("name", e.target.value)
-                  }
-                  placeholder="Nhập họ và tên..."
-                  required
-                />
-              </div>
-
-              <div className="users-form-group">
-                <label htmlFor="add-email">
-                  <Mail size={16} />
-                  Email
-                </label>
-                <input
-                  id="add-email"
-                  type="email"
-                  value={addAdminForm.email}
-                  onChange={(e) =>
-                    handleAddAdminFormChange("email", e.target.value)
-                  }
-                  placeholder="Nhập email..."
-                  required
-                />
-              </div>
-
-              <div className="users-form-group">
-                <label htmlFor="add-password">
-                  <Lock size={16} />
-                  Mật khẩu
-                </label>
-                <input
-                  id="add-password"
-                  type="password"
-                  value={addAdminForm.password}
-                  onChange={(e) =>
-                    handleAddAdminFormChange("password", e.target.value)
-                  }
-                  placeholder="Nhập mật khẩu..."
-                  required
-                />
-              </div>
-
-              <button type="submit" className="users-btn users-btn--primary users-btn--full">
-                <UserPlus size={18} />
-                Thêm người dùng
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal xác nhận xóa */}
-      {deletingUser && (
-        <div
-          className="users-modal-overlay"
-          onClick={closeDeleteModal}
-          role="alertdialog"
-          aria-modal="true"
-        >
-          <div
-            className="users-modal users-modal--danger"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="users-modal__header">
-              <div>
-                <div className="users-modal__icon users-modal__icon--danger">
-                  <AlertTriangle size={20} />
-                </div>
-                <div>
-                  <h3>Xác Nhận Xóa</h3>
-                  <p>Hành động này không thể hoàn tác</p>
-                </div>
-              </div>
-            </header>
-            <div className="users-modal__body">
-              <p>
-                Bạn có chắc chắn muốn xóa người dùng{" "}
-                <strong>{deletingUser.name}</strong>?
-              </p>
-            </div>
-            <footer className="users-modal__footer">
-              <button
-                className="users-btn users-btn--ghost"
-                onClick={closeDeleteModal}
-              >
-                Hủy
-              </button>
-              <button
-                className="users-btn users-btn--danger"
-                onClick={confirmDelete}
-              >
-                Xóa
-              </button>
-            </footer>
-          </div>
-        </div>
-      )}
+      <DeleteUserModal
+        user={deletingUser}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

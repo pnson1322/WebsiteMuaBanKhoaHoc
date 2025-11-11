@@ -100,3 +100,47 @@ export const HistoryPageSkeleton = () => {
     </div>
   );
 };
+
+export const UsersTableSkeleton = ({ rows = 5 }) => {
+  return (
+    <div className="users-table-container">
+      <h3 className="users-table-title">Danh sách người dùng</h3>
+      <div className="users-table">
+        <div className="users-table__header">
+          <span>ID</span>
+          <span>Họ tên</span>
+          <span>Email</span>
+          <span>Vai trò</span>
+          <span>Ngày tạo</span>
+          <span>Thao tác</span>
+        </div>
+
+        <div className="users-table__body">
+          {Array.from({ length: rows }).map((_, index) => (
+            <div className="users-row skeleton-row" key={index}>
+              <span className="users-cell">
+                <div className="skeleton skeleton-cell-id"></div>
+              </span>
+              <span className="users-cell">
+                <div className="skeleton skeleton-cell-name"></div>
+              </span>
+              <span className="users-cell">
+                <div className="skeleton skeleton-cell-email"></div>
+              </span>
+              <span className="users-cell">
+                <div className="skeleton skeleton-cell-role"></div>
+              </span>
+              <span className="users-cell">
+                <div className="skeleton skeleton-cell-date"></div>
+              </span>
+              <span className="users-cell users-cell--actions">
+                <div className="skeleton skeleton-cell-action"></div>
+                <div className="skeleton skeleton-cell-action"></div>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
