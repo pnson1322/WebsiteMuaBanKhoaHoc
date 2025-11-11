@@ -2,9 +2,12 @@ import { Image } from "lucide-react";
 import "./CourseDetailMain.css";
 import { useState } from "react";
 import CourseDetailInfo from "./CourseDetailInfo";
+import CourseDetailStudents from "./CourseDetailStudents";
+import CourseDetailStatistic from "./CourseDetailStatistic";
 
 export default function CourseDetailMain({
   course,
+  user,
   formData,
   isEditable,
   handleChange,
@@ -255,9 +258,13 @@ export default function CourseDetailMain({
             removeSkill={removeSkill}
           />
         ) : active === "students" ? (
-          <CourseDetailStudents />
+          <CourseDetailStudents course={course} isEditable={isEditable} />
         ) : (
-          <CourseDetailStatistic />
+          <CourseDetailStatistic
+            course={course}
+            user={user}
+            isEditable={isEditable}
+          />
         )}
       </form>
     </div>

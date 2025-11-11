@@ -15,8 +15,31 @@ import {
   DollarSign,
   Server,
   Users,
+  BellRing,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import NotificationPopup from "./NotificationPopup";
+
+const initialNotifications = [
+  {
+    id: 1,
+    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
+    time: "Vừa xong",
+    isRead: true, // Đã đọc
+  },
+  {
+    id: 2,
+    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
+    time: "Vừa xong",
+    isRead: true, // Đã đọc
+  },
+  {
+    id: 3,
+    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
+    time: "1 phút trước",
+    isRead: false, // Chưa đọc
+  },
+];
 
 const Header = ({ onOpenLoginPopup }) => {
   const navigate = useNavigate();
@@ -92,6 +115,48 @@ const Header = ({ onOpenLoginPopup }) => {
   function handleRegisterClick() {
     navigate("/register");
   }
+
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  const notificationRef = useRef(null);
+
+  useEffect(() => {
+    if (!isNotificationOpen) return;
+
+    function handleClickOutside(event) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setIsNotificationOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isNotificationOpen]);
+
+  const handleNoficationClick = () => {
+    setIsNotificationOpen((prev) => !prev);
+  };
+
+  const markOneAsRead = (id) => {
+    setNotifications((currentNotifs) =>
+      currentNotifs.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications((currentNotifs) =>
+      currentNotifs.map((n) => ({ ...n, isRead: true }))
+    );
+  };
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <header className="header">
@@ -180,6 +245,29 @@ const Header = ({ onOpenLoginPopup }) => {
                 <List className="nav-icon" />
                 <span className="nav-label">Khóa học</span>
               </button>
+
+              {/* Notification */}
+              <div className="notification-wrapper" ref={notificationRef}>
+                <button
+                  className="nav-button"
+                  onClick={handleNoficationClick}
+                  title="Thông báo"
+                >
+                  <BellRing className="nav-icon" />
+                  {unreadCount > 0 && (
+                    <span className="badge">{unreadCount}</span>
+                  )}
+                  <span className="nav-label">Thông báo</span>
+                </button>
+
+                {isNotificationOpen && (
+                  <NotificationPopup
+                    notifications={notifications}
+                    onMarkOneAsRead={markOneAsRead}
+                    onMarkAllAsRead={markAllAsRead}
+                  />
+                )}
+              </div>
             </>
           ) : null}
 
@@ -226,7 +314,6 @@ const Header = ({ onOpenLoginPopup }) => {
               </button>
             </>
           ) : null}
-
           {/* User */}
           {isLoggedIn ? (
             <div className="user-menu destop-only">
