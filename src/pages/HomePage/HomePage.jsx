@@ -28,7 +28,7 @@ const HomePage = () => {
 
   return (
     <HomePageLayout>
-      {user?.role === "learner" || !isLoggedIn ? (
+      {/* {user?.role === "learner" || !isLoggedIn ? (
         <>
           <HeroSection />
           <ViewHistory onViewDetails={handleViewDetails} />
@@ -39,9 +39,9 @@ const HomePage = () => {
 
       {isLoggedIn && user?.role === "seller" ? <SellerHomePage /> : null}
 
-      {isLoggedIn && user?.role === "admin" ? <AdminHomePage /> : null}
+      {isLoggedIn && user?.role === "admin" ? <AdminHomePage /> : null} */}
 
-      {/* {!isLoggedIn ? <AdminHomePage /> : null} */}
+      {!isLoggedIn ? <AdminHomePage /> : null}
     </HomePageLayout>
   );
 };

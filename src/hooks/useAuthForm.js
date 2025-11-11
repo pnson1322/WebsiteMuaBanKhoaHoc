@@ -2,6 +2,11 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
+import axios from "axios";
+
+// ⚙️ Cấu hình axios kết nối BE .NET (chạy ở cổng 5230)
+axios.defaults.baseURL = process.env.REACT_APP_API_BASE_URL;
+axios.defaults.withCredentials = true;
 
 const useAuthForm = (initialMode = "login", onSuccess = null) => {
   const { login } = useAuth();
@@ -23,26 +28,19 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
   const validateForm = useCallback(() => {
     const newErrors = {};
 
-    // Validate name for register
     if (mode === "register" && !formData.name.trim()) {
       newErrors.name = "Vui lòng nhập họ tên";
     }
-
-    // Validate email
     if (!formData.email.trim()) {
       newErrors.email = "Vui lòng nhập email";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Email không hợp lệ";
     }
-
-    // Validate password
     if (!formData.password) {
       newErrors.password = "Vui lòng nhập mật khẩu";
     } else if (formData.password.length < 6) {
       newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
     }
-
-    // Validate confirm password for register
     if (mode === "register") {
       if (!formData.confirmPassword) {
         newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
@@ -55,111 +53,96 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
     return Object.keys(newErrors).length === 0;
   }, [mode, formData]);
 
-  // ✅ Handle input change
+  // ✅ Khi người dùng nhập form
   const handleChange = useCallback(
     (e) => {
       const { name, value } = e.target;
       setFormData((prev) => ({ ...prev, [name]: value }));
-
-      // Clear error when user starts typing
-      if (errors[name]) {
-        setErrors((prev) => ({ ...prev, [name]: "" }));
-      }
+      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
     },
     [errors]
   );
 
-  // ✅ Handle login
+  // ✅ Đăng nhập thật qua API .NET
   const handleLogin = useCallback(async () => {
     if (!validateForm()) return;
-
     setLoading(true);
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const userData = {
-        name: formData.name || "Người dùng",
+      const res = await axios.post("/api/auth/login", {
         email: formData.email,
-        role:
-          formData.role === "Người bán"
-            ? "seller"
-            : formData.role === "Admin"
-            ? "admin"
-            : "learner",
-      };
+        password: formData.password,
+      });
 
+      const userData = res.data;
+      // Lưu token vào localStorage
+      localStorage.setItem("token", userData.token);
+      localStorage.setItem("refreshToken", userData.refreshToken);
       login(userData);
       showSuccess("Đăng nhập thành công!");
 
-      // Call custom success handler if provided
-      if (onSuccess) {
-        onSuccess();
-      }
-      navigate("/"); // Redirect to homepage
+      // ✅ Điều hướng theo role
+      navigate("/");
+
+      if (onSuccess) onSuccess();
     } catch (error) {
-      showError("Đăng nhập thất bại. Vui lòng thử lại!");
+      console.error(error);
+      showError(
+        error.response?.data?.message ||
+        "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản!"
+      );
     } finally {
       setLoading(false);
     }
-  }, [
-    validateForm,
-    formData,
-    login,
-    showSuccess,
-    showError,
-    onSuccess,
-    navigate,
-  ]);
+  }, [formData, validateForm, login, navigate, onSuccess, showError, showSuccess]);
 
-  // ✅ Handle register
+
+  // ✅ Đăng ký tài khoản thật qua API .NET
   const handleRegister = useCallback(async () => {
     if (!validateForm()) return;
-
     setLoading(true);
-
     try {
-      // ✅ Giả lập gọi API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await axios.post("/api/auth/register", {
+        fullName: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
 
-      showSuccess("Đăng ký thành công! Chuyển sang đăng nhập...");
+      showSuccess("Đăng ký thành công! Vui lòng kiểm tra email để xác thực.");
 
-      // ✅ Sau 1.5s: chuyển sang form đăng nhập
+      // Sau 2s chuyển sang form login
       setTimeout(() => {
         setMode("login");
-        setFormData((prev) => ({
-          ...prev,
+        setFormData({
           name: "",
+          email: formData.email,
+          password: formData.password,
           confirmPassword: "",
-          // ⚡ Giữ lại email & password để login nhanh
-          email: prev.email,
-          password: prev.password,
-        }));
+          role: "Học viên",
+        });
         setErrors({});
-      }, 1500);
+      }, 2000);
     } catch (error) {
-      showError("Đăng ký thất bại. Vui lòng thử lại!");
+      console.error(error);
+      showError(
+        error.response?.data?.message ||
+        "Đăng ký thất bại. Vui lòng thử lại!"
+      );
     } finally {
       setLoading(false);
     }
-  }, [validateForm, showSuccess, showError]);
+  }, [formData, validateForm, showError, showSuccess]);
 
-  // ✅ Handle form submit
+  // ✅ Submit form
   const handleSubmit = useCallback(
     (e) => {
       e.preventDefault();
-
-      if (mode === "login") {
-        handleLogin();
-      } else {
-        handleRegister();
-      }
+      if (mode === "login") handleLogin();
+      else handleRegister();
     },
     [mode, handleLogin, handleRegister]
   );
 
-  // ✅ Switch between login/register modes
+  // ✅ Chuyển qua lại login/register
   const switchMode = useCallback((newMode) => {
     setMode(newMode);
     setFormData({
@@ -172,40 +155,15 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
     setErrors({});
   }, []);
 
-  // ✅ Reset form
-  const resetForm = useCallback(() => {
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      role: "Học viên",
-    });
-    setErrors({});
-    setLoading(false);
-  }, []);
-
   return {
-    // State
     mode,
     formData,
     errors,
     loading,
-
-    // Actions
     handleChange,
     handleSubmit,
     switchMode,
-    resetForm,
     setMode,
-    setFormData,
-    setErrors,
-    setLoading,
-
-    // Handlers
-    handleLogin,
-    handleRegister,
-    validateForm,
   };
 };
 
