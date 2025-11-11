@@ -66,7 +66,7 @@ export default function AdminHomePage() {
   const revenueBarColor = "#14b8a6";
   const revenueLineColor = "#2563eb";
 
-  const [revenuePeriod, setRevenuePeriod] = useState("7days");
+  const [revenuePeriod, setRevenuePeriod] = useState("monthly");
 
   const [course, setCourse] = useState([
     {

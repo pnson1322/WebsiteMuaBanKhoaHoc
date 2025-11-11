@@ -11,20 +11,20 @@ import {
 } from "lucide-react";
 import { CourseCardSkeleton } from "../components/LoadingSkeleton";
 import PaymentPopup from "../components/PaymentPopup";
+import CourseDetailMain from "../components/CourseDetailPopup/CourseDetailMain";
+import CourseDetailPopup from "../components/CourseDetailPopup/CourseDetailPopup";
 
 const Cart = () => {
   const navigate = useNavigate();
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
 
-  // 🔹 Lấy danh sách khóa học trong giỏ từ state.courses (lọc theo ID trong state.cart)
   const [cartCourses, setCartCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showPayment, setShowPayment] = useState(false);
 
-  // ✅ Khi danh sách courses hoặc giỏ hàng thay đổi, cập nhật lại
   useEffect(() => {
     try {
       if (!state.courses || state.courses.length === 0) {
@@ -78,7 +78,6 @@ const Cart = () => {
     0
   );
 
-  // 🔹 Loading khi chưa có dữ liệu
   if (loading) {
     return (
       <div className="cart-page page-transition">
@@ -105,7 +104,6 @@ const Cart = () => {
     );
   }
 
-  // 🔹 Nếu có lỗi
   if (error) {
     return (
       <div className="cart-page page-transition">
@@ -132,7 +130,6 @@ const Cart = () => {
     );
   }
 
-  // 🔹 Giao diện chính
   return (
     <div className="cart-page page-transition">
       <div className="container">
@@ -268,7 +265,8 @@ const Cart = () => {
       </div>
 
       {showPayment && (
-        <PaymentPopup onClose={closePopup} course={selectedCourses} />
+        // <PaymentPopup onClose={closePopup} course={selectedCourses} />
+        <CourseDetailPopup onClose={closePopup} course={selectedCourses[0]} />
       )}
     </div>
   );
