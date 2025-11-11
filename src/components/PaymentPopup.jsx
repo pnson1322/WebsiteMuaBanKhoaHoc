@@ -16,7 +16,7 @@ const PaymentPopup = ({ onClose, course }) => {
   return (
     <div className="payment-overlay" onClick={onClose}>
       <div className="payment" onClick={(e) => e.stopPropagation()}>
-        <div className="title-section">
+        <div className="title-section-popup">
           <CreditCard />
 
           <div>Thanh toán</div>
