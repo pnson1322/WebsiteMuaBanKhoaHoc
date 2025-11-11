@@ -18,6 +18,7 @@ export default function CourseDetailPopup({ onClose, course }) {
     level: course?.level || "",
     price: course?.price || 0,
     duration: course?.duration || "",
+    totalPurchased: course?.totalPurchased || 0,
     description: course?.description || "",
     imageUrl: course?.imageUrl || null,
     imageFile: null,
@@ -121,13 +122,6 @@ export default function CourseDetailPopup({ onClose, course }) {
   const [students, setStudents] = useState(false);
   const [statistic, setStatistic] = useState(false);
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
-  };
-
   return (
     <div className="course-detail-overlay" onClick={onClose}>
       <div className="course-detail-popup" onClick={(e) => e.stopPropagation()}>
@@ -138,6 +132,7 @@ export default function CourseDetailPopup({ onClose, course }) {
 
         <SimpleBar style={{ maxHeight: "calc(90vh - 80px)" }}>
           <CourseDetailMain
+            user={user}
             course={course}
             formData={formData}
             isEditable={isEditable}
@@ -167,6 +162,14 @@ export default function CourseDetailPopup({ onClose, course }) {
               setStatistic(true);
             }}
           />
+
+          {isEditable ? (
+            <div className="submit-wrapper">
+              <button onClick={handleSubmit} className="submit-popup-btn">
+                Lưu thay đổi
+              </button>
+            </div>
+          ) : null}
         </SimpleBar>
       </div>
     </div>

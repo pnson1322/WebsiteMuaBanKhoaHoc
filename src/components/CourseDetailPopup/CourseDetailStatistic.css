@@ -1,0 +1,312 @@
+/* --- Màu sắc và biến --- */
+:root {
+  --color-primary: #6c5ce7;
+  --color-danger: #e74c3c;
+  --color-secondary-text: #6b7280;
+  --color-border: #e5e7eb;
+  --color-background-light: #f9fafb;
+  --color-star-filled: #facc15;
+  --color-star-empty: #d1d5db;
+}
+
+.course-statistic-tab {
+  padding: 16px 0;
+}
+
+/* --- Wrapper chung cho 2 section --- */
+.review-section {
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.review-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.review-section-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.review-icon {
+  color: var(--color-primary);
+}
+
+/* --- Form (Viết mới & Sửa) --- */
+.review-form {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+/* --- Nút bấm --- */
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+  align-self: flex-end; /* Nút "Gửi" nằm bên phải */
+}
+.btn-primary:hover {
+  background-color: #5a4cdc;
+}
+
+.btn-secondary {
+  background-color: #f3f4f6;
+  color: #333;
+}
+.btn-secondary:hover {
+  background-color: #e5e7eb;
+}
+
+.btn-delete {
+  background-color: transparent;
+  color: var(--color-danger);
+}
+.btn-delete:hover {
+  background-color: #fef2f2;
+}
+
+.btn-edit {
+  background-color: transparent;
+  color: var(--color-primary);
+}
+.btn-edit:hover {
+  background-color: #f4f3ff;
+}
+
+/* --- Sao đánh giá (Chung) --- */
+.star-rating .star,
+.star-rating-display .star {
+  font-size: 1.75rem;
+  color: var(--color-star-empty);
+  margin-right: 4px;
+}
+.star-rating .star.filled,
+.star-rating-display .star.filled {
+  color: var(--color-star-filled);
+}
+.star-rating .star {
+  cursor: pointer;
+}
+
+/* --- Danh sách bình luận --- */
+.review-list-wrapper .review-section-header {
+  justify-content: space-between;
+}
+
+.sort-select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: #fff;
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.review-item {
+  padding: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-item-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.review-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.review-user-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Đẩy sao qua bên phải */
+}
+
+.review-user-name {
+  font-weight: 600;
+  color: #111;
+}
+
+.review-date {
+  font-size: 0.85rem;
+  color: var(--color-secondary-text);
+}
+
+.review-item-stars {
+  /* co lại để không chiếm khoảng trống */
+  flex-shrink: 0;
+}
+.review-item-stars .star {
+  font-size: 1.1rem; /* Sao nhỏ hơn */
+}
+
+.review-body {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* --- Nút Sửa/Xóa --- */
+.review-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.review-actions-edit {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Form Sửa lồng bên trong */
+.review-form-edit {
+  padding: 20px 0 0 0;
+  border-top: 1px dashed var(--color-border);
+  margin-top: 16px;
+}
+
+/* Grid container 2 cột */
+.stats-grid-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.stats-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 24px;
+}
+
+.stats-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.stats-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.stats-icon {
+  color: #6c5ce7;
+}
+
+/* Cột trái: Chart */
+.chart-area {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Cột phải: Rating Bars */
+.rating-bars-area {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rating-bar-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  flex-basis: 40px;
+}
+
+.rating-bar-track {
+  flex-grow: 1;
+  height: 10px;
+  background-color: #f3f4f6;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  background-color: #facc15;
+  border-radius: 5px;
+  transition: width 0.5s ease;
+}
+
+.rating-bar-count {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6b7280;
+  flex-basis: 30px;
+  text-align: right;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 992px) {
+  .stats-grid-container {
+    grid-template-columns: 1fr;
+  }
+}
