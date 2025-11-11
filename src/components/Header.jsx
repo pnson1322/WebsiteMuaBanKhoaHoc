@@ -124,7 +124,7 @@ const Header = ({ onOpenLoginPopup }) => {
         {/* Navigation Icons */}
         <nav className="nav-icons">
           {/* Admin */}
-          {isLoggedIn && user && user.role === "admin" ? (
+          {isLoggedIn && user && user.role === "Admin" ? (
             <>
               {/* Courses */}
               <button
@@ -169,7 +169,7 @@ const Header = ({ onOpenLoginPopup }) => {
           ) : null}
 
           {/* Seller */}
-          {isLoggedIn && user && user.role === "seller" ? (
+          {isLoggedIn && user && user.role === "Seller" ? (
             <>
               {/* Courses */}
               <button
@@ -184,7 +184,7 @@ const Header = ({ onOpenLoginPopup }) => {
           ) : null}
 
           {/* Learner */}
-          {!isLoggedIn || (user && user.role === "learner") ? (
+          {!isLoggedIn || (user && user.role === "Buyer") ? (
             <>
               {/* Courses */}
               <button
