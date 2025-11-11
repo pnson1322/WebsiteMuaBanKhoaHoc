@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { CourseCardSkeleton } from "../components/LoadingSkeleton";
 import PaymentPopup from "../components/PaymentPopup";
-import CourseDetailMain from "../components/CourseDetailPopup/CourseDetailMain";
 import CourseDetailPopup from "../components/CourseDetailPopup/CourseDetailPopup";
 
 const Cart = () => {

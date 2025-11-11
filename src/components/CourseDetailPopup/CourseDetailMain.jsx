@@ -1,27 +1,40 @@
 import { Image } from "lucide-react";
 import "./CourseDetailMain.css";
 import { useState } from "react";
+import CourseDetailInfo from "./CourseDetailInfo";
 
 export default function CourseDetailMain({
+  course,
+  formData,
+  isEditable,
+  handleChange,
   handleSubmit,
   handleImageChange,
   handleRemoveImage,
+  addIntendedLearner,
+  addContent,
+  addSkill,
+  removeContent,
+  removeIntendedLearner,
+  removeSkill,
   setInfo,
   setStudents,
   setStatistic,
-  course,
 }) {
-  const name = course?.name || "";
-  const instructorName = course?.instructor?.name || "";
-  const category = course?.category || "";
-  const level = course?.level || "";
-  const price = course?.price || "";
-  const duration = course?.duration || "";
-  const description = course?.description || "";
-  const courseImage = course?.image || "";
-  const students = course?.students || 0;
+  const {
+    name,
+    instructorName,
+    category,
+    level,
+    price,
+    duration,
+    description,
+    imageUrl,
+  } = formData;
+
+  const studentsCount = course?.students || 0;
   const rating = course?.rating || 0;
-  const comments = course?.commentList?.length || 0;
+  const commentsCount = course?.commentList?.length || 0;
 
   const [active, setActive] = useState("info");
 
@@ -35,13 +48,14 @@ export default function CourseDetailMain({
               Ảnh đại diện khóa học
             </label>
             <div className="course-detail-image-uploader">
-              {!courseImage ? (
+              {!imageUrl ? (
                 <label className="course-detail-upload-dropzone">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
                     style={{ display: "none" }}
+                    disabled={!isEditable}
                   />
                   <Image size={48} />
                   <span>Tải lên hình ảnh khóa học</span>
@@ -51,14 +65,16 @@ export default function CourseDetailMain({
                 </label>
               ) : (
                 <div className="course-detail-image-preview">
-                  <img src={courseImage} alt="Course preview" />
-                  <button
-                    type="button"
-                    className="course-detail-remove-image"
-                    onClick={handleRemoveImage}
-                  >
-                    Xóa ảnh
-                  </button>
+                  <img src={imageUrl} alt="Course preview" />
+                  {isEditable && (
+                    <button
+                      type="button"
+                      className="course-detail-remove-image"
+                      onClick={handleRemoveImage}
+                    >
+                      Xóa ảnh
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -68,17 +84,17 @@ export default function CourseDetailMain({
           <div className="course-form-section">
             <div className="form-grid-popup">
               <div className="form-grid-top">
-                <div>
-                  <div className="form-field">
-                    <label>Tên khóa học *</label>
-                    <input
-                      type="text"
-                      placeholder="Nhập tên khóa học"
-                      value={name}
-                      readOnly
-                      required
-                    />
-                  </div>
+                <div className="form-field">
+                  <label>Tên khóa học *</label>
+                  <input
+                    type="text"
+                    placeholder="Nhập tên khóa học"
+                    value={name}
+                    readOnly={!isEditable}
+                    onChange={handleChange}
+                    name="name"
+                    required
+                  />
                 </div>
 
                 <div className="form-field">
@@ -87,14 +103,22 @@ export default function CourseDetailMain({
                     type="text"
                     placeholder="Nhập tên giảng viên"
                     value={instructorName}
-                    readOnly
+                    readOnly={!isEditable}
+                    onChange={handleChange}
+                    name="instructorName"
                     required
                   />
                 </div>
 
                 <div className="form-field">
                   <label>Danh mục *</label>
-                  <select value={category} disabled required>
+                  <select
+                    value={category}
+                    disabled={!isEditable}
+                    onChange={handleChange}
+                    name="category"
+                    required
+                  >
                     <option value="" disabled>
                       Chọn danh mục
                     </option>
@@ -103,9 +127,16 @@ export default function CourseDetailMain({
                     <option value="Thiết kế">Thiết kế</option>
                   </select>
                 </div>
+
                 <div className="form-field">
                   <label>Mức độ *</label>
-                  <select value={level} disabled required>
+                  <select
+                    value={level}
+                    disabled={!isEditable}
+                    onChange={handleChange}
+                    name="level"
+                    required
+                  >
                     <option value="" disabled>
                       Chọn mức độ
                     </option>
@@ -122,17 +153,22 @@ export default function CourseDetailMain({
                     min="0"
                     placeholder="Nhập giá"
                     value={price}
-                    readOnly
+                    readOnly={!isEditable}
+                    onChange={handleChange}
+                    name="price"
                     required
                   />
                 </div>
+
                 <div className="form-field">
                   <label>Thời lượng (giờ) *</label>
                   <input
                     type="text"
                     placeholder="Ví dụ: 92 tiếng"
                     value={duration}
-                    readOnly
+                    readOnly={!isEditable}
+                    onChange={handleChange}
+                    name="duration"
                     required
                   />
                 </div>
@@ -143,65 +179,87 @@ export default function CourseDetailMain({
                 <textarea
                   placeholder="Mô tả ngắn về khóa học"
                   value={description}
-                  readOnly
+                  readOnly={!isEditable}
+                  onChange={handleChange}
+                  name="description"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom: Statistics Section */}
+        {/* Bottom: Statistics Section (Dùng 'course' prop) */}
         <div className="course-stats-section">
           <div className="stat-card">
-            <div className="stat-value">{students}</div>
-            <div className="stat-label">HỌC VIÊN</div>
+            <div className="stat-value-popup">{studentsCount}</div>
+            <div className="stat-label-popup">HỌC VIÊN</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">{rating}</div>
-            <div className="stat-label">ĐÁNH GIÁ</div>
+            <div className="stat-value-popup">{rating}</div>
+            <div className="stat-label-popup">ĐÁNH GIÁ</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">{comments}</div>
-            <div className="stat-label">BÌNH LUẬN</div>
+            <div className="stat-value-popup">{commentsCount}</div>
+            <div className="stat-label-popup">BÌNH LUẬN</div>
           </div>
         </div>
-      </form>
 
-      <div className="nav-buttons">
-        <button
-          className={`nav-button-popup ${
-            active === "info" ? "active-nav-btn" : ""
-          }`}
-          onClick={() => {
-            setInfo();
-            setActive("info");
-          }}
-        >
-          Thông tin
-        </button>
-        <button
-          className={`nav-button-popup ${
-            active === "students" ? "active-nav-btn" : ""
-          }`}
-          onClick={() => {
-            setStudents();
-            setActive("students");
-          }}
-        >
-          Học viên
-        </button>
-        <button
-          className={`nav-button-popup ${
-            active === "statistic" ? "active-nav-btn" : ""
-          }`}
-          onClick={() => {
-            setStatistic();
-            setActive("statistic");
-          }}
-        >
-          Thống kê
-        </button>
-      </div>
+        <div className="nav-buttons">
+          <button
+            className={`nav-button-popup ${
+              active === "info" ? "active-nav-btn" : ""
+            }`}
+            onClick={() => {
+              setInfo();
+              setActive("info");
+            }}
+          >
+            Thông tin
+          </button>
+          <button
+            className={`nav-button-popup ${
+              active === "students" ? "active-nav-btn" : ""
+            }`}
+            onClick={() => {
+              setStudents();
+
+              setActive("students");
+            }}
+          >
+            Học viên
+          </button>
+
+          <button
+            className={`nav-button-popup ${
+              active === "statistic" ? "active-nav-btn" : ""
+            }`}
+            onClick={() => {
+              setStatistic();
+
+              setActive("statistic");
+            }}
+          >
+            Thống kê
+          </button>
+        </div>
+
+        {active === "info" ? (
+          <CourseDetailInfo
+            formData={formData}
+            isEditable={isEditable}
+            addIntendedLearner={addIntendedLearner}
+            addContent={addContent}
+            addSkill={addSkill}
+            removeContent={removeContent}
+            removeIntendedLearner={removeIntendedLearner}
+            removeSkill={removeSkill}
+          />
+        ) : active === "students" ? (
+          <CourseDetailStudents />
+        ) : (
+          <CourseDetailStatistic />
+        )}
+      </form>
     </div>
   );
 }
