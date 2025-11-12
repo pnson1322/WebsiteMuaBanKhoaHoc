@@ -5,7 +5,7 @@ import { LineChart } from "@mui/x-charts";
 
 const StarRating = ({ rating, setRating, hover, setHover }) => {
   return (
-    <div className="star-rating">
+    <div className="star-rating-popup">
       {[...Array(5)].map((_, index) => {
         const starValue = index + 1;
         return (
@@ -58,9 +58,9 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
 
   useEffect(() => {
     if (course?.commentList) {
-      const sorted = sortComments(course.commentList, "date-desc");
+      const sorted = sortComments(course.commentList, "all-comment");
       setCommentList(sorted);
-      setSortMode("date-desc");
+      setSortMode("all-comment");
     }
   }, [course]);
 
@@ -151,39 +151,29 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
     setCommentList(sorted);
   };
 
-  // Hàm Sắp xếp
   const handleSortChange = (e) => {
     const newMode = e.target.value;
     setSortMode(newMode);
-    setCommentList(sortComments(commentList, newMode));
+    setCommentList(sortComments(course.commentList, newMode));
   };
 
-  // Hàm helper (lấy từ CourseDetail.js)
   const sortComments = (list, mode) => {
     const sortedList = [...list];
     switch (mode) {
-      case "star-asc":
-        return sortedList.sort((a, b) => a.rate - b.rate);
-      case "star-desc":
-        return sortedList.sort((a, b) => b.rate - a.rate);
-      case "date-asc":
-        return sortedList.sort(
-          (a, b) =>
-            new Date(a.date.split("/").reverse()) -
-            new Date(b.date.split("/").reverse())
-        );
-      case "date-desc":
-        return sortedList.sort(
-          (a, b) =>
-            new Date(b.date.split("/").reverse()) -
-            new Date(a.date.split("/").reverse())
-        );
+      case "all-comment":
+        return sortedList;
+      case "one-star":
+        return sortedList.filter((a) => a.rate == 1);
+      case "two-star":
+        return sortedList.filter((a) => a.rate == 2);
+      case "three-star":
+        return sortedList.filter((a) => a.rate == 3);
+      case "four-star":
+        return sortedList.filter((a) => a.rate == 4);
+      case "five-star":
+        return sortedList.filter((a) => a.rate == 5);
       default:
-        return sortedList.sort(
-          (a, b) =>
-            new Date(b.date.split("/").reverse()) -
-            new Date(a.date.split("/").reverse())
-        );
+        return sortedList;
     }
   };
 
@@ -342,97 +332,113 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
             onChange={handleSortChange}
             value={sortMode}
           >
-            <option value="date-desc">Mới nhất</option>
             <option value="all-comment">Tất cả đánh giá</option>
-            <option value="star-asc">Số sao tăng dần</option>
-            <option value="star-desc">Số sao giảm dần</option>
-            <option value="date-asc">Cũ nhất</option>
+            <option value="one-star">1 sao</option>
+            <option value="two-star">2 sao</option>
+            <option value="three-star">3 sao</option>
+            <option value="four-star">4 sao</option>
+            <option value="five-star">5 sao</option>
           </select>
         </div>
 
         <div className="review-list">
-          {commentList.map((comment) => (
-            <div key={comment.id} className="review-item">
-              {/* --- Vùng hiển thị bình luận --- */}
-              {editComment !== comment.id && (
-                <>
-                  <div className="review-item-header">
-                    <img
-                      src={comment.user.image || testAvatar}
-                      alt={comment.user.name}
-                      className="review-avatar"
-                    />
-                    <div className="review-user-info">
-                      <span className="review-user-name">
-                        {comment.user.name}
-                      </span>
-                      <span className="review-date">{comment.date}</span>
-                    </div>
-                    <div className="review-item-stars">
-                      <StarDisplay rating={comment.rate} />
-                    </div>
-                  </div>
-                  <p className="review-body">{comment.comment}</p>
-
-                  {/* Nút Xóa / Sửa (Chỉ chủ bình luận mới thấy) */}
-                  {isEditable && user && user.id === comment.user.id && (
-                    <div className="review-actions">
-                      <button
-                        className="btn btn-edit"
-                        onClick={() => setEditComment(comment.id)}
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        className="btn btn-delete"
-                        onClick={() => handleDeleteComment(comment.id)}
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* --- Vùng Sửa bình luận (hiện khi bấm "Sửa") --- */}
-              {isEditable && editComment === comment.id && (
-                <form
-                  onSubmit={submitEditComment}
-                  className="review-form review-form-edit"
-                >
-                  <div className="form-group">
-                    <label>Đánh giá:</label>
-                    <StarRating
-                      rating={ratingEdit}
-                      setRating={setRatingEdit}
-                      hover={hoverEdit}
-                      setHover={setHoverEdit}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Nội dung đánh giá:</label>
-                    <textarea
-                      name="commentEdit"
-                      rows="4"
-                      defaultValue={comment.comment}
-                    ></textarea>
-                  </div>
-                  <div className="review-actions-edit">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setEditComment(0)}
-                    >
-                      Hủy
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      Cập nhật
-                    </button>
-                  </div>
-                </form>
-              )}
+          {course.commentList.length === 0 ? (
+            <div className="empty-cart">
+              <MessageCircle className="empty-icon" />
+              <h3>Chưa có đánh giá nào</h3>
+              <p>
+                Hãy là người đầu tiên chia sẻ trải nghiệm của bạn về khóa học
+                này
+              </p>
             </div>
-          ))}
+          ) : commentList.length === 0 ? (
+            <div className="empty-cart">
+              <MessageCircle className="empty-icon" />
+              <h3>Không tìm thấy bình luận phù hợp</h3>
+              <p>Không có đánh giá nào khớp với bộ lọc của bạn</p>
+            </div>
+          ) : (
+            commentList.length > 0 &&
+            commentList.map((comment) => (
+              <div key={comment.id} className="review-item">
+                {editComment !== comment.id && (
+                  <>
+                    <div className="review-item-header">
+                      <img
+                        src={comment.user.image || testAvatar}
+                        alt={comment.user.name}
+                        className="review-avatar"
+                      />
+                      <div className="review-user-info">
+                        <span className="review-user-name">
+                          {comment.user.name}
+                        </span>
+                        <span className="review-date">{comment.date}</span>
+                      </div>
+                      <div className="review-item-stars">
+                        <StarDisplay rating={comment.rate} />
+                      </div>
+                    </div>
+                    <p className="review-body">{comment.comment}</p>
+
+                    {isEditable && user && user.id === comment.user.id && (
+                      <div className="review-actions">
+                        <button
+                          className="btn btn-edit"
+                          onClick={() => setEditComment(comment.id)}
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          className="btn btn-delete"
+                          onClick={() => handleDeleteComment(comment.id)}
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {isEditable && editComment === comment.id && (
+                  <form
+                    onSubmit={submitEditComment}
+                    className="review-form review-form-edit"
+                  >
+                    <div className="form-group">
+                      <label>Đánh giá:</label>
+                      <StarRating
+                        rating={ratingEdit}
+                        setRating={setRatingEdit}
+                        hover={hoverEdit}
+                        setHover={setHoverEdit}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Nội dung đánh giá:</label>
+                      <textarea
+                        name="commentEdit"
+                        rows="4"
+                        defaultValue={comment.comment}
+                      ></textarea>
+                    </div>
+                    <div className="review-actions-edit">
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setEditComment(0)}
+                      >
+                        Hủy
+                      </button>
+                      <button type="submit" className="btn btn-primary">
+                        Cập nhật
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

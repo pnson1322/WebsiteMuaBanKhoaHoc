@@ -20,6 +20,10 @@ import {
 import { useState, useEffect, useRef } from "react";
 import NotificationPopup from "./NotificationPopup";
 
+import test from "../assets/test.jpg";
+import momo from "../assets/momo.png";
+import test2 from "../assets/test2.jpg";
+
 const initialNotifications = [
   {
     id: 1,
@@ -41,6 +45,14 @@ const initialNotifications = [
   },
 ];
 
+const ALL_COURSES = [
+  { id: 1, name: "Lập trình React cơ bản", imageUrl: test },
+  { id: 2, name: "Lập trình Javascript nâng cao", imageUrl: test2 },
+  { id: 3, name: "Giáo trình SQL cho người mới", imageUrl: momo },
+  { id: 4, name: "Node.js và Express", imageUrl: test },
+  { id: 5, name: "Giáo trình Python từ A-Z", imageUrl: test2 },
+];
+
 const Header = ({ onOpenLoginPopup }) => {
   const navigate = useNavigate();
   const state = useAppState();
@@ -55,6 +67,7 @@ const Header = ({ onOpenLoginPopup }) => {
   function handleSearchSubmit(e) {
     e.preventDefault();
     if (state.searchTerm.trim()) {
+      setIsDropdownVisible(false);
       navigate(`/?search=${encodeURIComponent(state.searchTerm.trim())}`);
     }
   }
@@ -158,6 +171,56 @@ const Header = ({ onOpenLoginPopup }) => {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
+  const [suggestions, setSuggestions] = useState([]);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (state.searchTerm.trim() === "") {
+      setSuggestions([]);
+      setIsDropdownVisible(false);
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      console.log("Đang lấy gợi ý cho:", state.searchTerm);
+
+      const filteredSuggestions = ALL_COURSES.filter(
+        (
+          course //sau đổi thành course từ api
+        ) => course.name.toLowerCase().includes(state.searchTerm.toLowerCase())
+      );
+
+      setSuggestions(filteredSuggestions);
+      setIsDropdownVisible(filteredSuggestions.length > 0);
+    }, 300);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [state.searchTerm]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
+        setIsDropdownVisible(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleSuggestionClick = (suggestionName) => {
+    dispatch({ type: actionTypes.SET_SEARCH_TERM, payload: e.target.value });
+    setIsDropdownVisible(false);
+  };
+
   return (
     <header className="header">
       <div className="header-container">
@@ -175,6 +238,7 @@ const Header = ({ onOpenLoginPopup }) => {
         <form
           className="search-container desktop-only"
           onSubmit={handleSearchSubmit}
+          ref={searchContainerRef}
         >
           <Search className="search-icon" />
           <input
@@ -183,7 +247,29 @@ const Header = ({ onOpenLoginPopup }) => {
             placeholder="Tìm kiếm khóa học, giáo trình..."
             value={state.searchTerm}
             onChange={handleSearchChange}
+            onFocus={() => setIsDropdownVisible(suggestions.length > 0)}
+            autoComplete="off"
           />
+
+          {isDropdownVisible && (
+            <ul className="suggestions-dropdown">
+              {suggestions.map((suggestion) => (
+                <li
+                  key={suggestion.id}
+                  onMouseDown={() => handleSuggestionClick(suggestion.name)}
+                  className="suggestion-item"
+                >
+                  <span className="suggestion-name">{suggestion.name}</span>
+
+                  <img
+                    src={suggestion.imageUrl}
+                    alt={suggestion.name}
+                    className="suggestion-image"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </form>
 
         {/* Navigation Icons */}
