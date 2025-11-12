@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./CourseTransactionDetails.css";
-import { adminAPI } from "../../services/api";
+import { transactionAPI } from "../../services/transactionAPI";
 import SkeletonTable from "../../components/SkeletonTable/SkeletonTable";
 import CourseTransactionFilters from "../../components/AdminTransactions/CourseTransactionFilters";
 import CourseTransactionDetailsTable from "../../components/AdminTransactions/CourseTransactionDetailsTable";
@@ -15,65 +15,64 @@ export default function CourseTransactionDetails() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
 
-  // 🔹 Load toàn bộ giao dịch (nhiều khóa học)
+  // 🔹 Gọi API khi thay đổi trang
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchTransactions = async () => {
       setLoading(true);
       try {
-        const res = await adminAPI.getAllTransactions(); // ✅ API mới
-        setData(res);
+        const res = await transactionAPI.getTransactions(page, PAGE_SIZE);
+        setData(res.items || []);
+        setTotalCount(res.totalCount || 0);
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
+        console.error("Lỗi khi tải danh sách giao dịch:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    fetchTransactions();
+  }, [page]);
 
-  // 🔹 Lọc & tìm kiếm
+  // 🔹 Tìm kiếm (client-side)
   const filtered = useMemo(() => {
-    let rows = [...data];
     const s = search.trim().toLowerCase();
-    if (s) {
-      rows = rows.filter(
-        (r) =>
-          r.transactionId.toLowerCase().includes(s) ||
-          r.studentName.toLowerCase().includes(s) ||
-          r.courseList.some((c) => c.name.toLowerCase().includes(s))
-      );
-    }
-    return rows;
+    if (!s) return data;
+    return data.filter(
+      (r) =>
+        r.transactionCode.toLowerCase().includes(s) ||
+        r.buyerName.toLowerCase().includes(s)
+    );
   }, [data, search]);
 
-  // 🔹 Pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageClamped = Math.min(page, totalPages);
-
-  const pageData = useMemo(() => {
-    const start = (pageClamped - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, pageClamped]);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
   };
 
-  React.useEffect(() => {
-    setPage(1);
-  }, [search]);
+  // 🔹 Mở modal chi tiết
+  const handleSelect = async (row) => {
+    try {
+      setLoading(true);
+      const res = await transactionAPI.getTransactionByCode(row.transactionCode);
+      setSelected(res);
+      setOpen(true);
+    } catch (err) {
+      console.error("Lỗi khi tải chi tiết giao dịch:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="course-tx-details-wrapper">
       <div className="course-tx-details-panel">
         <div className="course-tx-header">
-          <h1 className="course-tx-title">
-            📊 Thông Tin Giao Dịch Toàn Bộ Khóa Học
-          </h1>
+          <h1 className="course-tx-title">📊 Thông Tin Giao Dịch</h1>
           <CourseTransactionFilters
             search={search}
             onSearchChange={setSearch}
@@ -83,31 +82,24 @@ export default function CourseTransactionDetails() {
         <div className="course-tx-content">
           {loading ? (
             <div className="tx-table-wrap">
-              <SkeletonTable columns={5} rows={PAGE_SIZE} />
+              <SkeletonTable columns={4} rows={PAGE_SIZE} />
             </div>
           ) : (
-            <CourseTransactionDetailsTable
-              data={pageData}
-              onSelect={(row) => {
-                setSelected(row);
-                setOpen(true);
-              }}
-            />
+            <CourseTransactionDetailsTable data={filtered} onSelect={handleSelect} />
           )}
 
           <Pagination
-            currentPage={pageClamped}
+            currentPage={page}
             totalPages={totalPages}
             onPageChange={handlePageChange}
           />
-          <button
-            className="course-tx-close-btn"
-            onClick={() => navigate("/transactions")}
-          >
+
+          <button className="course-tx-close-btn" onClick={() => navigate("/transactions")}>
             Đóng
           </button>
         </div>
       </div>
+
       <TransactionDetailModal
         open={open}
         transaction={selected}

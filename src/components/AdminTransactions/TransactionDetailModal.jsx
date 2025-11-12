@@ -2,14 +2,13 @@ import React from "react";
 import "./TransactionDetailModal.css";
 
 function formatVND(n) {
-  return n.toLocaleString("vi-VN") + "₫";
+  return (n ?? 0).toLocaleString("vi-VN") + "₫";
 }
 
 export default function TransactionDetailModal({ open, onClose, transaction }) {
   if (!open || !transaction) return null;
 
-  const { transactionId, transactionDate, totalAmount, studentName, courseList = [] } =
-    transaction;
+  const { transactionCode, createdAt, buyerName, totalAmount, courses = [] } = transaction;
 
   return (
     <div className="tx-modal-overlay" onClick={onClose}>
@@ -25,27 +24,29 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
           <div className="tx-grid">
             <div className="tx-info">
               <div className="tx-info-label">Mã giao dịch</div>
-              <div className="tx-info-value">{transactionId}</div>
+              <div className="tx-info-value">{transactionCode}</div>
             </div>
             <div className="tx-info">
               <div className="tx-info-label">Ngày giao dịch</div>
-              <div className="tx-info-value">{transactionDate}</div>
-            </div>
-            <div className="tx-info">
-              <div className="tx-info-label">Tổng tiền</div>
-              <div className="tx-info-value">{formatVND(totalAmount ?? 0)}</div>
+              <div className="tx-info-value">
+                {new Date(createdAt).toLocaleString("vi-VN")}
+              </div>
             </div>
             <div className="tx-info">
               <div className="tx-info-label">Học viên</div>
-              <div className="tx-info-value">{studentName}</div>
+              <div className="tx-info-value">{buyerName}</div>
+            </div>
+            <div className="tx-info">
+              <div className="tx-info-label">Tổng tiền</div>
+              <div className="tx-info-value">{formatVND(totalAmount)}</div>
             </div>
           </div>
 
           <div className="tx-course-section-title">Danh Sách Khóa Học</div>
           <div className="tx-course-list">
-            {courseList.map((c, idx) => (
+            {courses.map((c, idx) => (
               <div key={idx} className="tx-course-row">
-                <div className="tx-course-name">{c.name}</div>
+                <div className="tx-course-name">{c.courseName}</div>
                 <div className="tx-course-price">{formatVND(c.price)}</div>
               </div>
             ))}
@@ -55,5 +56,3 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
     </div>
   );
 }
-
-
