@@ -114,17 +114,17 @@
 }
 
 /* --- Sao đánh giá (Chung) --- */
-.star-rating .star,
+.star-rating-popup .star,
 .star-rating-display .star {
   font-size: 1.75rem;
   color: var(--color-star-empty);
   margin-right: 4px;
 }
-.star-rating .star.filled,
+.star-rating-popup .star.filled,
 .star-rating-display .star.filled {
   color: var(--color-star-filled);
 }
-.star-rating .star {
+.star-rating-popup .star {
   cursor: pointer;
 }
 
