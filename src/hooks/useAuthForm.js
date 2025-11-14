@@ -92,11 +92,19 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
   const handleRegister = useCallback(async () => {
     if (!validateForm()) return;
     setLoading(true);
+    let Role = formData.role;
+    if (Role == "Học viên") {
+      Role = "Buyer";
+    }
+    else {
+      Role = "Seller";
+    }
     try {
       const res = await instance.post("/api/auth/register", {
         fullName: formData.name,
         email: formData.email,
         password: formData.password,
+        role: Role
       });
 
       // ✅ Hiển thị message từ BE

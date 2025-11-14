@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import instance from "../../services/axiosInstance";
 import {
   ModalOverlay,
   ModalContainer,
@@ -8,44 +9,87 @@ import {
 import { Edit3, CheckCircle } from "lucide-react";
 
 const ForgotPasswordPopup = ({ onClose }) => {
-  const [step, setStep] = useState(1); // 1: nhập email, 2: xác thực OTP, 3: đặt lại mật khẩu
+  const [step, setStep] = useState(1); // 1: email, 2: OTP, 3: reset pass
   const [forgotEmail, setForgotEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleSendOTP = () => {
+  const [loading, setLoading] = useState(false);
+
+  // ============================
+  // 1) Gửi email lấy OTP
+  // ============================
+  const handleSendOTP = async () => {
     if (!forgotEmail) {
-      alert("Vui lòng nhập email");
-      return;
+      return alert("Vui lòng nhập email");
     }
-    // Giả lập gửi OTP
-    alert(`Mã OTP đã được gửi tới ${forgotEmail}`);
-    setStep(2);
+
+    try {
+      setLoading(true);
+
+      await instance.post("/api/auth/forgot-password", {
+        email: forgotEmail,
+      });
+
+      alert(`OTP đã được gửi tới email: ${forgotEmail}`);
+      setStep(2);
+    } catch (err) {
+      alert(err.response?.data?.message || "Có lỗi xảy ra!");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyOTP = () => {
-    if (!otpCode) {
-      alert("Vui lòng nhập mã OTP");
-      return;
+  // ============================
+  // 2) Kiểm tra OTP
+  // ============================
+  const handleVerifyOTP = async () => {
+    if (!otpCode) return alert("Vui lòng nhập mã OTP");
+
+    try {
+      setLoading(true);
+
+      await instance.post("/api/auth/check-otp", {
+        email: forgotEmail,
+        otp: otpCode,
+      });
+
+      alert("Xác thực OTP thành công!");
+      setStep(3);
+    } catch (err) {
+      alert(err.response?.data?.message || "OTP không hợp lệ!");
+    } finally {
+      setLoading(false);
     }
-    // Giả lập xác thực OTP
-    alert("Xác thực thành công!");
-    setStep(3);
   };
 
-  const handleResetPassword = () => {
-    if (!newPassword || !confirmPassword) {
-      alert("Vui lòng nhập đầy đủ mật khẩu");
-      return;
+  // ============================
+  // 3) Reset mật khẩu
+  // ============================
+  const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword)
+      return alert("Vui lòng nhập đầy đủ mật khẩu");
+
+    if (newPassword !== confirmPassword)
+      return alert("Mật khẩu xác nhận không khớp");
+
+    try {
+      setLoading(true);
+
+      await instance.post("/api/auth/reset-password", {
+        email: forgotEmail,
+        otp: otpCode,
+        newPassword,
+      });
+
+      alert("Đặt lại mật khẩu thành công!");
+      onClose();
+    } catch (err) {
+      alert(err.response?.data?.message || "Có lỗi xảy ra!");
+    } finally {
+      setLoading(false);
     }
-    if (newPassword !== confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp");
-      return;
-    }
-    // Giả lập đặt lại mật khẩu
-    alert("Đặt lại mật khẩu thành công!");
-    onClose();
   };
 
   const handleCancel = () => {
@@ -68,16 +112,18 @@ const ForgotPasswordPopup = ({ onClose }) => {
               <Edit3 size={20} color="#fff" />
             )}
           </div>
+
           <h2>
             {step === 1
               ? "Quên mật khẩu"
               : step === 2
-              ? "Xác thực email"
-              : "Đặt lại mật khẩu"}
+                ? "Xác thực email"
+                : "Đặt lại mật khẩu"}
           </h2>
         </ModalHeader>
 
         <ModalBody>
+          {/* STEP 1 — EMAIL */}
           {step === 1 && (
             <>
               <label>Nhập địa chỉ email của bạn</label>
@@ -87,37 +133,45 @@ const ForgotPasswordPopup = ({ onClose }) => {
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
               />
+
               <div className="actions">
-                <button type="button" className="cancel" onClick={handleCancel}>
+                <button className="cancel" onClick={handleCancel}>
                   Hủy
                 </button>
-                <button type="button" className="send" onClick={handleSendOTP}>
-                  Gửi OTP
+                <button className="send" onClick={handleSendOTP} disabled={loading}>
+                  {loading ? "Đang gửi..." : "Gửi OTP"}
                 </button>
               </div>
             </>
           )}
 
+          {/* STEP 2 — OTP */}
           {step === 2 && (
             <>
-              <label>Nhập mã OTP vừa được gửi tới email của bạn</label>
+              <label>Nhập mã OTP được gửi tới email</label>
               <input
                 type="text"
                 placeholder="Nhập mã OTP"
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value)}
               />
+
               <div className="actions">
-                <button type="button" className="cancel" onClick={handleCancel}>
+                <button className="cancel" onClick={handleCancel}>
                   Hủy
                 </button>
-                <button type="button" className="send" onClick={handleVerifyOTP}>
-                  Xác nhận
+                <button
+                  className="send"
+                  onClick={handleVerifyOTP}
+                  disabled={loading}
+                >
+                  {loading ? "Đang kiểm tra..." : "Xác nhận"}
                 </button>
               </div>
             </>
           )}
 
+          {/* STEP 3 — RESET PASSWORD */}
           {step === 3 && (
             <>
               <label>Nhập mật khẩu mới</label>
@@ -128,7 +182,7 @@ const ForgotPasswordPopup = ({ onClose }) => {
                 onChange={(e) => setNewPassword(e.target.value)}
               />
 
-              <label>Xác thực mật khẩu</label>
+              <label>Xác nhận mật khẩu</label>
               <input
                 type="password"
                 placeholder="Nhập lại mật khẩu mới"
@@ -137,11 +191,15 @@ const ForgotPasswordPopup = ({ onClose }) => {
               />
 
               <div className="actions">
-                <button type="button" className="cancel" onClick={handleCancel}>
+                <button className="cancel" onClick={handleCancel}>
                   Hủy
                 </button>
-                <button type="button" className="send" onClick={handleResetPassword}>
-                  Đặt lại mật khẩu
+                <button
+                  className="send"
+                  onClick={handleResetPassword}
+                  disabled={loading}
+                >
+                  {loading ? "Đang xử lý..." : "Đặt lại mật khẩu"}
                 </button>
               </div>
             </>
@@ -153,4 +211,3 @@ const ForgotPasswordPopup = ({ onClose }) => {
 };
 
 export default ForgotPasswordPopup;
-
