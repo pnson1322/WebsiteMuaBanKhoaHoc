@@ -6,6 +6,7 @@ import {
   BookOpen,
   Clock,
   Heart,
+  MessageCircle,
   ShoppingCart,
   Star,
   Users,
@@ -14,8 +15,7 @@ import { useAppState, useAppDispatch } from "../contexts/AppContext";
 import { useToast } from "../contexts/ToastContext";
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { coursesAPI } from "../services/api"; // ✅ Chỉ dùng coursesAPI, KHÔNG dùng mockCourses
-import test from "../assets/test.jpg";
+import { coursesAPI } from "../services/api";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -29,7 +29,6 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Lấy dữ liệu từ mock API (không cần chỉnh api.js)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -103,17 +102,17 @@ const CourseDetail = () => {
   const handleToggleFavorite = () => {
     if (isFavorite) {
       dispatch({ type: actionTypes.REMOVE_FROM_FAVORITES, payload: course.id });
-      showUnfavorite(`💔 Đã bỏ yêu thích "${course.name}"`);
+      showUnfavorite(`💔 Đã bỏ yêu thích "${course.title}"`);
     } else {
       dispatch({ type: actionTypes.ADD_TO_FAVORITES, payload: course.id });
-      showFavorite(`❤️ Đã thêm "${course.name}" vào yêu thích!`);
+      showFavorite(`❤️ Đã thêm "${course.title}" vào yêu thích!`);
     }
   };
 
   const handleAddToCart = () => {
     if (!isInCart) {
       dispatch({ type: actionTypes.ADD_TO_CART, payload: course.id });
-      showSuccess(`🛒 Đã thêm "${course.name}" vào giỏ hàng!`);
+      showSuccess(`🛒 Đã thêm "${course.title}" vào giỏ hàng!`);
     }
   };
 
@@ -141,7 +140,7 @@ const CourseDetail = () => {
       id: Date.now(),
       user: {
         id: user?.id || 0,
-        name: user?.name || "Người dùng",
+        name: user?.fullName || "Người dùng",
         image: user?.image || test,
       },
       date: dateStr,
@@ -166,7 +165,7 @@ const CourseDetail = () => {
     if (!ratingEdit || !content) return;
 
     const updated = commentList.map((c) =>
-      c.id === editComment ? { ...c, comment: content, rate: ratingEdit } : c
+      c.id === editComment ? { ...c, comment: content, rating: ratingEdit } : c
     );
     const sorted = sortComments(updated, sortMode);
     setCommentList(sorted);
@@ -192,30 +191,26 @@ const CourseDetail = () => {
   const handleSortChange = (e) => {
     const newMode = e.target.value;
     setSortMode(newMode);
-    setCommentList(sortComments(commentList, newMode));
+    setCommentList(sortComments(course.commentList, newMode));
   };
 
   const sortComments = (list, mode) => {
     const sortedList = [...list];
     switch (mode) {
-      case "star-asc":
-        return sortedList.sort((a, b) => a.rate - b.rate);
-      case "star-desc":
-        return sortedList.sort((a, b) => b.rate - a.rate);
-      case "date-asc":
-        return sortedList.sort(
-          (a, b) =>
-            new Date(a.date.split("/").reverse()) -
-            new Date(b.date.split("/").reverse())
-        );
-      case "date-desc":
-        return sortedList.sort(
-          (a, b) =>
-            new Date(b.date.split("/").reverse()) -
-            new Date(a.date.split("/").reverse())
-        );
+      case "all-comment":
+        return sortedList;
+      case "one-star":
+        return sortedList.filter((a) => a.rate == 1);
+      case "two-star":
+        return sortedList.filter((a) => a.rate == 2);
+      case "three-star":
+        return sortedList.filter((a) => a.rate == 3);
+      case "four-star":
+        return sortedList.filter((a) => a.rate == 4);
+      case "five-star":
+        return sortedList.filter((a) => a.rate == 5);
       default:
-        return list;
+        return sortedList;
     }
   };
 
@@ -235,15 +230,15 @@ const CourseDetail = () => {
         <div className="course-header">
           <div className="course-image-section">
             <img
-              src={course.image}
-              alt={course.name}
+              src={course.imageUrl}
+              alt={course.title}
               className="course-main-image"
             />
-            <div className="course-category-badge">{course.category}</div>
+            <div className="course-category-badge">{course.categoryName}</div>
 
             <div className="course-instructor">
               <div>
-                👨‍🏫 Giảng viên: <strong>{course.instructor?.name}</strong>
+                👨‍🏫 Giảng viên: <strong>{course.teacherName}</strong>
               </div>
               <div>
                 📧 Email:{" "}
@@ -265,30 +260,28 @@ const CourseDetail = () => {
           </div>
 
           <div className="course-info-section">
-            <h1 className="course-title">{course.name}</h1>
+            <h1 className="course-title">{course.title}</h1>
             <p className="course-description">{course.description}</p>
 
             <div className="course-stats-grid">
               <div className="stat-item">
                 <Star className="stat-icon" />
                 <div>
-                  <span className="stat-value">{course.rating}</span>
+                  <span className="stat-value">{course.averageRating}</span>
                   <span className="stat-label">Đánh giá</span>
                 </div>
               </div>
               <div className="stat-item">
                 <Users className="stat-icon" />
                 <div>
-                  <span className="stat-value">
-                    {course.students.toLocaleString()}
-                  </span>
+                  <span className="stat-value">{course.totalPurchased}</span>
                   <span className="stat-label">Học viên</span>
                 </div>
               </div>
               <div className="stat-item">
                 <Clock className="stat-icon" />
                 <div>
-                  <span className="stat-value">{course.duration}</span>
+                  <span className="stat-value">{course.durationHours}</span>
                   <span className="stat-label">Thời lượng</span>
                 </div>
               </div>
@@ -332,12 +325,12 @@ const CourseDetail = () => {
           <div className="content-section">
             <h2>📖 Nội dung khóa học</h2>
             <div className="content-list">
-              {course.contentList?.map((content, idx) => (
+              {course.courseContents?.map((content, idx) => (
                 <div className="content-item" key={content.title + idx}>
                   <BookOpen className="content-icon" />
                   <div>
                     <h3>{content.title}</h3>
-                    <p>{content.des}</p>
+                    <p>{content.description}</p>
                   </div>
                 </div>
               ))}
@@ -348,7 +341,7 @@ const CourseDetail = () => {
             <h2>🎯 Đối tượng học viên</h2>
             <ul className="target-list">
               {course.intendedLearners?.map((item, index) => (
-                <li key={index}>{item}</li>
+                <li key={index}>{item.description}</li>
               ))}
             </ul>
           </div>
@@ -358,7 +351,7 @@ const CourseDetail = () => {
             <div className="skills-grid">
               {course.skillsAcquired?.map((skill, idx) => (
                 <span className="skill-tag" key={skill + idx}>
-                  {skill}
+                  {skill.description}
                 </span>
               ))}
             </div>
@@ -414,119 +407,140 @@ const CourseDetail = () => {
               value={sortMode}
             >
               <option value="all-comment">Tất cả đánh giá</option>
-              <option value="star-asc">Số sao tăng dần</option>
-              <option value="star-desc">Số sao giảm dần</option>
-              <option value="date-asc">Cũ nhất</option>
-              <option value="date-desc">Mới nhất</option>
+              <option value="one-star">1 sao</option>
+              <option value="two-star">2 sao</option>
+              <option value="three-star">3 sao</option>
+              <option value="four-star">4 sao</option>
+              <option value="five-star">5 sao</option>
             </select>
           </div>
 
-          {commentList.map((comment) => (
-            <div
-              key={comment.id}
-              className="comment-item"
-              onClick={() => handleCommentClick(comment.id, comment.user.id)}
-            >
-              <div className="comment">
-                <div className="comment-user">
-                  <img
-                    src={comment.user.image}
-                    alt={comment.user.name}
-                    className="comment-image"
-                  />
-                  <div>
-                    <div className="comment-user-name">{comment.user.name}</div>
-                    <div className="comment-date">{comment.date}</div>
-                  </div>
-                </div>
-                <p>{comment.comment}</p>
-              </div>
-
-              <div className="star-rating star-rating-comment">
-                {[...Array(5)].map((_, index) => {
-                  const starValue = index + 1;
-                  return (
-                    <span
-                      key={starValue}
-                      className={`star star-comment ${
-                        starValue <= comment.rate ? "filled" : ""
-                      }`}
-                    >
-                      ★
-                    </span>
-                  );
-                })}
-              </div>
-
-              {editComment === comment.id && (
-                <div className="comment-section comment-edit">
-                  <form
-                    onSubmit={(e) => {
-                      e.stopPropagation();
-                      submitEditComment();
-                    }}
-                    className="comment-form"
-                  >
-                    <label htmlFor="rating">Đánh giá:</label>
-                    <div className="star-rating">
-                      {[...Array(5)].map((_, index) => {
-                        const starValue = index + 1;
-                        return (
-                          <span
-                            key={starValue}
-                            className={`star ${
-                              starValue <= (hoverEdit || ratingEdit)
-                                ? "filled"
-                                : ""
-                            }`}
-                            onClick={() => setRatingEdit(starValue)}
-                            onMouseEnter={() => setHoverEdit(starValue)}
-                            onMouseLeave={() => setHoverEdit(ratingEdit)}
-                          >
-                            ★
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <label htmlFor="comment">Nội dung đánh giá:</label>
-                    <textarea
-                      id="comment-edit"
-                      name="comment"
-                      rows="4"
-                      cols="50"
-                      placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
-                      defaultValue={comment.comment}
-                    />
-                    <div className="comment-btn">
-                      <button
-                        type="button"
-                        className="delete-comment-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteComment();
-                        }}
-                      >
-                        Xóa
-                      </button>
-                      <button
-                        type="button"
-                        className="cancel-comment-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditComment(0);
-                        }}
-                      >
-                        Hủy
-                      </button>
-                      <button type="submit" className="edit-comment-btn">
-                        Cập nhật
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
+          {course.commentList.length === 0 ? (
+            <div className="empty-cart">
+              <MessageCircle className="empty-icon" />
+              <h3>Chưa có đánh giá nào</h3>
+              <p>
+                Hãy là người đầu tiên chia sẻ trải nghiệm của bạn về khóa học
+                này
+              </p>
             </div>
-          ))}
+          ) : commentList.length === 0 ? (
+            <div className="empty-cart">
+              <MessageCircle className="empty-icon" />
+              <h3>Không tìm thấy bình luận phù hợp</h3>
+              <p>Không có đánh giá nào khớp với bộ lọc của bạn</p>
+            </div>
+          ) : (
+            commentList.length > 0 &&
+            commentList.map((comment) => (
+              <div
+                key={comment.id}
+                className="comment-item"
+                onClick={() => handleCommentClick(comment.id, comment.user.id)}
+              >
+                <div className="comment">
+                  <div className="comment-user">
+                    <img
+                      src={comment.user.image}
+                      alt={comment.user.name}
+                      className="comment-image"
+                    />
+                    <div>
+                      <div className="comment-user-name">
+                        {comment.user.name}
+                      </div>
+                      <div className="comment-date">{comment.date}</div>
+                    </div>
+                  </div>
+                  <p>{comment.comment}</p>
+                </div>
+
+                <div className="star-rating star-rating-comment">
+                  {[...Array(5)].map((_, index) => {
+                    const starValue = index + 1;
+                    return (
+                      <span
+                        key={starValue}
+                        className={`star star-comment ${
+                          starValue <= comment.rate ? "filled" : ""
+                        }`}
+                      >
+                        ★
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {editComment === comment.id && (
+                  <div className="comment-section comment-edit">
+                    <form
+                      onSubmit={(e) => {
+                        e.stopPropagation();
+                        submitEditComment();
+                      }}
+                      className="comment-form"
+                    >
+                      <label htmlFor="rating">Đánh giá:</label>
+                      <div className="star-rating">
+                        {[...Array(5)].map((_, index) => {
+                          const starValue = index + 1;
+                          return (
+                            <span
+                              key={starValue}
+                              className={`star ${
+                                starValue <= (hoverEdit || ratingEdit)
+                                  ? "filled"
+                                  : ""
+                              }`}
+                              onClick={() => setRatingEdit(starValue)}
+                              onMouseEnter={() => setHoverEdit(starValue)}
+                              onMouseLeave={() => setHoverEdit(ratingEdit)}
+                            >
+                              ★
+                            </span>
+                          );
+                        })}
+                      </div>
+                      <label htmlFor="comment">Nội dung đánh giá:</label>
+                      <textarea
+                        id="comment-edit"
+                        name="comment"
+                        rows="4"
+                        cols="50"
+                        placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
+                        defaultValue={comment.comment}
+                      />
+                      <div className="comment-btn">
+                        <button
+                          type="button"
+                          className="delete-comment-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteComment();
+                          }}
+                        >
+                          Xóa
+                        </button>
+                        <button
+                          type="button"
+                          className="cancel-comment-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditComment(0);
+                          }}
+                        >
+                          Hủy
+                        </button>
+                        <button type="submit" className="edit-comment-btn">
+                          Cập nhật
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -9,18 +9,22 @@ import {
   Shield,
   UserRound,
   UserRoundPen,
+  Camera,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import "./UserInfo.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ForgotPasswordPopup from "../components/Auth/ForgotPasswordPopup";
+import test from "../assets/test.jpg";
 
 const UserInfo = () => {
   const { user, updateUser } = useAuth();
   const { showSuccess, showError } = useToast();
-  const [name, setName] = useState(user?.name || "");
-  const [phone, setPhone] = useState(user?.phone || "");
+  const [name, setName] = useState(user?.fullName || "");
+  const [phone, setPhone] = useState(user?.phoneNumber || "");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,6 +32,16 @@ const UserInfo = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(user?.image || null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const role =
+    user?.role === "Admin"
+      ? "Quản lý"
+      : user?.role === "Buyer"
+      ? "Học viên"
+      : "Người bán";
 
   const calculateStrength = (pwd) => {
     let score = 0;
@@ -55,6 +69,42 @@ const UserInfo = () => {
   };
 
   const strength = calculateStrength(newPassword);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        showError("Chỉ chấp nhận file ảnh");
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        showError("Kích thước ảnh tối đa là 2MB");
+        return;
+      }
+
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    if (avatarPreview && avatarPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   function handleSaveInfoClick(e) {
     e.preventDefault?.();
@@ -121,6 +171,38 @@ const UserInfo = () => {
           </div>
 
           <form>
+            <div className="avatar-section user-info-form-container">
+              <label className="avatar-uploader" htmlFor="avatar-upload-input">
+                <img
+                  src={
+                    avatarPreview ||
+                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-user-round'%3E%3Ccircle cx='12' cy='8' r='5'/%3E%3Cpath d='M20 21a8 8 0 0 0-16 0'/%3E%3C/svg%3E"
+                  } // Dùng SVG placeholder nếu không có ảnh
+                  alt="Avatar"
+                  className="profile-avatar"
+                />
+                <div className="avatar-overlay">
+                  <Camera size={20} />
+                </div>
+                <input
+                  id="avatar-upload-input"
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={handleAvatarChange}
+                  style={{ display: "none" }}
+                  disabled={isUploading}
+                />
+              </label>
+              <button
+                type="button"
+                className="avatar-remove-btn"
+                onClick={handleRemoveAvatar}
+                disabled={isUploading || !avatarPreview}
+              >
+                <Trash2 size={16} /> Xóa ảnh
+              </button>
+            </div>
+
             <label className="user-info-form-label">
               <UserRound className="user-info-form-icon" />
               <div>Họ và Tên</div>
@@ -172,7 +254,7 @@ const UserInfo = () => {
               type="text"
               name="role"
               placeholder="Chọn vai trò"
-              value={user?.role}
+              value={role}
               className="user-info-form-input"
               disabled
             />
@@ -181,9 +263,14 @@ const UserInfo = () => {
           <button
             className="save-btn user-info-btn"
             onClick={handleSaveInfoClick}
+            disabled={isUploading}
           >
-            <Save className="user-info-form-icon" />
-            Cập nhật thông tin
+            {isUploading ? (
+              <Loader2 className="user-info-form-icon spinning" />
+            ) : (
+              <Save className="user-info-form-icon" />
+            )}
+            {isUploading ? "Đang lưu..." : "Cập nhật thông tin"}
           </button>
         </div>
 
@@ -273,6 +360,19 @@ const UserInfo = () => {
                 ></div>
               </div>
               <div className="strength-text">{strength.label}</div>
+            </div>
+
+            <div className="security-tips">
+              <h4>Mẹo bảo mật:</h4>
+              <ul>
+                <li>
+                  Mật khẩu mạnh nên dài (tối thiểu 6 ký tự) và kết hợp chữ hoa,
+                  chữ thường, số, và <strong>ký tự đặc biệt</strong> (như !@#$).
+                </li>
+                <li>
+                  Không dùng chung mật khẩu này cho bất kỳ tài khoản nào khác.
+                </li>
+              </ul>
             </div>
 
             <label className="user-info-form-label">

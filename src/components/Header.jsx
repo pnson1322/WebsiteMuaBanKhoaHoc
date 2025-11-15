@@ -15,8 +15,43 @@ import {
   DollarSign,
   Server,
   Users,
+  BellRing,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import NotificationPopup from "./NotificationPopup";
+
+import test from "../assets/test.jpg";
+import momo from "../assets/momo.png";
+import test2 from "../assets/test2.jpg";
+
+const initialNotifications = [
+  {
+    id: 1,
+    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
+    time: "Vừa xong",
+    isRead: true, // Đã đọc
+  },
+  {
+    id: 2,
+    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
+    time: "Vừa xong",
+    isRead: true, // Đã đọc
+  },
+  {
+    id: 3,
+    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
+    time: "1 phút trước",
+    isRead: false, // Chưa đọc
+  },
+];
+
+const ALL_COURSES = [
+  { id: 1, name: "Lập trình React cơ bản", imageUrl: test },
+  { id: 2, name: "Lập trình Javascript nâng cao", imageUrl: test2 },
+  { id: 3, name: "Giáo trình SQL cho người mới", imageUrl: momo },
+  { id: 4, name: "Node.js và Express", imageUrl: test },
+  { id: 5, name: "Giáo trình Python từ A-Z", imageUrl: test2 },
+];
 
 const Header = ({ onOpenLoginPopup }) => {
   const navigate = useNavigate();
@@ -32,6 +67,7 @@ const Header = ({ onOpenLoginPopup }) => {
   function handleSearchSubmit(e) {
     e.preventDefault();
     if (state.searchTerm.trim()) {
+      setIsDropdownVisible(false);
       navigate(`/?search=${encodeURIComponent(state.searchTerm.trim())}`);
     }
   }
@@ -93,6 +129,98 @@ const Header = ({ onOpenLoginPopup }) => {
     navigate("/register");
   }
 
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  const notificationRef = useRef(null);
+
+  useEffect(() => {
+    if (!isNotificationOpen) return;
+
+    function handleClickOutside(event) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setIsNotificationOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isNotificationOpen]);
+
+  const handleNoficationClick = () => {
+    setIsNotificationOpen((prev) => !prev);
+  };
+
+  const markOneAsRead = (id) => {
+    setNotifications((currentNotifs) =>
+      currentNotifs.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications((currentNotifs) =>
+      currentNotifs.map((n) => ({ ...n, isRead: true }))
+    );
+  };
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const [suggestions, setSuggestions] = useState([]);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (state.searchTerm.trim() === "") {
+      setSuggestions([]);
+      setIsDropdownVisible(false);
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      console.log("Đang lấy gợi ý cho:", state.searchTerm);
+
+      const filteredSuggestions = ALL_COURSES.filter(
+        (
+          course //sau đổi thành course từ api
+        ) => course.name.toLowerCase().includes(state.searchTerm.toLowerCase())
+      );
+
+      setSuggestions(filteredSuggestions);
+      setIsDropdownVisible(filteredSuggestions.length > 0);
+    }, 300);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [state.searchTerm]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
+        setIsDropdownVisible(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleSuggestionClick = (suggestionName) => {
+    dispatch({ type: actionTypes.SET_SEARCH_TERM, payload: e.target.value });
+    setIsDropdownVisible(false);
+  };
+
   return (
     <header className="header">
       <div className="header-container">
@@ -110,6 +238,7 @@ const Header = ({ onOpenLoginPopup }) => {
         <form
           className="search-container desktop-only"
           onSubmit={handleSearchSubmit}
+          ref={searchContainerRef}
         >
           <Search className="search-icon" />
           <input
@@ -118,7 +247,29 @@ const Header = ({ onOpenLoginPopup }) => {
             placeholder="Tìm kiếm khóa học, giáo trình..."
             value={state.searchTerm}
             onChange={handleSearchChange}
+            onFocus={() => setIsDropdownVisible(suggestions.length > 0)}
+            autoComplete="off"
           />
+
+          {isDropdownVisible && (
+            <ul className="suggestions-dropdown">
+              {suggestions.map((suggestion) => (
+                <li
+                  key={suggestion.id}
+                  onMouseDown={() => handleSuggestionClick(suggestion.name)}
+                  className="suggestion-item"
+                >
+                  <span className="suggestion-name">{suggestion.name}</span>
+
+                  <img
+                    src={suggestion.imageUrl}
+                    alt={suggestion.name}
+                    className="suggestion-image"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </form>
 
         {/* Navigation Icons */}
@@ -180,6 +331,29 @@ const Header = ({ onOpenLoginPopup }) => {
                 <List className="nav-icon" />
                 <span className="nav-label">Khóa học</span>
               </button>
+
+              {/* Notification */}
+              <div className="notification-wrapper" ref={notificationRef}>
+                <button
+                  className="nav-button"
+                  onClick={handleNoficationClick}
+                  title="Thông báo"
+                >
+                  <BellRing className="nav-icon" />
+                  {unreadCount > 0 && (
+                    <span className="badge">{unreadCount}</span>
+                  )}
+                  <span className="nav-label">Thông báo</span>
+                </button>
+
+                {isNotificationOpen && (
+                  <NotificationPopup
+                    notifications={notifications}
+                    onMarkOneAsRead={markOneAsRead}
+                    onMarkAllAsRead={markAllAsRead}
+                  />
+                )}
+              </div>
             </>
           ) : null}
 
@@ -226,21 +400,20 @@ const Header = ({ onOpenLoginPopup }) => {
               </button>
             </>
           ) : null}
-
           {/* User */}
           {isLoggedIn ? (
             <div className="user-menu destop-only">
-              <button className="nav-button user-button" title={user?.name}>
+              <button className="nav-button user-button" title={user?.fullName}>
                 {user?.avatar ? (
                   <img
                     src={user.avatar}
-                    alt={user.name}
+                    alt={user.fullName}
                     className="user-avatar"
                   />
                 ) : (
                   <User className="nav-icon" />
                 )}
-                <span className="nav-label">{user?.name}</span>
+                <span className="nav-label">{user?.fullName}</span>
               </button>
 
               <div className="user-dropdown">

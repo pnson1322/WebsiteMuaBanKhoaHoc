@@ -1,36 +1,40 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, GraduationCap } from "lucide-react";
 import "./AdminTransactions.css";
-import { adminAPI } from "../../services/api";
 import SkeletonTable from "../../components/SkeletonTable/SkeletonTable";
 import TransactionsFilters from "../../components/AdminTransactions/TransactionsFilters";
 import TransactionsTable from "../../components/AdminTransactions/TransactionsTable";
 import Pagination from "../../components/common/Pagination";
 import { useNavigate } from "react-router-dom";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
+import { transactionAPI } from "../../services/transactionAPI"; // ✅ import mới
 
 const PAGE_SIZE = 4;
 
 export default function AdminTransactions() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("courses"); // 'courses' | 'students'
+  const [activeTab, setActiveTab] = useState("courses");
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // 🔹 Load dữ liệu theo tab
+  // 🔹 Gọi API thật (theo tab)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res =
-          activeTab === "courses"
-            ? await adminAPI.getTransactionsByCourse()
-            : await adminAPI.getTransactionsByStudent();
-        setData(res);
+        let res;
+        if (activeTab === "courses") {
+          res = await transactionAPI.getTransactionsByCourses(page, PAGE_SIZE);
+        } else {
+          res = await transactionAPI.getTransactionsByStudents(page, PAGE_SIZE);
+        }
+        setData(res.items || []);
+        setTotalCount(res.totalCount || 0);
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu:", err);
       } finally {
@@ -38,9 +42,9 @@ export default function AdminTransactions() {
       }
     };
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, page]);
 
-  // 🔹 Lọc & tìm kiếm
+  // 🔹 Lọc và tìm kiếm (client-side)
   const filtered = useMemo(() => {
     let rows = [...data];
     const s = search.trim().toLowerCase();
@@ -49,19 +53,20 @@ export default function AdminTransactions() {
       rows =
         activeTab === "courses"
           ? rows.filter(
-              (r) =>
-                r.id.toLowerCase().includes(s) ||
-                r.name.toLowerCase().includes(s)
-            )
+            (r) =>
+              String(r.courseId).includes(s) ||
+              r.courseTitle.toLowerCase().includes(s)
+          )
           : rows.filter(
-              (r) =>
-                String(r.id).includes(s) || r.name.toLowerCase().includes(s)
-            );
+            (r) =>
+              String(r.studentId).includes(s) ||
+              r.fullName.toLowerCase().includes(s)
+          );
     }
 
-    if (activeTab === "courses" && (fromDate || toDate)) {
+    if ((fromDate || toDate) && activeTab === "courses") {
       rows = rows.filter((r) => {
-        const t = new Date(r.lastTransaction.replace(" ", "T"));
+        const t = new Date(r.lastTransactionDate);
         const okFrom = fromDate ? t >= new Date(fromDate) : true;
         const okTo = toDate ? t <= new Date(toDate + "T23:59:59") : true;
         return okFrom && okTo;
@@ -71,22 +76,14 @@ export default function AdminTransactions() {
     return rows;
   }, [data, search, fromDate, toDate, activeTab]);
 
-  // 🔹 Pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageClamped = Math.min(page, totalPages);
-
-  const pageData = useMemo(() => {
-    const start = (pageClamped - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, pageClamped]);
+  // 🔹 Tính toán phân trang
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
+    if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     setPage(1);
   }, [activeTab, search, fromDate, toDate]);
 
@@ -127,13 +124,13 @@ export default function AdminTransactions() {
             <SkeletonTable columns={5} rows={PAGE_SIZE} />
           </div>
         ) : (
-          <TransactionsTable activeTab={activeTab} data={pageData} />
+          <TransactionsTable activeTab={activeTab} data={filtered} />
         )}
 
-        {/* Pagination + Action */}
+        {/* Pagination */}
         <div className="tx-pagination-row">
           <Pagination
-            currentPage={pageClamped}
+            currentPage={page}
             totalPages={totalPages}
             onPageChange={handlePageChange}
           />

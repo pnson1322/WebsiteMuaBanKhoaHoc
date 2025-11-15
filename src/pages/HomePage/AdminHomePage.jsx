@@ -468,22 +468,8 @@ export default function AdminHomePage() {
 
           {course.map((item) => (
             <div className="revenue-item">
-              <div
-                className={`revenue-item-icon-wrapper ${
-                  item.status === "done"
-                    ? "done-wrapper"
-                    : item.status === "pending"
-                    ? "pending-wrapper"
-                    : "error-wrapper"
-                }`}
-              >
-                {item.status === "done" ? (
-                  <Check className="revenue-item-icon done" />
-                ) : item.status === "pending" ? (
-                  <Clock className="revenue-item-icon pending" />
-                ) : (
-                  <CircleX className="revenue-item-icon error" />
-                )}
+              <div className={`revenue-item-icon-wrapper done`}>
+                <Check className="revenue-item-icon done" />
               </div>
 
               <div>
@@ -498,15 +484,7 @@ export default function AdminHomePage() {
                 </div>
               </div>
 
-              <div
-                className={`revenue-item-price ${
-                  item.status === "done"
-                    ? "done"
-                    : item.status === "pending"
-                    ? "pending"
-                    : "error"
-                }`}
-              >
+              <div className={`revenue-item-price done`}>
                 {formatPrice(item.revenue)}
               </div>
             </div>
