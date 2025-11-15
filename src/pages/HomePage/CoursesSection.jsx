@@ -1,7 +1,7 @@
 import React from "react";
 import LazyLoadCourses from "../../components/LazyLoadCourses";
 
-const CoursesSection = ({ onViewDetails }) => {
+const CoursesSection = ({ onViewDetails, CardComponent }) => {
   return (
     <section className="courses-section">
       <div className="section-header">
@@ -9,7 +9,7 @@ const CoursesSection = ({ onViewDetails }) => {
         <p>Khám phá những khóa học phù hợp với bạn.</p>
       </div>
 
-      <LazyLoadCourses onViewDetails={onViewDetails} />
+      <LazyLoadCourses onViewDetails={onViewDetails} CardComponent={CardComponent} />
     </section>
   );
 };

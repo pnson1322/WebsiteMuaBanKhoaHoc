@@ -11,6 +11,10 @@ import "./AdminHomePage.css";
 import { useNavigate } from "react-router-dom";
 import { BarChart, LineChart, PieChart } from "@mui/x-charts";
 import { useEffect, useRef, useState } from "react";
+import CoursesSection from "./CoursesSection";
+import Filter from "../../components/Filter/Filter";
+import PurchasedCourseCard from "../../components/PurchasedCourseCard/PurchasedCourseCard";
+import { useAppDispatch } from "../../contexts/AppContext";
 
 // Simple hook to observe an element's width for responsive charts
 function useElementWidth(initialWidth = 500) {
@@ -33,6 +37,18 @@ function useElementWidth(initialWidth = 500) {
 
 export default function AdminHomePage() {
   const navigate = useNavigate();
+  const { dispatch, actionTypes } = useAppDispatch();
+
+  const handleViewDetails = (course) => {
+    // Lưu lịch sử xem
+    dispatch({
+      type: actionTypes.ADD_TO_VIEW_HISTORY,
+      payload: course.id,
+    });
+
+    // Sau đó điều hướng sang trang chi tiết
+    navigate(`/course/${course.id}`);
+  };
   const [lineRef, lineWidth] = useElementWidth();
   const [pieRef, pieWidth] = useElementWidth();
   const [barRef, barWidth] = useElementWidth();
@@ -442,7 +458,10 @@ export default function AdminHomePage() {
         <div className="chart-item">
           <div className="chart-item-header">
             <h3 style={{ marginBottom: "0" }}>Giao dịch gần đây</h3>
-            <button className="chart-item-button" onClick={() => navigate("/")}>
+            <button
+              className="chart-item-button"
+              onClick={() => navigate("/transactions")}
+            >
               Xem tất cả
             </button>
           </div>
@@ -494,6 +513,11 @@ export default function AdminHomePage() {
           ))}
         </div>
       </div>
+      <Filter></Filter>
+      <CoursesSection
+        onViewDetails={handleViewDetails}
+        CardComponent={PurchasedCourseCard}
+      />
     </>
   );
 }
