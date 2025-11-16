@@ -11,8 +11,8 @@ import "./AdminHomePage.css";
 import { useNavigate } from "react-router-dom";
 import { BarChart, LineChart, PieChart } from "@mui/x-charts";
 import { useEffect, useRef, useState } from "react";
+import { dashboardAPI } from "../../services/dashboardAPI";
 
-// Simple hook to observe an element's width for responsive charts
 function useElementWidth(initialWidth = 500) {
   const ref = useRef(null);
   const [width, setWidth] = useState(initialWidth);
@@ -37,29 +37,42 @@ export default function AdminHomePage() {
   const [pieRef, pieWidth] = useElementWidth();
   const [barRef, barWidth] = useElementWidth();
 
-  const pieChartData = [
-    { id: 0, value: 372, label: "Lập trình", color: "#a855f7" },
-    { id: 1, value: 247, label: "Thiết kế", color: "#3b82f6" },
-    { id: 2, value: 222, label: "Marketing", color: "#ec4899" },
-    { id: 3, value: 222, label: "Kinh doanh", color: "#14b8a6" },
-    { id: 4, value: 171, label: "Khác", color: "#22c55e" },
-  ];
+  const [totalCourses, setTotalCourses] = useState(0);
+  const [newUser, setNewUser] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+
+  const [totalUser, setTotalUser] = useState(0);
+  const [userRole, setUserRole] = useState([]);
+  const [transaction, setTransaction] = useState([]);
+
+  const buyerCount = userRole[0]?.count || 0;
+  const sellerCount = userRole[2]?.count || 0;
+  const adminCount = userRole[1]?.count || 0;
+
+  const [dataPieChart, setDataPieChart] = useState([]);
+  const [dataLineChart, setDataLineChart] = useState([]);
+  const [dataBarChart, setDataBarChart] = useState([]);
+
   const pieChartColors = [
-    "#a855f7",
-    "#3b82f6",
-    "#ec4899",
-    "#14b8a6",
-    "#22c55e",
+    "#4254fb",
+    "#fa4f58",
+    "#4CAF50",
+    "#0dbeff",
+    "#FFD100",
+    "#00ACC1",
+    "#D81B60",
+    "#3F51B5",
+    "#E53935",
+    "#6D4C41",
+    "#29B6F6",
+    "#ffb452",
+    "#757575",
+    "#5C6BC0",
   ];
-  const totalCourses = 1234;
 
   // Revenue chart data
   const revenue7DaysData = [2.5, 3.2, 2.8, 3.5, 4.1, 3.9, 4.5];
-  const revenueMonthlyData = [
-    2.4, 3.1, 4.0, 3.7, 5.2, 6.0, 5.7, 7.1, 6.8, 8.0, 7.4, 9.1,
-  ];
   const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
-  const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   const days7 = [1, 2, 3, 4, 5, 6, 7];
 
   // Chart colors
@@ -68,32 +81,76 @@ export default function AdminHomePage() {
 
   const [revenuePeriod, setRevenuePeriod] = useState("monthly");
 
-  const [course, setCourse] = useState([
-    {
-      name: "Nguyễn Văn An",
-      date: "11/9/2025",
-      revenue: 299000,
-      status: "done",
-    },
-    {
-      name: "Trần Thị Bình",
-      date: "10/9/2025",
-      revenue: 450000,
-      status: "done",
-    },
-    {
-      name: "Lê Hoàng Cường",
-      date: "9/9/2025",
-      revenue: 350000,
-      status: "pending",
-    },
-    {
-      name: "Phạm Minh Đức",
-      date: "8/9/2025",
-      revenue: 199000,
-      status: "done",
-    },
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const totalCoursesAPI = await dashboardAPI.getCourseCategoryStats();
+        const userStats = await dashboardAPI.getUserStats();
+        const revenue = await dashboardAPI.getGlobalTotalRevenue();
+        const userRoleAPI = await dashboardAPI.getRoleCountStats();
+        const recentTransaction = await dashboardAPI.getRecentTransactions();
+        const monthlyRevenue =
+          await dashboardAPI.getGlobalRevenueLast12Months();
+
+        console.log(totalCoursesAPI);
+        console.log(userStats);
+        console.log(revenue);
+        console.log(userRoleAPI);
+        console.log(recentTransaction);
+        console.log(monthlyRevenue);
+
+        const total = totalCoursesAPI.reduce((sum, category) => {
+          return sum + category.courseCount;
+        }, 0);
+
+        setTotalCourses(total);
+        setNewUser(userStats.newUsersToday);
+        setTotalRevenue(revenue.totalRevenue);
+
+        setUserRole(userRoleAPI);
+        setTotalUser(userStats.totalUsers);
+        setTransaction(
+          recentTransaction
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 4)
+            .map((item) => {
+              const d = new Date(item.createdAt);
+              const day = String(d.getDate()).padStart(2, "0");
+              const month = String(d.getMonth() + 1).padStart(2, "0");
+              const year = d.getFullYear();
+
+              return {
+                id: item.id,
+                revenue: item.totalAmount,
+                name: item.buyerName,
+                date: `${day}/${month}/${year}`,
+              };
+            })
+        );
+
+        setDataPieChart(
+          totalCoursesAPI.map((item, index) => {
+            return {
+              id: item.categoryId,
+              value: item.courseCount,
+              label: item.categoryName,
+              color: pieChartColors[index % pieChartColors.length],
+            };
+          })
+        );
+        setDataLineChart(
+          monthlyRevenue.map((i) => ({
+            date: i.year + "-" + i.month,
+            revenue: i.totalRevenue,
+          }))
+        );
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -118,7 +175,7 @@ export default function AdminHomePage() {
         <div className="text-chart-item">
           <div className="text-chart-stats">
             <div className="text-chart-text">Tổng khóa học</div>
-            <div className="text-chart-number">3</div>
+            <div className="text-chart-number">{totalCourses}</div>
           </div>
 
           <div
@@ -134,8 +191,8 @@ export default function AdminHomePage() {
 
         <div className="text-chart-item">
           <div className="text-chart-stats">
-            <div className="text-chart-text">Học viên</div>
-            <div className="text-chart-number">1247</div>
+            <div className="text-chart-text">Người dùng mới hôm nay</div>
+            <div className="text-chart-number">{newUser}</div>
           </div>
 
           <div
@@ -152,7 +209,7 @@ export default function AdminHomePage() {
         <div className="text-chart-item">
           <div className="text-chart-stats">
             <div className="text-chart-text">Doanh thu</div>
-            <div className="text-chart-number">{formatPrice(45200000)}</div>
+            <div className="text-chart-number">{formatPrice(totalRevenue)}</div>
           </div>
 
           <div
@@ -180,7 +237,7 @@ export default function AdminHomePage() {
                 series={[
                   {
                     innerRadius: 70,
-                    data: pieChartData.map(({ id, value, label }) => ({
+                    data: dataPieChart.map(({ id, value, label }) => ({
                       id,
                       value,
                       label,
@@ -222,7 +279,7 @@ export default function AdminHomePage() {
               </div>
             </div>
             <div className="pie-chart-legend">
-              {pieChartData.map((item) => {
+              {dataPieChart.map((item) => {
                 const percentage = ((item.value / totalCourses) * 100).toFixed(
                   1
                 );
@@ -269,7 +326,7 @@ export default function AdminHomePage() {
                 fontSize: "2rem",
               }}
             >
-              2845
+              {totalUser}
             </div>
             <div
               className="text-chart-text"
@@ -290,7 +347,7 @@ export default function AdminHomePage() {
                   className="text-chart-number"
                   style={{ fontSize: "1.25rem" }}
                 >
-                  2456
+                  {buyerCount}
                 </div>
                 <div className="text-chart-text">86.3%</div>
               </div>
@@ -305,7 +362,7 @@ export default function AdminHomePage() {
                   className="text-chart-number"
                   style={{ fontSize: "1.25rem" }}
                 >
-                  389
+                  {sellerCount}
                 </div>
                 <div className="text-chart-text">13.7%</div>
               </div>
@@ -320,7 +377,7 @@ export default function AdminHomePage() {
                   className="text-chart-number"
                   style={{ fontSize: "1.25rem" }}
                 >
-                  2
+                  {adminCount}
                 </div>
                 <div className="text-chart-text">0.1%</div>
               </div>
@@ -391,8 +448,7 @@ export default function AdminHomePage() {
                 <LineChart
                   xAxis={[
                     {
-                      data: months,
-                      valueFormatter: (v) => `Tháng ${v}`,
+                      data: dataLineChart.map((i) => i.date),
                       tickLabelInterval: (index) => index % 2 !== 0,
                       tickLabelStyle: { fontSize: 12, fontWeight: 500 },
                       scaleType: "point",
@@ -400,7 +456,7 @@ export default function AdminHomePage() {
                   ]}
                   series={[
                     {
-                      data: revenueMonthlyData,
+                      data: dataLineChart.map((i) => i.revenue),
                       color: revenueLineColor,
                       label: "Doanh thu: ",
                       valueFormatter: (v) => `${v} triệu đồng`,
@@ -414,11 +470,8 @@ export default function AdminHomePage() {
                   ]}
                   yAxis={[
                     {
-                      min: 2,
-                      max: 10,
-                      tickNumber: 9,
-                      tickMinStep: 1,
-                      valueFormatter: (v) => `${v} triệu`,
+                      valueFormatter: (v) => `${v / 1000000} triệu`,
+                      min: 0,
                     },
                   ]}
                   grid={{ horizontal: true }}
@@ -447,9 +500,9 @@ export default function AdminHomePage() {
             </button>
           </div>
 
-          {course.map((item) => (
+          {transaction.map((item) => (
             <div className="revenue-item">
-              <div className={`revenue-item-icon-wrapper done`}>
+              <div className="revenue-item-icon-wrapper done-wrapper">
                 <Check className="revenue-item-icon done" />
               </div>
 
@@ -465,7 +518,7 @@ export default function AdminHomePage() {
                 </div>
               </div>
 
-              <div className={`revenue-item-price done`}>
+              <div className="revenue-item-price done">
                 {formatPrice(item.revenue)}
               </div>
             </div>
