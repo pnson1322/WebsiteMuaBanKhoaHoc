@@ -1,14 +1,16 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-// 🧩 Layout & Components
+// Layout & Components
 import { Layout } from "./components/Layout";
-// 🧠 Context Providers (đã có sẵn trong dự án bạn)
+import ProtectedRoute from "./components/ProtectedRoute";
+
+// Context Providers
 import { AuthProvider } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
 import { ToastProvider } from "./contexts/ToastContext";
 
-// 📄 Các trang chính
+// Các trang chính
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage";
 import UserInfo from "./pages/UserInfo";
@@ -36,39 +38,98 @@ function App() {
                 <Route index element={<HomePage />} />
                 {/* Trang lịch sử xem */}
                 <Route path="history" element={<HistoryPage />} />
-                {/* Trang khóa học đã mua */}
-                <Route path="/purchased" element={<PurchasedCoursesPage />} />
-                {/* Trang quản lý khóa học (Seller) */}
-                <Route path="seller-courses" element={<SellerCoursesPage />} />
-                {/* Trang quản lý khóa học (Admin) */}
-                <Route path="admin-courses" element={<AdminCoursesPage />} />
-                {/* Trang quản lý danh mục (Admin) */}
-                <Route path="admin-categories" element={<AdminCategories />} />
-                {/* Trang quản lý người dùng (Admin) */}
-                <Route path="admin-users" element={<AdminUsersPage />} />
                 {/* Trang chi tiết khóa học */}
                 <Route path="course/:id" element={<CourseDetail />} />
-                {/* Trang quản lý giao dịch (Admin) */}
-                <Route path="/transactions" element={<AdminTransactions />} />
                 {/* Đăng nhập / đăng ký */}
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<LoginPage />} />
 
+                {/* Trang khóa học đã mua */}
+                <Route
+                  path="/purchased"
+                  element={
+                    <ProtectedRoute showModal={true}>
+                      <PurchasedCoursesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Trang quản lý khóa học (Seller) */}
+                <Route
+                  path="seller-courses"
+                  element={
+                    <ProtectedRoute>
+                      <SellerCoursesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Trang quản lý khóa học (Admin) */}
+                <Route
+                  path="admin-courses"
+                  element={
+                    <ProtectedRoute>
+                      <AdminCoursesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Trang quản lý danh mục (Admin) */}
+                <Route
+                  path="admin-categories"
+                  element={
+                    <ProtectedRoute>
+                      <AdminCategories />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Trang quản lý người dùng (Admin) */}
+                <Route
+                  path="admin-users"
+                  element={
+                    <ProtectedRoute>
+                      <AdminUsersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Trang quản lý giao dịch (Admin) */}
+                <Route
+                  path="/transactions"
+                  element={
+                    <ProtectedRoute>
+                      <AdminTransactions />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* Thông tin người dùng */}
-                <Route path="user-info" element={<UserInfo />} />
+                <Route
+                  path="user-info"
+                  element={
+                    <ProtectedRoute>
+                      <UserInfo />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Trang yêu thích */}
                 <Route path="favorites" element={<Favorites />} />
-
                 {/* Giỏ hàng */}
                 <Route path="cart" element={<Cart />} />
 
                 {/* Thêm khóa học mới */}
-                <Route path="add-new-course" element={<AddNewCourse />} />
+                <Route
+                  path="add-new-course"
+                  element={
+                    <ProtectedRoute>
+                      <AddNewCourse />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* Trang chi tiết giao dịch tổng hợp */}
                 <Route
                   path="course-transactions/details"
-                  element={<CourseTransactionDetails />}
+                  element={
+                    <ProtectedRoute>
+                      <CourseTransactionDetails />
+                    </ProtectedRoute>
+                  }
                 />
               </Route>
 

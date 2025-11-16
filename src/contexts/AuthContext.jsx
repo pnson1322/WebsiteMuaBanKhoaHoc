@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }) => {
   const clearAuth = () => {
     setIsLoggedIn(false);
     setUser(null);
+    localStorage.removeItem("token");
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("currentUser");
     localStorage.removeItem("accessToken");
