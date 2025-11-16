@@ -6,16 +6,18 @@
 /* Results Info */
 .results-info {
   margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 12px;
-  border-left: 4px solid #667eea;
+  padding: 1.1rem 1.5rem;
+  background: rgba(0, 13, 255, 0.15);
+  border-radius: 16px;
+  border: 1px solid rgba(48, 79, 219, 0.2);
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  color: #2d3748;
+  font-weight: 600;
 }
 
 .results-info p {
   margin: 0;
-  color: #4a5568;
-  font-weight: 500;
 }
 
 /* Courses Grid */
@@ -133,20 +135,21 @@
 
 /* End of Results */
 .end-of-results {
-  text-align: center;
-  padding: 2rem;
-  margin: 2rem 0;
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0 2.5rem;
 }
 
 .end-of-results p {
-  color: #667eea;
-  font-size: 1.1rem;
+  color: #2d3748;
+  font-size: 1rem;
   font-weight: 600;
   margin: 0;
-  padding: 1rem 2rem;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 12px;
-  display: inline-block;
+  padding: 1rem 2.5rem;
+  background: rgba(102, 126, 234, 0.2);
+  border-radius: 16px;
+  border: 1px solid rgba(102, 126, 234, 0.25);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
 }
 
 /* Loading Animation */
@@ -174,7 +177,7 @@
 
   .results-info {
     margin: 0 0.5rem 1rem;
-    padding: 0.75rem;
+    padding: 0.9rem 1rem;
   }
 
   .no-results {
@@ -210,7 +213,7 @@
   }
 
   .end-of-results p {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
+    padding: 0.85rem 1.75rem;
+    font-size: 0.95rem;
   }
 }

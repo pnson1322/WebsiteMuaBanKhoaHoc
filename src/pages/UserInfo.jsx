@@ -15,33 +15,62 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
+import { userAPI } from "../services/userAPI";
 import "./UserInfo.css";
 import { useState, useEffect } from "react";
 import ForgotPasswordPopup from "../components/Auth/ForgotPasswordPopup";
-import test from "../assets/test.jpg";
 
 const UserInfo = () => {
-  const { user, updateUser } = useAuth();
+  const { refreshUser } = useAuth();
   const { showSuccess, showError } = useToast();
-  const [name, setName] = useState(user?.fullName || "");
-  const [phone, setPhone] = useState(user?.phoneNumber || "");
+
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [userData, setUserData] = useState(null);
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(user?.image || null);
-  const [avatarFile, setAvatarFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
 
-  const role =
-    user?.role === "Admin"
-      ? "Quản lý"
-      : user?.role === "Buyer"
-      ? "Học viên"
-      : "Người bán";
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // ===== GET USER DETAIL =====
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const data = await userAPI.getUserDetail();
+        setUserData(data);
+
+        setName(data.fullName || "");
+        setPhone(data.phoneNumber || "");
+        setRole(
+          data.role === "Admin"
+            ? "Quản lý"
+            : data.role === "Buyer"
+              ? "Học viên"
+              : "Người bán"
+        );
+
+        setAvatarPreview(data.avatarUrl || data.image || null);
+      } catch (err) {
+        showError("Không lấy được thông tin người dùng");
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    fetchUser();
+  }, [showError]);
 
   const calculateStrength = (pwd) => {
     let score = 0;
@@ -70,82 +99,111 @@ const UserInfo = () => {
 
   const strength = calculateStrength(newPassword);
 
+  // =========== handle Avatar ============
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        showError("Chỉ chấp nhận file ảnh");
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        showError("Kích thước ảnh tối đa là 2MB");
-        return;
-      }
+    if (!file) return;
 
-      if (avatarPreview && avatarPreview.startsWith("blob:")) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-    }
+    if (!file.type.startsWith("image/")) return showError("Chỉ chấp nhận file ảnh");
+    if (file.size > 2 * 1024 * 1024)
+      return showError("Kích thước ảnh tối đa là 2MB");
+
+    if (avatarPreview?.startsWith("blob:"))
+      URL.revokeObjectURL(avatarPreview);
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const handleRemoveAvatar = () => {
-    if (avatarPreview && avatarPreview.startsWith("blob:")) {
+    if (avatarPreview?.startsWith("blob:"))
       URL.revokeObjectURL(avatarPreview);
-    }
-    setAvatarFile(null);
+
     setAvatarPreview(null);
+    setAvatarFile(null);
   };
 
+  // Cleanup blob URLs when component unmounts
   useEffect(() => {
     return () => {
-      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+      if (avatarPreview?.startsWith("blob:")) {
         URL.revokeObjectURL(avatarPreview);
       }
     };
   }, [avatarPreview]);
 
-  function handleSaveInfoClick(e) {
-    e.preventDefault?.();
-    if (!user) {
-      showError("Bạn chưa đăng nhập");
-      return;
+  // =========== SAVE INFO ============
+  async function handleSaveInfoClick(e) {
+    e.preventDefault();
+    const trimmedName = name.trim();
+
+    if (!trimmedName) return showError("Vui lòng nhập họ tên");
+
+    setIsUploading(true);
+    try {
+      await userAPI.updateUser({
+        fullName: trimmedName,
+        phoneNumber: phone.trim(),
+        avatarFile,
+      });
+
+      await refreshUser?.();
+
+      const updated = await userAPI.getUserDetail();
+      setUserData(updated);
+      setAvatarFile(null);
+
+      setAvatarPreview(updated.avatarUrl || updated.image);
+
+      showSuccess("Cập nhật thông tin thành công");
+    } catch (err) {
+      showError(err.response?.data?.message || "Cập nhật thất bại");
+    } finally {
+      setIsUploading(false);
     }
-    const trimmedName = (name || "").trim();
-    const trimmedPhone = (phone || "").trim();
-    if (!trimmedName) {
-      showError("Vui lòng nhập họ và tên");
-      return;
-    }
-    updateUser({ name: trimmedName, phone: trimmedPhone });
-    showSuccess("Cập nhật thông tin thành công");
   }
 
-  function handleSavePasswordClick(e) {
-    e.preventDefault?.();
-    if (!user) {
-      showError("Bạn chưa đăng nhập");
-      return;
+  // =========== CHANGE PASSWORD ============
+  async function handleSavePasswordClick(e) {
+    e.preventDefault();
+
+    if (!password || !newPassword || !confirmPassword)
+      return showError("Vui lòng điền đầy đủ mật khẩu");
+
+    if (password === newPassword)
+      return showError("Mật khẩu mới không được trùng với mật khẩu hiện tại");
+
+    if (newPassword !== confirmPassword)
+      return showError("Mật khẩu xác nhận không khớp");
+
+    if (newPassword.length < 6)
+      return showError("Mật khẩu phải có ít nhất 6 ký tự");
+
+    setIsChangingPassword(true);
+    try {
+      await userAPI.changePassword({
+        currentPassword: password,
+        newPassword: newPassword,
+      });
+
+      setPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      showSuccess("Đổi mật khẩu thành công");
+    } catch (err) {
+      showError(err.response?.data?.message || "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại");
+    } finally {
+      setIsChangingPassword(false);
     }
-    if (!password || !newPassword || !confirmPassword) {
-      showError("Vui lòng điền đầy đủ thông tin mật khẩu");
-      return;
-    }
-    if (password === newPassword) {
-      showError("Mật khẩu mới không được trùng với mật khẩu hiện tại");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      showError("Mật khẩu mới không khớp");
-      return;
-    }
-    if (newPassword.length < 6) {
-      showError("Mật khẩu mới phải có ít nhất 6 ký tự");
-      return;
-    }
-    updateUser({ password: newPassword });
-    showSuccess("Yêu cầu đổi mật khẩu đã được ghi nhận");
+  }
+
+  if (loadingUser) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+        <Loader2 className="spinning" size={32} />
+      </div>
+    );
   }
 
   return (
@@ -158,6 +216,7 @@ const UserInfo = () => {
       </div>
 
       <div className="info">
+        {/* Thẻ thông tin cá nhân */}
         <div className="card">
           <div className="card-header">
             <div className="user-info-icon-wrapper">
@@ -177,7 +236,7 @@ const UserInfo = () => {
                   src={
                     avatarPreview ||
                     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-user-round'%3E%3Ccircle cx='12' cy='8' r='5'/%3E%3Cpath d='M20 21a8 8 0 0 0-16 0'/%3E%3C/svg%3E"
-                  } // Dùng SVG placeholder nếu không có ảnh
+                  }
                   alt="Avatar"
                   className="profile-avatar"
                 />
@@ -207,7 +266,6 @@ const UserInfo = () => {
               <UserRound className="user-info-form-icon" />
               <div>Họ và Tên</div>
             </label>
-
             <input
               type="text"
               name="name"
@@ -221,12 +279,11 @@ const UserInfo = () => {
               <Mail className="user-info-form-icon" />
               <div>Email</div>
             </label>
-
             <input
               type="text"
               name="email"
               placeholder="Nhập email"
-              value={user?.email}
+              value={userData?.email || ""}
               className="user-info-form-input"
               disabled
             />
@@ -235,7 +292,6 @@ const UserInfo = () => {
               <PhoneCall className="user-info-form-icon" />
               <div>Số điện thoại</div>
             </label>
-
             <input
               type="tel"
               name="phone"
@@ -249,7 +305,6 @@ const UserInfo = () => {
               <UserRoundPen className="user-info-form-icon" />
               <div>Vai Trò</div>
             </label>
-
             <input
               type="text"
               name="role"
@@ -274,6 +329,7 @@ const UserInfo = () => {
           </button>
         </div>
 
+        {/* Thẻ đổi mật khẩu */}
         <div className="card">
           <div className="card-header">
             <div className="password-icon-wrapper">
@@ -291,7 +347,6 @@ const UserInfo = () => {
               <UserRound className="user-info-form-icon" />
               <div>Mật Khẩu Hiện Tại</div>
             </label>
-
             <div className="password-input">
               <input
                 type={showOldPassword ? "text" : "password"}
@@ -301,7 +356,6 @@ const UserInfo = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-
               <button
                 type="button"
                 className="toggle-password"
@@ -320,16 +374,13 @@ const UserInfo = () => {
             </button>
 
             {showForgotPassword && (
-              <ForgotPasswordPopup
-                onClose={() => setShowForgotPassword(false)}
-              />
+              <ForgotPasswordPopup onClose={() => setShowForgotPassword(false)} />
             )}
 
             <label className="user-info-form-label">
               <Lock className="user-info-form-icon" />
               <div>Mật Khẩu Mới</div>
             </label>
-
             <div className="password-input">
               <input
                 type={showNewPassword ? "text" : "password"}
@@ -339,7 +390,6 @@ const UserInfo = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
-
               <button
                 type="button"
                 className="toggle-password"
@@ -353,10 +403,7 @@ const UserInfo = () => {
               <div className="strength-bar-wrapper">
                 <div
                   className="strength-bar-fill"
-                  style={{
-                    width: `${strength.percent}%`,
-                    background: strength.color,
-                  }}
+                  style={{ width: `${strength.percent}%`, background: strength.color }}
                 ></div>
               </div>
               <div className="strength-text">{strength.label}</div>
@@ -369,9 +416,7 @@ const UserInfo = () => {
                   Mật khẩu mạnh nên dài (tối thiểu 6 ký tự) và kết hợp chữ hoa,
                   chữ thường, số, và <strong>ký tự đặc biệt</strong> (như !@#$).
                 </li>
-                <li>
-                  Không dùng chung mật khẩu này cho bất kỳ tài khoản nào khác.
-                </li>
+                <li>Không dùng chung mật khẩu này cho bất kỳ tài khoản nào khác.</li>
               </ul>
             </div>
 
@@ -379,7 +424,6 @@ const UserInfo = () => {
               <CheckCheck className="user-info-form-icon" />
               <div>Xác Nhận Mật Khẩu Mới</div>
             </label>
-
             <div className="password-input">
               <input
                 type={showConfirmPassword ? "text" : "password"}
@@ -389,7 +433,6 @@ const UserInfo = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
-
               <button
                 type="button"
                 className="toggle-password"
@@ -411,6 +454,7 @@ const UserInfo = () => {
       </div>
     </div>
   );
+
 };
 
 export default UserInfo;

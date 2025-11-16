@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { userAPI } from "../services/userAPI";
 
 const AuthContext = createContext();
 
@@ -17,20 +18,32 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if user is logged in on app start
-    const checkAuthStatus = () => {
+    const checkAuthStatus = async () => {
       try {
+        const token = localStorage.getItem("accessToken");
         const loggedIn = localStorage.getItem("isLoggedIn") === "true";
         const currentUser = localStorage.getItem("currentUser");
 
-        if (loggedIn && currentUser) {
+        if (loggedIn && token) {
+          // Nếu có token, fetch user data mới nhất từ API
+          try {
+            const userData = await userAPI.getUserDetail();
+            setIsLoggedIn(true);
+            setUser(userData);
+            localStorage.setItem("currentUser", JSON.stringify(userData));
+          } catch (error) {
+            // Nếu token hết hạn hoặc invalid, clear auth
+            console.error("Error fetching user data:", error);
+            clearAuth();
+          }
+        } else if (loggedIn && currentUser) {
+          // Fallback: dùng data từ localStorage nếu không có token
           setIsLoggedIn(true);
           setUser(JSON.parse(currentUser));
         }
       } catch (error) {
         console.error("Error checking auth status:", error);
-        // Clear invalid data
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("currentUser");
+        clearAuth();
       } finally {
         setLoading(false);
       }
@@ -39,20 +52,33 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
-  const login = (userData) => {
-    setIsLoggedIn(true);
-    setUser(userData);
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("currentUser", JSON.stringify(userData));
-  };
-
-  const logout = () => {
+  const clearAuth = () => {
     setIsLoggedIn(false);
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("currentUser");
-    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+  };
+
+  const login = (userData, tokens) => {
+    setIsLoggedIn(true);
+    setUser(userData);
+    localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("currentUser", JSON.stringify(userData));
+
+    // Lưu tokens nếu có
+    if (tokens?.accessToken) {
+      localStorage.setItem("accessToken", tokens.accessToken);
+    }
+    if (tokens?.refreshToken) {
+      localStorage.setItem("refreshToken", tokens.refreshToken);
+    }
+  };
+
+  const logout = () => {
+    clearAuth();
   };
 
   const updateUser = (updates) => {
@@ -68,12 +94,26 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  // Function để refresh user data từ API
+  const refreshUser = async () => {
+    try {
+      const userData = await userAPI.getUserDetail();
+      setUser(userData);
+      localStorage.setItem("currentUser", JSON.stringify(userData));
+      return userData;
+    } catch (error) {
+      console.error("Error refreshing user data:", error);
+      throw error;
+    }
+  };
+
   const value = {
     isLoggedIn,
     user,
     login,
     logout,
     updateUser,
+    refreshUser,
     loading,
   };
 
