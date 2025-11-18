@@ -40,8 +40,9 @@
 }
 
 .admin-chart {
-  grid-template-columns: 1fr 0.6fr;
+  grid-template-columns: 2fr 1fr;
   grid-template-rows: auto auto;
+  gap: 1rem;
 }
 
 .chart-item-header {
