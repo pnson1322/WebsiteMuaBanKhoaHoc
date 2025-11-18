@@ -4,8 +4,17 @@ import { Heart } from "lucide-react";
 const CourseImageSection = ({ course, isFavorite, onToggleFavorite }) => {
   return (
     <div className="course-image-container">
-      <img src={course.image} alt={course.name} className="course-image" />
+      <img
+        src={
+          course.image ||
+          "https://images.unsplash.com/photo-1529101091764-c3526daf38fe"
+        }
+        alt={course.title}
+        className="course-image"
+      />
+
       <div className="course-category">{course.level}</div>
+
       <button
         className={`favorite-button ${isFavorite ? "favorite" : ""}`}
         onClick={onToggleFavorite}

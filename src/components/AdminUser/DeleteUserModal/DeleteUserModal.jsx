@@ -30,20 +30,14 @@ const DeleteUserModal = ({ user, onClose, onConfirm }) => {
         <div className="users-modal__body">
           <p>
             Bạn có chắc chắn muốn xóa người dùng{" "}
-            <strong>{user.name}</strong>?
+            <strong>{user.fullName}</strong>?
           </p>
         </div>
         <footer className="users-modal__footer">
-          <button
-            className="users-btn users-btn--ghost"
-            onClick={onClose}
-          >
+          <button className="users-btn users-btn--ghost" onClick={onClose}>
             Hủy
           </button>
-          <button
-            className="users-btn users-btn--danger"
-            onClick={onConfirm}
-          >
+          <button className="users-btn users-btn--danger" onClick={onConfirm}>
             Xóa
           </button>
         </footer>
@@ -53,4 +47,3 @@ const DeleteUserModal = ({ user, onClose, onConfirm }) => {
 };
 
 export default DeleteUserModal;
-

@@ -1,5 +1,5 @@
 import React from "react";
-import { UserPlus, User, Mail, Lock } from "lucide-react";
+import { UserPlus, User, Mail, Lock, Phone } from "lucide-react";
 import "./AddAdminModal.css";
 
 const AddAdminModal = ({
@@ -37,22 +37,25 @@ const AddAdminModal = ({
             ×
           </button>
         </header>
+
         <form className="users-modal__form" onSubmit={onSubmit}>
+          {/* Họ và tên */}
           <div className="users-form-group">
-            <label htmlFor="add-name">
+            <label htmlFor="add-fullName">
               <User size={16} />
               Họ và Tên
             </label>
             <input
-              id="add-name"
+              id="add-fullName"
               type="text"
-              value={formData.name}
-              onChange={(e) => onFormChange("name", e.target.value)}
+              value={formData.fullName}
+              onChange={(e) => onFormChange("fullName", e.target.value)}
               placeholder="Nhập họ và tên..."
               required
             />
           </div>
 
+          {/* Email */}
           <div className="users-form-group">
             <label htmlFor="add-email">
               <Mail size={16} />
@@ -68,6 +71,23 @@ const AddAdminModal = ({
             />
           </div>
 
+          {/* Số điện thoại */}
+          <div className="users-form-group">
+            <label htmlFor="add-phone">
+              <Phone size={16} />
+              Số Điện Thoại
+            </label>
+            <input
+              id="add-phone"
+              type="text"
+              value={formData.phoneNumber}
+              onChange={(e) => onFormChange("phoneNumber", e.target.value)}
+              placeholder="Nhập số điện thoại..."
+              required
+            />
+          </div>
+
+          {/* Mật khẩu */}
           <div className="users-form-group">
             <label htmlFor="add-password">
               <Lock size={16} />
@@ -88,7 +108,7 @@ const AddAdminModal = ({
             className="users-btn users-btn--primary users-btn--full"
           >
             <UserPlus size={18} />
-            Thêm người dùng
+            Thêm Admin
           </button>
         </form>
       </div>
@@ -97,4 +117,3 @@ const AddAdminModal = ({
 };
 
 export default AddAdminModal;
-

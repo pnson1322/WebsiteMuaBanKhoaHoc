@@ -12,34 +12,40 @@ const CourseCard = ({ course, onViewDetails }) => {
   const { dispatch, actionTypes } = useAppDispatch();
   const { showFavorite, showUnfavorite, showSuccess } = useToast();
 
-  const isFavorite = state.favorites.includes(course.id);
-  const isInCart = state.cart.includes(course.id);
+  const isFavorite = state.favorites.includes(course.courseId);
+  const isInCart = state.cart.includes(course.courseId);
 
   const handleToggleFavorite = (e) => {
     e.stopPropagation();
     if (isFavorite) {
-      dispatch({ type: actionTypes.REMOVE_FROM_FAVORITES, payload: course.id });
-      showUnfavorite(`💔 Đã bỏ yêu thích "${course.name}"`);
+      dispatch({
+        type: actionTypes.REMOVE_FROM_FAVORITES,
+        payload: course.courseId,
+      });
+      showUnfavorite(`💔 Đã bỏ yêu thích "${course.title}"`);
     } else {
-      dispatch({ type: actionTypes.ADD_TO_FAVORITES, payload: course.id });
-      showFavorite(`❤️ Đã thêm "${course.name}" vào danh sách yêu thích!`);
+      dispatch({
+        type: actionTypes.ADD_TO_FAVORITES,
+        payload: course.courseId,
+      });
+      showFavorite(`❤️ Đã thêm "${course.title}" vào danh sách yêu thích!`);
     }
   };
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
     if (isInCart) return;
-    dispatch({ type: actionTypes.ADD_TO_CART, payload: course.id });
-    showSuccess(`🛒 Đã thêm "${course.name}" vào giỏ hàng!`);
-  };
 
-  const handleViewDetails = (e) => {
-    e.stopPropagation();
-    onViewDetails(course);
+    dispatch({
+      type: actionTypes.ADD_TO_CART,
+      payload: course.courseId,
+    });
+
+    showSuccess(`🛒 Đã thêm "${course.title}" vào giỏ hàng!`);
   };
 
   return (
-    <div className="course-card" onClick={handleViewDetails}>
+    <div className="course-card" onClick={() => onViewDetails(course)}>
       <CourseImageSection
         course={course}
         isFavorite={isFavorite}
@@ -57,7 +63,7 @@ const CourseCard = ({ course, onViewDetails }) => {
             course={course}
             isInCart={isInCart}
             onAddToCart={handleAddToCart}
-            onViewDetails={handleViewDetails}
+            onViewDetails={() => onViewDetails(course)}
           />
         </div>
       </div>

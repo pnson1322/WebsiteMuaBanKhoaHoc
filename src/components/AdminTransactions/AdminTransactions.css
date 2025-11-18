@@ -143,12 +143,12 @@
   padding: 10px 16px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(56, 161, 105, 0.3);
+  box-shadow: 0 6px 16px rgba(56, 161, 105, 0.15);
   transition: transform 0.06s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .tx-open-btn:hover {
   background: #2f855a;
-  box-shadow: 0 10px 24px rgba(47, 133, 90, 0.35);
+  box-shadow: 0 10px 24px rgba(47, 133, 90, 0.2);
 }
 .tx-open-btn:active {
   transform: translateY(1px);
@@ -200,4 +200,3 @@
     min-width: 100%;
   }
 }
-

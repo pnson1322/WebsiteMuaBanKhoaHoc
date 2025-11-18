@@ -5,22 +5,23 @@ import CategoryList from "../../components/AdminCategory/CategoryList/CategoryLi
 import EditCategoryModal from "../../components/AdminCategory/EditCategoryModal/EditCategoryModal";
 import DeleteCategoryModal from "../../components/AdminCategory/DeleteCategoryModal/DeleteCategoryModal";
 import "./AdminCategories.css";
-
-const initialCategories = [
-  { id: 1, name: "Lập Trình Web", createdAt: "2024-01-15" },
-  { id: 2, name: "Mobile Development", createdAt: "2024-01-16" },
-  { id: 3, name: "Data Science", createdAt: "2024-01-17" },
-  { id: 4, name: "UI/UX Design", createdAt: "2024-01-18" },
-  { id: 5, name: "Digital Marketing", createdAt: "2024-01-19" },
-];
+import { categoryAPI } from "../../services/categoryAPI";
 
 const AdminCategories = () => {
   const [newCategory, setNewCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [categories, setCategories] = useState(initialCategories);
+  const [categories, setCategories] = useState([]);
+
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [deletingCategory, setDeletingCategory] = useState(null);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const data = await categoryAPI.getAll();
+      setCategories(data);
+    };
+    fetchCategories();
+  }, []);
 
   const filteredCategories = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -30,24 +31,18 @@ const AdminCategories = () => {
     );
   }, [categories, searchTerm]);
 
-  const handleAddCategory = (event) => {
+  const handleAddCategory = async (event) => {
     event.preventDefault();
+
     const name = newCategory.trim();
     if (!name) return;
 
-    const nextId =
-      categories.reduce((maxId, category) => Math.max(maxId, category.id), 0) +
-      1;
-
-    setCategories((prev) => [
-      ...prev,
-      {
-        id: nextId,
-        name,
-        createdAt: new Date().toISOString().split("T")[0],
-      },
-    ]);
-    setNewCategory("");
+    const ok = await categoryAPI.createCategory(name);
+    if (ok) {
+      const data = await categoryAPI.getAll(); // reload list
+      setCategories(data);
+      setNewCategory("");
+    }
   };
 
   const openEditModal = (category) => {
@@ -60,18 +55,19 @@ const AdminCategories = () => {
     setEditingName("");
   };
 
-  const handleUpdateCategory = (event) => {
+  const handleUpdateCategory = async (event) => {
     event.preventDefault();
     if (!editingCategory) return;
 
     const name = editingName.trim();
     if (!name) return;
 
-    setCategories((prev) =>
-      prev.map((item) =>
-        item.id === editingCategory.id ? { ...item, name } : item
-      )
-    );
+    const ok = await categoryAPI.updateCategory(editingCategory.id, name);
+    if (ok) {
+      const data = await categoryAPI.getAll();
+      setCategories(data);
+    }
+
     closeEditModal();
   };
 
@@ -83,12 +79,15 @@ const AdminCategories = () => {
     setDeletingCategory(null);
   };
 
-  const confirmDeleteCategory = () => {
+  const confirmDeleteCategory = async () => {
     if (!deletingCategory) return;
 
-    setCategories((prev) =>
-      prev.filter((item) => item.id !== deletingCategory.id)
-    );
+    const ok = await categoryAPI.deleteCategory(deletingCategory.id);
+    if (ok) {
+      const data = await categoryAPI.getAll();
+      setCategories(data);
+    }
+
     closeDeleteModal();
   };
 
@@ -152,5 +151,3 @@ const AdminCategories = () => {
 };
 
 export default AdminCategories;
-
-

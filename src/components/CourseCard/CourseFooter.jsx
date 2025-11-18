@@ -1,5 +1,5 @@
 import React from "react";
-import { ShoppingCart, Eye, Clock } from "lucide-react";
+import { ShoppingCart, Eye } from "lucide-react";
 
 const CourseFooter = ({ course, isInCart, onAddToCart, onViewDetails }) => {
   return (
@@ -7,19 +7,18 @@ const CourseFooter = ({ course, isInCart, onAddToCart, onViewDetails }) => {
       {/* 👨‍🏫 Instructor info */}
       <div className="course-instructor">
         <span className="instructor-badge">
-          👨‍🏫 {course.instructor?.name ?? "Giảng viên ẩn danh"}
+          👨‍🏫 {course.teacherName || "Giảng viên ẩn danh"}
         </span>
       </div>
 
-      {/* 💰 Price + Level + Duration */}
+      {/* 💰 Price + Level */}
       <div className="course-price-level">
         <p className="course-price">
-          {typeof course?.price === "number"
-            ? new Intl.NumberFormat("vi-VN").format(course.price) + " VNĐ"
-            : "0 VNĐ"}
+          {new Intl.NumberFormat("vi-VN").format(course.price)} VNĐ
         </p>
+
         <div className="course-meta">
-          <span className="level-badge">{course.level || "Cơ bản"}</span>
+          <span className="level-badge">{course.level}</span>
         </div>
       </div>
 
@@ -33,6 +32,7 @@ const CourseFooter = ({ course, isInCart, onAddToCart, onViewDetails }) => {
           <ShoppingCart className="action-icon" />
           {isInCart ? "Đã thêm" : "Thêm vào giỏ"}
         </button>
+
         <button className="view-details-btn" onClick={onViewDetails}>
           <Eye className="action-icon" />
           Xem chi tiết

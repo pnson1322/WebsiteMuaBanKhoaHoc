@@ -2,12 +2,13 @@ import React from "react";
 import { List, Search } from "lucide-react";
 import CategoryTable from "../CategoryTable/CategoryTable";
 import "./CategoryList.css";
-
+import SkeletonCategoryTable from "../CategoryTable/SkeletonCategoryTable";
 const CategoryList = ({
   searchTerm,
   onSearchChange,
   categories,
   onEdit,
+  loading,
   onDelete,
 }) => {
   return (
@@ -29,14 +30,17 @@ const CategoryList = ({
         </div>
       </header>
 
-      <CategoryTable
-        categories={categories}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
+      {loading ? (
+        <SkeletonCategoryTable />
+      ) : (
+        <CategoryTable
+          categories={categories}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      )}
     </section>
   );
 };
 
 export default CategoryList;
-

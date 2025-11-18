@@ -1,8 +1,8 @@
 import React from "react";
-import { User, Mail, Save } from "lucide-react";
+import { User, Mail, Phone } from "lucide-react";
 import "./UserViewModal.css";
 
-const UserViewModal = ({ user, editingUser, onClose, onUpdate, onFormChange }) => {
+const UserViewModal = ({ user, editingUser, onClose }) => {
   if (!user || !editingUser) return null;
 
   return (
@@ -31,7 +31,8 @@ const UserViewModal = ({ user, editingUser, onClose, onUpdate, onFormChange }) =
             ×
           </button>
         </header>
-        <form className="users-modal__form" onSubmit={onUpdate}>
+
+        <form className="users-modal__form">
           <div className="users-form-group">
             <label htmlFor="edit-name">
               <User size={16} />
@@ -40,8 +41,8 @@ const UserViewModal = ({ user, editingUser, onClose, onUpdate, onFormChange }) =
             <input
               id="edit-name"
               type="text"
-              value={editingUser.name}
-              onChange={(e) => onFormChange("name", e.target.value)}
+              value={editingUser.fullName}
+              readOnly // ⛔ KHÔNG sửa
               placeholder="Nhập họ và tên..."
             />
           </div>
@@ -55,8 +56,22 @@ const UserViewModal = ({ user, editingUser, onClose, onUpdate, onFormChange }) =
               id="edit-email"
               type="email"
               value={editingUser.email}
-              onChange={(e) => onFormChange("email", e.target.value)}
+              readOnly // ⛔ KHÔNG sửa
               placeholder="Nhập email..."
+            />
+          </div>
+
+          <div className="users-form-group">
+            <label htmlFor="edit-phone">
+              <Phone size={16} />
+              Số Điện Thoại
+            </label>
+            <input
+              id="edit-phone"
+              type="text"
+              value={editingUser.phoneNumber || ""}
+              readOnly // ⛔ KHÔNG sửa
+              placeholder="Nhập số điện thoại..."
             />
           </div>
 
@@ -68,7 +83,7 @@ const UserViewModal = ({ user, editingUser, onClose, onUpdate, onFormChange }) =
             <select
               id="edit-role"
               value={editingUser.role}
-              onChange={(e) => onFormChange("role", e.target.value)}
+              disabled // ⛔ Không cho chỉnh
               className="users-form-select"
             >
               <option value="BUYER">Người Mua</option>
@@ -76,14 +91,6 @@ const UserViewModal = ({ user, editingUser, onClose, onUpdate, onFormChange }) =
               <option value="ADMIN">Quản Trị Viên</option>
             </select>
           </div>
-
-          <button
-            type="submit"
-            className="users-btn users-btn--primary users-btn--full"
-          >
-            <Save size={18} />
-            Cập Nhật Thông Tin
-          </button>
         </form>
       </div>
     </div>
@@ -91,4 +98,3 @@ const UserViewModal = ({ user, editingUser, onClose, onUpdate, onFormChange }) =
 };
 
 export default UserViewModal;
-

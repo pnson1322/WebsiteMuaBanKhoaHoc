@@ -86,19 +86,19 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: #000000;
 }
 
 .role-badge--green {
-  background: #10b981;
+  background: #56e5b5;
 }
 
 .role-badge--blue {
-  background: #3b82f6;
+  background: #a9caff;
 }
 
 .role-badge--orange {
-  background: #f97316;
+  background: #ffb580;
 }
 
 .users-cell--date {
@@ -198,4 +198,3 @@
     justify-content: flex-start;
   }
 }
-

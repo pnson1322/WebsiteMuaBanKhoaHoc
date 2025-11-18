@@ -43,7 +43,7 @@
 
 .cat-modal__icon--danger {
   background: linear-gradient(130deg, #f87171 0%, #ef4444 100%);
-  box-shadow: 0 16px 24px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 12px 20px rgba(239, 68, 68, 0.11);
 }
 
 .cat-modal__header h3 {
@@ -94,12 +94,12 @@
 .cat-btn--danger {
   background: linear-gradient(95deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
-  box-shadow: 0 16px 28px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 12px 22px rgba(220, 38, 38, 0.11);
 }
 
 .cat-btn--danger:hover {
   transform: translateY(-1px);
-  box-shadow: 0 20px 34px rgba(220, 38, 38, 0.35);
+  box-shadow: 0 16px 28px rgba(220, 38, 38, 0.15);
 }
 
 @media (max-width: 720px) {
@@ -113,4 +113,3 @@
     flex: 1;
   }
 }
-
