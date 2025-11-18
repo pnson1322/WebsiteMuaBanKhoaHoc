@@ -5,13 +5,13 @@ const CourseStats = ({ course }) => {
   return (
     <div className="course-stats">
       <div className="stat">
-        <Star className="stat-icon" /> {course.rating}
+        <Star className="stat-icon" /> {course.averageRating}
       </div>
       <div className="stat">
-        <Users className="stat-icon" /> {course.students}
+        <Users className="stat-icon" /> {course.totalPurchased}
       </div>
       <div className="stat">
-        <Clock className="stat-icon" /> {course.duration}
+        <Clock className="stat-icon" /> {course.durationHours} giờ
       </div>
     </div>
   );

@@ -1,0 +1,44 @@
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 180px 160px;
+  padding: 14px 18px;
+  align-items: center;
+  background: #fafafa;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.skeleton-cell {
+  display: block;
+  height: 16px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e5e5e5 25%, #f2f2f2 50%, #e5e5e5 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+}
+
+.skeleton-id {
+  width: 40px;
+}
+
+.skeleton-name {
+  width: 70%;
+  height: 18px;
+}
+
+.skeleton-date {
+  width: 60%;
+}
+
+.skeleton-actions {
+  width: 80%;
+  height: 20px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

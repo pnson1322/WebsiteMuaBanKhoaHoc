@@ -7,12 +7,13 @@ import "./Favorites.css";
 
 const Favorites = () => {
   const navigate = useNavigate();
-
   const [favoriteCourses, setFavoriteCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🔹 Load danh sách khóa học yêu thích từ API
+  // ===========================
+  //   LOAD DANH SÁCH YÊU THÍCH
+  // ===========================
   useEffect(() => {
     const loadFavoriteCourses = async () => {
       try {
@@ -20,22 +21,21 @@ const Favorites = () => {
         setError(null);
 
         const data = await favoriteAPI.getFavorites(); // GET /Favorite
-        console.log("⭐ Danh sách yêu thích tải về:", data);
-        // 🧩 Map dữ liệu từ API -> format mockCourses
+        console.log("⭐ Favorite API trả về:", data);
+
+        // Map dữ liệu API -> format chuẩn để CourseCard dùng
         const mapped = (data || []).map((item) => ({
           id: item.courseId,
           name: item.title,
           description: item.description,
           image:
-            item.image || "https://via.placeholder.com/400x250?text=No+Image", // fallback nếu API chưa có image
+            item.image || "https://via.placeholder.com/400x250?text=No+Image",
           category: item.category || "Chưa phân loại",
           instructor: {
             id: item.teacherId || 0,
             name: item.teacherName || "Giảng viên ẩn danh",
-            email: "",
-            phone: "",
           },
-          rating: item.averageRating?.toFixed?.(1) || "0.0",
+          rating: Number(item.averageRating || 0).toFixed(1),
           students: item.totalPurchased || 0,
           duration: item.durationHours
             ? `${item.durationHours} giờ`
@@ -47,6 +47,7 @@ const Favorites = () => {
         setFavoriteCourses(mapped);
       } catch (err) {
         console.error("❌ Lỗi tải danh sách yêu thích:", err);
+
         if (err.response?.status === 401) {
           setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
         } else {
@@ -60,30 +61,37 @@ const Favorites = () => {
     loadFavoriteCourses();
   }, []);
 
-  // 🔹 Xem chi tiết khóa học
+  // ===========================
+  //     VIEW COURSE DETAILS
+  // ===========================
   const handleViewDetails = (course) => {
     navigate(`/course/${course.id}`);
   };
 
-  // 🔹 Xóa tất cả yêu thích
+  // ===========================
+  //     XÓA TẤT CẢ YÊU THÍCH
+  // ===========================
   const clearAllFavorites = async () => {
     if (
       !window.confirm("Bạn có chắc muốn xóa tất cả khóa học yêu thích không?")
     )
       return;
+
     try {
       await favoriteAPI.clearFavorites(); // DELETE /Favorite/clear
       setFavoriteCourses([]);
     } catch (err) {
-      console.error("❌ Lỗi khi xóa tất cả:", err);
+      console.error("❌ Lỗi khi xóa toàn bộ:", err);
       alert("Không thể xóa danh sách yêu thích.");
     }
   };
 
-  // 🔹 Xóa 1 khóa học khỏi yêu thích
+  // ===========================
+  //     XÓA 1 KHÓA HỌC
+  // ===========================
   const handleRemoveFavorite = async (courseId) => {
     try {
-      await favoriteAPI.removeFavorite(courseId); // DELETE /Favorite/{id}
+      await favoriteAPI.removeFavorite(courseId); // DELETE /Favorite/{courseId}
       setFavoriteCourses((prev) => prev.filter((c) => c.id !== courseId));
     } catch (err) {
       console.error("❌ Lỗi khi xóa khóa học:", err);
@@ -91,7 +99,9 @@ const Favorites = () => {
     }
   };
 
-  // 🔹 Giao diện khi đang tải
+  // ===========================
+  //      UI LOADING
+  // ===========================
   if (loading) {
     return (
       <div className="favorites-page page-transition">
@@ -100,12 +110,14 @@ const Favorites = () => {
             <ArrowLeft className="back-icon" />
             <span>Quay lại</span>
           </button>
+
           <div className="favorites-header">
             <div className="favorites-title">
               <Heart className="favorites-icon" />
               <h1>Khóa học yêu thích</h1>
             </div>
           </div>
+
           <div className="favorites-loading">
             <p>Đang tải khóa học yêu thích...</p>
           </div>
@@ -114,7 +126,9 @@ const Favorites = () => {
     );
   }
 
-  // 🔹 Giao diện khi lỗi
+  // ===========================
+  //      UI ERROR
+  // ===========================
   if (error) {
     return (
       <div className="favorites-page page-transition">
@@ -125,23 +139,23 @@ const Favorites = () => {
           </button>
 
           <div className="error-page">
-            <div className="error-content">
-              <h2>⚠️ Có lỗi xảy ra</h2>
-              <p>{error}</p>
-              <button
-                className="retry-button"
-                onClick={() => window.location.reload()}
-              >
-                Thử lại
-              </button>
-            </div>
+            <h2>⚠️ Có lỗi xảy ra</h2>
+            <p>{error}</p>
+            <button
+              className="retry-button"
+              onClick={() => window.location.reload()}
+            >
+              Thử lại
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // 🔹 Giao diện khi hiển thị danh sách yêu thích
+  // ===========================
+  //      UI EMPTY STATE
+  // ===========================
   return (
     <div className="favorites-page page-transition">
       <div className="container">

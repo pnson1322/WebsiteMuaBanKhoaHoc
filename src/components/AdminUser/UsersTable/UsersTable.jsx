@@ -31,7 +31,9 @@ const UsersTable = ({ users, onViewUser, onDeleteUser, isLoading = false }) => {
             users.map((user) => (
               <div className="users-row" key={user.id}>
                 <span className="users-cell users-cell--id">{user.id}</span>
-                <span className="users-cell users-cell--name">{user.name}</span>
+                <span className="users-cell users-cell--name">
+                  {user.fullName}
+                </span>
                 <span className="users-cell users-cell--email">
                   {user.email}
                 </span>
@@ -75,4 +77,3 @@ const UsersTable = ({ users, onViewUser, onDeleteUser, isLoading = false }) => {
 };
 
 export default UsersTable;
-
