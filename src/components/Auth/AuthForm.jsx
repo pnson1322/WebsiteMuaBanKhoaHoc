@@ -154,7 +154,6 @@ const AuthForm = ({
                 >
                   <option>Học viên</option>
                   <option>Người bán</option>
-                  <option>Admin</option>
                 </Input>
                 <ChevronDown className="select-arrow" size={18} />
               </InputContainer>
