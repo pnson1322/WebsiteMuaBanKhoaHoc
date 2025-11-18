@@ -97,9 +97,6 @@ export const userAPI = {
 
   /**
    * 📌 GET /User/role/{role}?page=1&pageSize=5
-   * Lấy danh sách user theo role (phân trang)
-   * role = Buyer | Seller | Admin
-   * (Admin only)
    */
   async getUsersByRole(role, page = 1, pageSize = 5) {
     const res = await instance.get(`/User/role/${role}`, {
@@ -110,13 +107,49 @@ export const userAPI = {
 
   /**
    * 📌 GET /User/statistics
-   * Lấy tổng số lượng user theo từng role
-   * (Admin only)
-   * Response: { totalUsers, roleCounts: { Admin, Instructor, User } }
-   * Note: Instructor = Seller, User = Buyer
    */
   async getUserStatistics() {
     const res = await instance.get("/User/statistics");
-    return res.data; // { totalUsers, roleCounts: { Admin, Instructor, User } }
+    return res.data;
+  },
+
+  // ===================================================================
+  // 📌 GỘP THÊM API BÊN DƯỚI (KHÔNG ĐỔI CODE)
+  // ===================================================================
+
+  // Lấy thông tin user hiện tại
+  async getUserDetail() {
+    const res = await instance.get("/User/Detail");
+    return res.data;
+  },
+
+  // Cập nhật thông tin user (có thể kèm avatar)
+  async updateUser({ fullName, phoneNumber, avatarFile }) {
+    const formData = new FormData();
+
+    if (fullName !== undefined && fullName !== null && fullName !== "") {
+      formData.append("fullName", fullName);
+    }
+    if (
+      phoneNumber !== undefined &&
+      phoneNumber !== null &&
+      phoneNumber !== ""
+    ) {
+      formData.append("phoneNumber", phoneNumber);
+    }
+    if (avatarFile) {
+      formData.append("avatar", avatarFile);
+    }
+
+    const res = await instance.put("/User", formData);
+    return res.data;
+  },
+
+  // Đổi mật khẩu
+  async changePasswordV2({ currentPassword, newPassword }) {
+    await instance.put("/User/ChangePassword", {
+      currentPassword,
+      newPassword,
+    });
   },
 };

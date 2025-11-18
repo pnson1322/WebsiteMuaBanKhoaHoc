@@ -19,6 +19,14 @@ instance.interceptors.request.use(
 let isRefreshing = false;
 let failedQueue = [];
 
+const AUTH_WHITELIST = [
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/auth/verify-email",
+];
+
 const processQueue = (error, token = null) => {
     failedQueue.forEach((prom) => {
         if (error) prom.reject(error);
@@ -30,9 +38,13 @@ const processQueue = (error, token = null) => {
 instance.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const originalRequest = error.config;
+        const originalRequest = error.config || {};
+        const requestUrl = originalRequest.url || "";
+        const isAuthRequest = AUTH_WHITELIST.some((endpoint) =>
+            requestUrl.includes(endpoint)
+        );
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });

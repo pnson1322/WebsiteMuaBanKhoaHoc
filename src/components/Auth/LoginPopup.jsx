@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthForm from "../../hooks/useAuthForm";
 import ForgotPasswordPopup from "./ForgotPasswordPopup";
+import VerifyEmailModal from "../AdminUser/VerifyEmailModal/VerifyEmailModal";
 import {
   Overlay,
   PopupContainer,
@@ -52,6 +53,10 @@ const LoginPopup = ({ onClose }) => {
     handleSubmit,
     switchMode,
     setMode: setIsRegister,
+    showVerifyEmailModal,
+    verifyEmail,
+    handleResendOTP,
+    handleCloseVerifyModal,
   } = useAuthForm("login", onClose);
   const isRegister = mode === "register";
   // ✅ Mở trang đầy đủ
@@ -223,7 +228,6 @@ const LoginPopup = ({ onClose }) => {
                   >
                     <option>Học viên</option>
                     <option>Người bán</option>
-                    <option>Admin</option>
                   </Input>
                   <ChevronDown className="select-arrow" size={18} />
                 </InputContainer>
@@ -253,6 +257,14 @@ const LoginPopup = ({ onClose }) => {
       {showForgot && (
         <ForgotPasswordPopup onClose={() => setShowForgot(false)} />
       )}
+
+      {/* ==== VERIFY EMAIL MODAL ==== */}
+      <VerifyEmailModal
+        isOpen={showVerifyEmailModal}
+        email={verifyEmail}
+        onClose={handleCloseVerifyModal}
+        onResendOTP={handleResendOTP}
+      />
     </Overlay>
   );
 };
