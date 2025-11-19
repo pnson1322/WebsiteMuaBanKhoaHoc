@@ -84,4 +84,10 @@ export const dashboardAPI = {
     );
     return res.data;
   },
+
+  // GET /dashboard/revenue-7-days: Lấy doanh thu theo ngày trong 7 ngày gần nhất, tính theo CreatedAt. Mỗi ngày trả về tổng TotalAmount.
+  getCourse7daysRevenue: async () => {
+    const res = await instance.get(`/dashboard/revenue-7-days`);
+    return res.data;
+  },
 };

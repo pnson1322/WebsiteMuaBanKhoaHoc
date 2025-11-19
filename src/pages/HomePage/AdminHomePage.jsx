@@ -11,6 +11,7 @@ import "./AdminHomePage.css";
 import { useNavigate } from "react-router-dom";
 import { BarChart, LineChart, PieChart } from "@mui/x-charts";
 import { useEffect, useRef, useState } from "react";
+import { useToast } from "../../contexts/ToastContext";
 import { dashboardAPI } from "../../services/dashboardAPI";
 import CoursesSection from "./CoursesSection";
 import Filter from "../../components/Filter/Filter";
@@ -38,6 +39,7 @@ function useElementWidth(initialWidth = 500) {
 export default function AdminHomePage() {
   const navigate = useNavigate();
   const { dispatch, actionTypes } = useAppDispatch();
+  const { showSuccess, showError } = useToast();
 
   const handleViewDetails = (course) => {
     // Lưu lịch sử xem
@@ -49,9 +51,9 @@ export default function AdminHomePage() {
     // Sau đó điều hướng sang trang chi tiết
     navigate(`/course/${course.id}`);
   };
-  const [lineRef, lineWidth] = useElementWidth();
+
+  const [revenueChartRef, revenueChartWidth] = useElementWidth();
   const [pieRef, pieWidth] = useElementWidth();
-  const [barRef, barWidth] = useElementWidth();
 
   const [totalCourses, setTotalCourses] = useState(0);
   const [newUser, setNewUser] = useState(0);
@@ -86,11 +88,6 @@ export default function AdminHomePage() {
     "#5C6BC0",
   ];
 
-  // Revenue chart data
-  const revenue7DaysData = [2.5, 3.2, 2.8, 3.5, 4.1, 3.9, 4.5];
-  const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
-  const days7 = [1, 2, 3, 4, 5, 6, 7];
-
   // Chart colors
   const revenueBarColor = "#14b8a6";
   const revenueLineColor = "#2563eb";
@@ -100,20 +97,23 @@ export default function AdminHomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const totalCoursesAPI = await dashboardAPI.getCourseCategoryStats();
-        const userStats = await dashboardAPI.getUserStats();
-        const revenue = await dashboardAPI.getGlobalTotalRevenue();
-        const userRoleAPI = await dashboardAPI.getRoleCountStats();
-        const recentTransaction = await dashboardAPI.getRecentTransactions();
-        const monthlyRevenue =
-          await dashboardAPI.getGlobalRevenueLast12Months();
-
-        console.log(totalCoursesAPI);
-        console.log(userStats);
-        console.log(revenue);
-        console.log(userRoleAPI);
-        console.log(recentTransaction);
-        console.log(monthlyRevenue);
+        const [
+          totalCoursesAPI,
+          userStats,
+          revenue,
+          userRoleAPI,
+          recentTransaction,
+          monthlyRevenue,
+          days7Revenue,
+        ] = await Promise.all([
+          dashboardAPI.getCourseCategoryStats(),
+          dashboardAPI.getUserStats(),
+          dashboardAPI.getGlobalTotalRevenue(),
+          dashboardAPI.getRoleCountStats(),
+          dashboardAPI.getRecentTransactions(),
+          dashboardAPI.getGlobalRevenueLast12Months(),
+          dashboardAPI.getCourse7daysRevenue(),
+        ]);
 
         const total = totalCoursesAPI.reduce((sum, category) => {
           return sum + category.courseCount;
@@ -131,15 +131,13 @@ export default function AdminHomePage() {
             .slice(0, 4)
             .map((item) => {
               const d = new Date(item.createdAt);
-              const day = String(d.getDate()).padStart(2, "0");
-              const month = String(d.getMonth() + 1).padStart(2, "0");
-              const year = d.getFullYear();
+              const dateStr = d.toLocaleDateString("vi-VN");
 
               return {
                 id: item.id,
                 revenue: item.totalAmount,
                 name: item.buyerName,
-                date: `${day}/${month}/${year}`,
+                date: dateStr,
               };
             })
         );
@@ -160,8 +158,19 @@ export default function AdminHomePage() {
             revenue: i.totalRevenue,
           }))
         );
+        setDataBarChart(
+          days7Revenue.map((item) => {
+            const d = new Date(item.date);
+            const dateStr = d.toLocaleDateString("vi-VN");
+
+            return {
+              revenue: item.totalAmount,
+              date: dateStr,
+            };
+          })
+        );
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
+        showError("Lỗi: " + err);
       }
     };
 
@@ -418,26 +427,21 @@ export default function AdminHomePage() {
             </select>
           </div>
 
-          {revenuePeriod === "7days" ? (
-            <div ref={barRef} style={{ width: "100%" }}>
+          <div
+            ref={revenueChartRef}
+            style={{ width: "100%", overflow: "hidden" }}
+          >
+            {revenuePeriod === "7days" ? (
               <BarChart
                 xAxis={[
                   {
-                    data: days7,
-                    valueFormatter: (value) => {
-                      const today = new Date();
-                      const date = new Date(today);
-                      date.setDate(today.getDate() - (7 - value));
-                      const dayName = dayNames[date.getDay()];
-                      const day = date.getDate();
-                      const month = date.getMonth() + 1;
-                      return `${dayName}, ${day}/${month}`;
-                    },
+                    data: dataBarChart.map((i) => i.date),
+                    scaleType: "band",
                   },
                 ]}
                 series={[
                   {
-                    data: revenue7DaysData,
+                    data: dataBarChart.map((i) => i.revenue || 0),
                     color: revenueBarColor,
                     label: "Doanh thu: ",
                     valueFormatter: (v) => `${v} triệu đồng`,
@@ -453,14 +457,12 @@ export default function AdminHomePage() {
                   },
                 ]}
                 grid={{ horizontal: true }}
-                width={barWidth}
+                width={revenueChartWidth}
                 height={300}
                 margin={{ left: 0 }}
               />
-            </div>
-          ) : (
-            <div ref={lineRef} style={{ width: "100%", overflow: "hidden" }}>
-              {lineWidth > 0 && (
+            ) : (
+              revenueChartWidth > 0 && (
                 <LineChart
                   xAxis={[
                     {
@@ -491,7 +493,7 @@ export default function AdminHomePage() {
                     },
                   ]}
                   grid={{ horizontal: true }}
-                  width={lineWidth}
+                  width={revenueChartWidth}
                   height={350}
                   margin={{ left: 50, right: 20, top: 20, bottom: 40 }}
                   sx={{
@@ -503,9 +505,9 @@ export default function AdminHomePage() {
                     },
                   }}
                 />
-              )}
-            </div>
-          )}
+              )
+            )}
+          </div>
         </div>
 
         <div className="chart-item">

@@ -1,6 +1,7 @@
 import { BookText, ChartArea, Star, UserRound } from "lucide-react";
 import "./SellerHomePage.css";
 import { useEffect, useRef, useState } from "react";
+import { useToast } from "../../contexts/ToastContext";
 import { BarChart, LineChart, PieChart } from "@mui/x-charts";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
 import SellerStatsSummary from "../../components/Seller/SellerStatsSummary";
@@ -32,6 +33,7 @@ const SellerHomePage = () => {
     { id: 3, name: "Python AI", students: 180, revenue: 4000000 },
     { id: 4, name: "Kotlin Android", students: 90, revenue: 2500000 },
   ]);
+  const { showSuccess, showError } = useToast();
 
   const [totalCourses, setTotalCourses] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
@@ -62,14 +64,19 @@ const SellerHomePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const categoryStats = await dashboardAPI.getCourseStatsByCategory();
-        const totalStudentsnRating = await dashboardAPI.getSellerStats();
-        const revenue = await dashboardAPI.getSellerTotalRevenue();
-        const monthlyRevenue = await dashboardAPI.getSellerRevenue();
-        const montlyBuyer = await dashboardAPI.getMonthlyBuyerStats();
-
-        console.log(monthlyRevenue);
-        console.log(montlyBuyer);
+        const [
+          categoryStats,
+          totalStudentsnRating,
+          revenue,
+          monthlyRevenue,
+          montlyBuyer,
+        ] = await Promise.all([
+          dashboardAPI.getCourseStatsByCategory(),
+          dashboardAPI.getSellerStats(),
+          dashboardAPI.getSellerTotalRevenue(),
+          dashboardAPI.getSellerRevenue(),
+          dashboardAPI.getMonthlyBuyerStats(),
+        ]);
 
         const total = categoryStats.reduce((sum, category) => {
           return sum + category.courseCount;
@@ -97,7 +104,7 @@ const SellerHomePage = () => {
         );
         setDataBarChart(montlyBuyer);
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
+        showError("Lỗi: " + err);
       }
     };
 

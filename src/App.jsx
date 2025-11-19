@@ -109,9 +109,23 @@ function App() {
                 />
 
                 {/* Trang yêu thích */}
-                <Route path="favorites" element={<Favorites />} />
+                <Route
+                  path="favorites"
+                  element={
+                    <ProtectedRoute showModal={true}>
+                      <Favorites />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* Giỏ hàng */}
-                <Route path="cart" element={<Cart />} />
+                <Route
+                  path="cart"
+                  element={
+                    <ProtectedRoute showModal={true}>
+                      <Cart />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Thêm khóa học mới */}
                 <Route
