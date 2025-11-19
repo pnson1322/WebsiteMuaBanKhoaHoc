@@ -2,6 +2,7 @@ import React from "react";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import "./NotificationPopup.css";
+import { X, Trash2 } from "lucide-react";
 
 const NotificationIcon = () => (
   <div className="notif-icon-wrapper">
@@ -27,6 +28,8 @@ export default function NotificationPopup({
   notifications,
   onMarkOneAsRead,
   onMarkAllAsRead,
+  onDeleteOne,
+  onDeleteAll,
 }) {
   const handleItemClick = (id, isRead) => {
     if (!isRead) {
@@ -38,9 +41,23 @@ export default function NotificationPopup({
     <div className="notification-popup">
       <div className="notif-header">
         <h3>Thông báo</h3>
-        <button className="mark-all-read" onClick={onMarkAllAsRead}>
-          Đánh dấu đã đọc
-        </button>
+        <div className="notif-actions">
+          <button
+            className="action-text-btn mark-read-btn"
+            onClick={onMarkAllAsRead}
+            title="Đánh dấu tất cả đã đọc"
+          >
+            Đã đọc
+          </button>
+          <span className="divider">|</span>
+          <button
+            className="action-text-btn delete-all-btn"
+            onClick={onDeleteAll}
+            title="Xóa tất cả thông báo"
+          >
+            Xóa tất cả
+          </button>
+        </div>
       </div>
 
       <SimpleBar className="notif-list" style={{ maxHeight: "450px" }}>
@@ -54,11 +71,24 @@ export default function NotificationPopup({
               onClick={() => handleItemClick(notif.id, notif.isRead)}
             >
               <NotificationIcon />
+
               <div className="notif-content">
                 <p className="notif-text">{notif.text}</p>
-                <span className="notif-time">{notif.time}</span>
+                <span className="notif-time">{notif.date}</span>
               </div>
+
               {!notif.isRead && <div className="notif-unread-dot" />}
+
+              <button
+                className="notif-delete-item-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteOne(notif.id);
+                }}
+                title="Xóa thông báo này"
+              >
+                <X size={14} />
+              </button>
             </div>
           ))
         )}

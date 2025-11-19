@@ -7,6 +7,7 @@ import PurchasedCourseCard from "../../components/PurchasedCourseCard/PurchasedC
 import "../PurchasedCoursesPage/PurchasedCoursesPage.css";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
 import SellerStatsSummary from "../../components/Seller/SellerStatsSummary";
+import { dashboardAPI } from "../../services/dashboardAPI";
 
 const SellerCoursesPage = () => {
   const navigate = useNavigate();
@@ -14,6 +15,34 @@ const SellerCoursesPage = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
+
+  const [totalCourses, setTotalCourses] = useState(0);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [rating, setRating] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const categoryStats = await dashboardAPI.getCourseStatsByCategory();
+        const totalStudentsnRating = await dashboardAPI.getSellerStats();
+        const revenue = await dashboardAPI.getSellerTotalRevenue();
+
+        const total = categoryStats.reduce((sum, category) => {
+          return sum + category.courseCount;
+        }, 0);
+
+        setTotalCourses(total);
+        setTotalStudents(totalStudentsnRating.totalStudents);
+        setRating(totalStudentsnRating.averageRating);
+        setTotalRevenue(revenue.totalRevenue);
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Lọc các khóa học mới thêm từ trang AddNewCourse: mặc định rating = 0, students = 0
   const sellerNewCourses = useMemo(() => {
@@ -94,18 +123,10 @@ const SellerCoursesPage = () => {
         />
 
         <SellerStatsSummary
-          totalCourses={filtered.length}
-          totalStudents={filtered.reduce(
-            (sum, c) => sum + (Number(c?.students) || 0),
-            0
-          )}
-          totalRevenue={0}
-          averageRating={
-            filtered.length
-              ? filtered.reduce((sum, c) => sum + (Number(c?.rating) || 0), 0) /
-                filtered.length
-              : 0
-          }
+          totalCourses={totalCourses}
+          totalStudents={totalStudents}
+          totalRevenue={totalRevenue}
+          averageRating={rating}
         />
 
         {/* Header */}
