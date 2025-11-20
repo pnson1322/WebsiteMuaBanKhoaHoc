@@ -19,6 +19,7 @@ import { userAPI } from "../services/userAPI";
 import "./UserInfo.css";
 import { useState, useEffect } from "react";
 import ForgotPasswordPopup from "../components/Auth/ForgotPasswordPopup";
+import PasswordStrengthBar from "../components/common/PasswordStrengthBar";
 
 const UserInfo = () => {
   const { refreshUser } = useAuth();
@@ -57,8 +58,8 @@ const UserInfo = () => {
           data.role === "Admin"
             ? "Quản lý"
             : data.role === "Buyer"
-              ? "Học viên"
-              : "Người bán"
+            ? "Học viên"
+            : "Người bán"
         );
 
         setAvatarPreview(data.avatarUrl || data.image || null);
@@ -72,52 +73,24 @@ const UserInfo = () => {
     fetchUser();
   }, [showError]);
 
-  const calculateStrength = (pwd) => {
-    let score = 0;
-    if (pwd.length >= 6) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-
-    let percent = (score / 4) * 100;
-
-    if (score === 0) return { label: "Yếu", color: "#ddd", percent: 0 };
-    if (score === 1) return { label: "Yếu", color: "#667eea", percent };
-    if (score === 2)
-      return {
-        label: "Trung bình",
-        color: "linear-gradient(90deg, #667eea 0%, #a06ee1 100%)",
-        percent,
-      };
-    if (score >= 3)
-      return {
-        label: "Mạnh",
-        color: "linear-gradient(90deg, #667eea 0%, #a06ee1 50%, #764ba2 100%)",
-        percent,
-      };
-  };
-
-  const strength = calculateStrength(newPassword);
-
   // =========== handle Avatar ============
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) return showError("Chỉ chấp nhận file ảnh");
+    if (!file.type.startsWith("image/"))
+      return showError("Chỉ chấp nhận file ảnh");
     if (file.size > 2 * 1024 * 1024)
       return showError("Kích thước ảnh tối đa là 2MB");
 
-    if (avatarPreview?.startsWith("blob:"))
-      URL.revokeObjectURL(avatarPreview);
+    if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
 
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
   };
 
   const handleRemoveAvatar = () => {
-    if (avatarPreview?.startsWith("blob:"))
-      URL.revokeObjectURL(avatarPreview);
+    if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
 
     setAvatarPreview(null);
     setAvatarFile(null);
@@ -192,7 +165,10 @@ const UserInfo = () => {
 
       showSuccess("Đổi mật khẩu thành công");
     } catch (err) {
-      showError(err.response?.data?.message || "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại");
+      showError(
+        err.response?.data?.message ||
+          "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại"
+      );
     } finally {
       setIsChangingPassword(false);
     }
@@ -200,7 +176,14 @@ const UserInfo = () => {
 
   if (loadingUser) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "400px",
+        }}
+      >
         <Loader2 className="spinning" size={32} />
       </div>
     );
@@ -374,7 +357,9 @@ const UserInfo = () => {
             </button>
 
             {showForgotPassword && (
-              <ForgotPasswordPopup onClose={() => setShowForgotPassword(false)} />
+              <ForgotPasswordPopup
+                onClose={() => setShowForgotPassword(false)}
+              />
             )}
 
             <label className="user-info-form-label">
@@ -399,15 +384,7 @@ const UserInfo = () => {
               </button>
             </div>
 
-            <div className="strength-bar-container">
-              <div className="strength-bar-wrapper">
-                <div
-                  className="strength-bar-fill"
-                  style={{ width: `${strength.percent}%`, background: strength.color }}
-                ></div>
-              </div>
-              <div className="strength-text">{strength.label}</div>
-            </div>
+            <PasswordStrengthBar password={newPassword} />
 
             <div className="security-tips">
               <h4>Mẹo bảo mật:</h4>
@@ -416,7 +393,9 @@ const UserInfo = () => {
                   Mật khẩu mạnh nên dài (tối thiểu 6 ký tự) và kết hợp chữ hoa,
                   chữ thường, số, và <strong>ký tự đặc biệt</strong> (như !@#$).
                 </li>
-                <li>Không dùng chung mật khẩu này cho bất kỳ tài khoản nào khác.</li>
+                <li>
+                  Không dùng chung mật khẩu này cho bất kỳ tài khoản nào khác.
+                </li>
               </ul>
             </div>
 
@@ -454,7 +433,6 @@ const UserInfo = () => {
       </div>
     </div>
   );
-
 };
 
 export default UserInfo;

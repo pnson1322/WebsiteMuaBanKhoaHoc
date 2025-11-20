@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAuthForm from "../../hooks/useAuthForm";
 import ForgotPasswordPopup from "./ForgotPasswordPopup";
 import VerifyEmailModal from "../AdminUser/VerifyEmailModal/VerifyEmailModal";
+import PasswordStrengthBar from "../common/PasswordStrengthBar";
 import {
   Overlay,
   PopupContainer,
@@ -215,6 +216,9 @@ const LoginPopup = ({ onClose }) => {
                   <ErrorText>{errors.confirmPassword}</ErrorText>
                 )}
               </FormGroup>
+
+              {/* Password Strength Bar */}
+              <PasswordStrengthBar password={formData.password} />
 
               <FormGroup>
                 <Label>Vai trò</Label>

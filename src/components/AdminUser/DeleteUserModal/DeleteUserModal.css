@@ -76,7 +76,7 @@
 
 .users-modal__icon--danger {
   background: linear-gradient(130deg, #f87171 0%, #ef4444 100%);
-  box-shadow: 0 16px 24px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 16px 24px rgba(239, 68, 68, 0.1);
   height: 46px;
   width: 46px;
 }
@@ -150,4 +150,3 @@
     margin: 16px;
   }
 }
-
