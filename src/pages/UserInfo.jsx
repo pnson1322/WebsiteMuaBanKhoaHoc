@@ -120,12 +120,10 @@ const UserInfo = () => {
         avatarFile,
       });
 
-      await refreshUser?.();
+      const updated = await refreshUser();
 
-      const updated = await userAPI.getUserDetail();
       setUserData(updated);
       setAvatarFile(null);
-
       setAvatarPreview(updated.avatarUrl || updated.image);
 
       showSuccess("Cập nhật thông tin thành công");
@@ -383,6 +381,7 @@ const UserInfo = () => {
                 {showNewPassword ? <EyeOff /> : <Eye />}
               </button>
             </div>
+
 
             <PasswordStrengthBar password={newPassword} />
 

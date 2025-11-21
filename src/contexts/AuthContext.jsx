@@ -62,18 +62,27 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("refreshToken");
   };
 
-  const login = (userData, tokens) => {
-    setIsLoggedIn(true);
-    setUser(userData);
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("currentUser", JSON.stringify(userData));
-
-    // Lưu tokens nếu có
-    if (tokens?.accessToken) {
+  const login = async (userData, tokens) => {
+    if (tokens?.accessToken)
       localStorage.setItem("accessToken", tokens.accessToken);
-    }
-    if (tokens?.refreshToken) {
+    if (tokens?.refreshToken)
       localStorage.setItem("refreshToken", tokens.refreshToken);
+    localStorage.setItem("isLoggedIn", "true");
+
+    try {
+      const fullUserData = await userAPI.getUserDetail();
+
+      setIsLoggedIn(true);
+      setUser(fullUserData);
+      localStorage.setItem("currentUser", JSON.stringify(fullUserData));
+    } catch (error) {
+      console.error("Login success but failed to fetch details", error);
+      const fallbackUser = {
+        ...userData,
+      };
+      setIsLoggedIn(true);
+      setUser(fallbackUser);
+      localStorage.setItem("currentUser", JSON.stringify(fallbackUser));
     }
   };
 
