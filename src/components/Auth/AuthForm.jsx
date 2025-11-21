@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ForgotPasswordPopup from "./ForgotPasswordPopup";
+import PasswordStrengthBar from "../common/PasswordStrengthBar";
 import {
   AuthFormWrapper,
   FormGroup,
@@ -140,6 +141,9 @@ const AuthForm = ({
                 <ErrorText>{errors.confirmPassword}</ErrorText>
               )}
             </FormGroup>
+
+            {/* Password Strength Bar */}
+            <PasswordStrengthBar password={formData.password} />
 
             {/* ==== VAI TRÒ ==== */}
             <FormGroup>

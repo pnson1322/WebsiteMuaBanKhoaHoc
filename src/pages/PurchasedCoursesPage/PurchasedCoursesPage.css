@@ -1,6 +1,7 @@
 .purchased-page {
   min-height: 100vh;
-  padding: 2rem 0;
+  padding-top: 0;
+  padding-bottom: 2rem;
 }
 
 .purchased-header {

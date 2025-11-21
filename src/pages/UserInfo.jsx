@@ -19,6 +19,7 @@ import { userAPI } from "../services/userAPI";
 import "./UserInfo.css";
 import { useState, useEffect } from "react";
 import ForgotPasswordPopup from "../components/Auth/ForgotPasswordPopup";
+import PasswordStrengthBar from "../components/common/PasswordStrengthBar";
 
 const UserInfo = () => {
   const { refreshUser } = useAuth();
@@ -71,33 +72,6 @@ const UserInfo = () => {
 
     fetchUser();
   }, [showError]);
-
-  const calculateStrength = (pwd) => {
-    let score = 0;
-    if (pwd.length >= 6) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-
-    let percent = (score / 4) * 100;
-
-    if (score === 0) return { label: "Yếu", color: "#ddd", percent: 0 };
-    if (score === 1) return { label: "Yếu", color: "#667eea", percent };
-    if (score === 2)
-      return {
-        label: "Trung bình",
-        color: "linear-gradient(90deg, #667eea 0%, #a06ee1 100%)",
-        percent,
-      };
-    if (score >= 3)
-      return {
-        label: "Mạnh",
-        color: "linear-gradient(90deg, #667eea 0%, #a06ee1 50%, #764ba2 100%)",
-        percent,
-      };
-  };
-
-  const strength = calculateStrength(newPassword);
 
   // =========== handle Avatar ============
   const handleAvatarChange = (e) => {
@@ -408,18 +382,8 @@ const UserInfo = () => {
               </button>
             </div>
 
-            <div className="strength-bar-container">
-              <div className="strength-bar-wrapper">
-                <div
-                  className="strength-bar-fill"
-                  style={{
-                    width: `${strength.percent}%`,
-                    background: strength.color,
-                  }}
-                ></div>
-              </div>
-              <div className="strength-text">{strength.label}</div>
-            </div>
+
+            <PasswordStrengthBar password={newPassword} />
 
             <div className="security-tips">
               <h4>Mẹo bảo mật:</h4>
