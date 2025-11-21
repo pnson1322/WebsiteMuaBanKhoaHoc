@@ -57,8 +57,8 @@ const UserInfo = () => {
           data.role === "Admin"
             ? "Quản lý"
             : data.role === "Buyer"
-              ? "Học viên"
-              : "Người bán"
+            ? "Học viên"
+            : "Người bán"
         );
 
         setAvatarPreview(data.avatarUrl || data.image || null);
@@ -104,20 +104,19 @@ const UserInfo = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) return showError("Chỉ chấp nhận file ảnh");
+    if (!file.type.startsWith("image/"))
+      return showError("Chỉ chấp nhận file ảnh");
     if (file.size > 2 * 1024 * 1024)
       return showError("Kích thước ảnh tối đa là 2MB");
 
-    if (avatarPreview?.startsWith("blob:"))
-      URL.revokeObjectURL(avatarPreview);
+    if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
 
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
   };
 
   const handleRemoveAvatar = () => {
-    if (avatarPreview?.startsWith("blob:"))
-      URL.revokeObjectURL(avatarPreview);
+    if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
 
     setAvatarPreview(null);
     setAvatarFile(null);
@@ -147,12 +146,10 @@ const UserInfo = () => {
         avatarFile,
       });
 
-      await refreshUser?.();
+      const updated = await refreshUser();
 
-      const updated = await userAPI.getUserDetail();
       setUserData(updated);
       setAvatarFile(null);
-
       setAvatarPreview(updated.avatarUrl || updated.image);
 
       showSuccess("Cập nhật thông tin thành công");
@@ -192,7 +189,10 @@ const UserInfo = () => {
 
       showSuccess("Đổi mật khẩu thành công");
     } catch (err) {
-      showError(err.response?.data?.message || "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại");
+      showError(
+        err.response?.data?.message ||
+          "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại"
+      );
     } finally {
       setIsChangingPassword(false);
     }
@@ -200,7 +200,14 @@ const UserInfo = () => {
 
   if (loadingUser) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "400px",
+        }}
+      >
         <Loader2 className="spinning" size={32} />
       </div>
     );
@@ -374,7 +381,9 @@ const UserInfo = () => {
             </button>
 
             {showForgotPassword && (
-              <ForgotPasswordPopup onClose={() => setShowForgotPassword(false)} />
+              <ForgotPasswordPopup
+                onClose={() => setShowForgotPassword(false)}
+              />
             )}
 
             <label className="user-info-form-label">
@@ -403,7 +412,10 @@ const UserInfo = () => {
               <div className="strength-bar-wrapper">
                 <div
                   className="strength-bar-fill"
-                  style={{ width: `${strength.percent}%`, background: strength.color }}
+                  style={{
+                    width: `${strength.percent}%`,
+                    background: strength.color,
+                  }}
                 ></div>
               </div>
               <div className="strength-text">{strength.label}</div>
@@ -416,7 +428,9 @@ const UserInfo = () => {
                   Mật khẩu mạnh nên dài (tối thiểu 6 ký tự) và kết hợp chữ hoa,
                   chữ thường, số, và <strong>ký tự đặc biệt</strong> (như !@#$).
                 </li>
-                <li>Không dùng chung mật khẩu này cho bất kỳ tài khoản nào khác.</li>
+                <li>
+                  Không dùng chung mật khẩu này cho bất kỳ tài khoản nào khác.
+                </li>
               </ul>
             </div>
 
@@ -454,7 +468,6 @@ const UserInfo = () => {
       </div>
     </div>
   );
-
 };
 
 export default UserInfo;
