@@ -53,7 +53,7 @@ const CourseCard = ({ course, onViewDetails }) => {
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    
+
     // Kiểm tra đăng nhập
     if (!isLoggedIn) {
       dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });

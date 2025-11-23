@@ -11,14 +11,20 @@ export const Layout = () => {
 
   return (
     <div className="app">
-      <Header onOpenLoginPopup={() => dispatch({ type: actionTypes.SHOW_LOGIN_POPUP })} />
+      <Header
+        onOpenLoginPopup={() =>
+          dispatch({ type: actionTypes.SHOW_LOGIN_POPUP })
+        }
+      />
 
       <main className="main-content">
         <Outlet />
       </main>
 
       {state.showLoginPopup && (
-        <LoginPopup onClose={() => dispatch({ type: actionTypes.HIDE_LOGIN_POPUP })} />
+        <LoginPopup
+          onClose={() => dispatch({ type: actionTypes.HIDE_LOGIN_POPUP })}
+        />
       )}
 
       <Footer />
