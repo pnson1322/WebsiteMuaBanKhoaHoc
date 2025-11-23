@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Lock, User } from "lucide-react";
 import LoginPopup from "./Auth/LoginPopup";
+import logger from "../utils/logger";
 import "./ProtectedRoute.css";
 
 const ProtectedRoute = ({
@@ -16,14 +17,45 @@ const ProtectedRoute = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
+    logger.debug("PROTECTED_ROUTE", "Checking route protection", {
+      loading,
+      requireAuth,
+      isLoggedIn,
+      showModal,
+      path: location.pathname,
+    });
+
     if (!loading && requireAuth && !isLoggedIn) {
+      logger.warn(
+        "PROTECTED_ROUTE_BLOCKED",
+        "User not authenticated - blocking access",
+        {
+          path: location.pathname,
+          showModal,
+        }
+      );
+
       if (showModal) {
+        logger.info("PROTECTED_ROUTE_MODAL", "Showing login modal");
         setShowAuthModal(true);
       } else {
         // Redirect to auth page with redirect parameter
         const redirect = location.pathname;
+        logger.info("PROTECTED_ROUTE_REDIRECT", "Redirecting to login page", {
+          from: redirect,
+          to: `/login?redirect=${encodeURIComponent(redirect)}`,
+        });
         navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
       }
+    } else if (!loading && requireAuth && isLoggedIn) {
+      logger.debug(
+        "PROTECTED_ROUTE_ALLOWED",
+        "User authenticated - allowing access",
+        {
+          path: location.pathname,
+          userId: user?.id,
+        }
+      );
     }
   }, [
     loading,
