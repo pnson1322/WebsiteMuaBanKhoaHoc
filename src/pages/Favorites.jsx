@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Heart, ArrowLeft, Trash2 } from "lucide-react";
 import { favoriteAPI } from "../services/favoriteAPI";
 import CourseCard from "../components/CourseCard/CourseCard";
+import logger from "../utils/logger";
 import "./Favorites.css";
 
 const Favorites = () => {
@@ -12,64 +13,89 @@ const Favorites = () => {
   const [error, setError] = useState(null);
 
   // ===========================
-  //   LOAD DANH SÁCH YÊU THÍCH
+  //   LOAD FAVORITES FROM API
   // ===========================
   useEffect(() => {
-    const loadFavoriteCourses = async () => {
+    const loadFavorites = async () => {
+      logger.info("FAVORITES_LOAD", "Loading favorites page");
+
       try {
         setLoading(true);
         setError(null);
 
-        const data = await favoriteAPI.getFavorites(); // GET /Favorite
+        logger.debug(
+          "FAVORITES_API_CALL",
+          "Calling favoriteAPI.getFavorites()"
+        );
+        const data = await favoriteAPI.getFavorites();
         console.log("⭐ Favorite API trả về:", data);
 
-        // Map dữ liệu API -> format chuẩn để CourseCard dùng
-        const mapped = (data || []).map((item) => ({
+        logger.info("FAVORITES_API_SUCCESS", "Favorites loaded successfully", {
+          count: data?.length || 0,
+        });
+
+        // ⭐ Chuyển imageUrl → image để CourseCard đọc đúng
+        const normalized = (data || []).map((item) => ({
+          ...item,
           id: item.courseId,
-          name: item.title,
-          description: item.description,
           image:
-            item.image || "https://via.placeholder.com/400x250?text=No+Image",
-          category: item.category || "Chưa phân loại",
-          instructor: {
-            id: item.teacherId || 0,
-            name: item.teacherName || "Giảng viên ẩn danh",
-          },
-          rating: Number(item.averageRating || 0).toFixed(1),
-          students: item.totalPurchased || 0,
-          duration: item.durationHours
-            ? `${item.durationHours} giờ`
-            : "Chưa cập nhật",
-          level: item.level || "Không xác định",
-          price: item.price || 0,
+            item.imageUrl ??
+            item.image ??
+            "https://via.placeholder.com/400x250?text=No+Image",
         }));
 
-        setFavoriteCourses(mapped);
+        setFavoriteCourses(normalized);
       } catch (err) {
-        console.error("❌ Lỗi tải danh sách yêu thích:", err);
+        console.error("❌ Lỗi lấy danh sách yêu thích:", err);
 
         if (err.response?.status === 401) {
+          logger.error(
+            "FAVORITES_401_ERROR",
+            "Unauthorized - session expired",
+            {
+              status: err.response.status,
+            }
+          );
+
           setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+
+          // 🔧 FIX: Auto redirect về login sau 2 giây
+          logger.warn(
+            "FAVORITES_AUTO_REDIRECT",
+            "Will redirect to login in 2 seconds"
+          );
+          setTimeout(() => {
+            logger.info("FAVORITES_REDIRECT_NOW", "Redirecting to login");
+            navigate("/login?expired=true");
+          }, 2000);
         } else {
-          setError("Không thể tải danh sách yêu thích. Vui lòng thử lại sau.");
+          logger.error("FAVORITES_LOAD_ERROR", "Failed to load favorites", {
+            error: err.message,
+            status: err.response?.status,
+          });
+          setError("Không thể tải danh sách yêu thích.");
         }
       } finally {
         setLoading(false);
+        logger.debug(
+          "FAVORITES_LOAD_COMPLETE",
+          "Favorites load process completed"
+        );
       }
     };
 
-    loadFavoriteCourses();
-  }, []);
+    loadFavorites();
+  }, [navigate]);
 
   // ===========================
-  //     VIEW COURSE DETAILS
+  //   VIEW COURSE DETAILS
   // ===========================
   const handleViewDetails = (course) => {
     navigate(`/course/${course.id}`);
   };
 
   // ===========================
-  //     XÓA TẤT CẢ YÊU THÍCH
+  //   CLEAR ALL FAVORITES
   // ===========================
   const clearAllFavorites = async () => {
     if (
@@ -78,20 +104,20 @@ const Favorites = () => {
       return;
 
     try {
-      await favoriteAPI.clearFavorites(); // DELETE /Favorite/clear
+      await favoriteAPI.clearFavorites();
       setFavoriteCourses([]);
     } catch (err) {
-      console.error("❌ Lỗi khi xóa toàn bộ:", err);
+      console.error("❌ Lỗi:", err);
       alert("Không thể xóa danh sách yêu thích.");
     }
   };
 
   // ===========================
-  //     XÓA 1 KHÓA HỌC
+  //   REMOVE ONE COURSE
   // ===========================
   const handleRemoveFavorite = async (courseId) => {
     try {
-      await favoriteAPI.removeFavorite(courseId); // DELETE /Favorite/{courseId}
+      await favoriteAPI.removeFavorite(courseId);
       setFavoriteCourses((prev) => prev.filter((c) => c.id !== courseId));
     } catch (err) {
       console.error("❌ Lỗi khi xóa khóa học:", err);
@@ -100,7 +126,7 @@ const Favorites = () => {
   };
 
   // ===========================
-  //      UI LOADING
+  //   LOADING UI
   // ===========================
   if (loading) {
     return (
@@ -127,7 +153,7 @@ const Favorites = () => {
   }
 
   // ===========================
-  //      UI ERROR
+  //   ERROR UI
   // ===========================
   if (error) {
     return (
@@ -154,7 +180,7 @@ const Favorites = () => {
   }
 
   // ===========================
-  //      UI EMPTY STATE
+  //   MAIN UI
   // ===========================
   return (
     <div className="favorites-page page-transition">
@@ -183,10 +209,7 @@ const Favorites = () => {
           <div className="empty-favorites">
             <Heart className="empty-icon" />
             <h3>Chưa có khóa học yêu thích</h3>
-            <p>
-              Hãy thêm những khóa học bạn quan tâm vào danh sách yêu thích để
-              theo dõi dễ dàng hơn!
-            </p>
+            <p>Hãy thêm những khóa học bạn quan tâm để theo dõi dễ dàng hơn!</p>
             <button
               className="browse-courses-btn"
               onClick={() => navigate("/")}
@@ -199,7 +222,7 @@ const Favorites = () => {
             {favoriteCourses.map((course) => (
               <CourseCard
                 key={course.id}
-                course={course}
+                course={{ ...course, courseId: course.id }} // ⭐ thống nhất với CourseCard
                 onViewDetails={() => handleViewDetails(course)}
                 onRemoveFavorite={() => handleRemoveFavorite(course.id)}
               />

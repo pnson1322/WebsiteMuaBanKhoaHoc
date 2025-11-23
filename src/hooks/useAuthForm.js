@@ -75,8 +75,8 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
       showSuccess("Đăng nhập thành công!");
       if (onSuccess) {
         onSuccess();
-        navigate("/");
       }
+      // Navigate sẽ được xử lý ở component cha
     } catch (error) {
       console.error("Login error:", error);
 

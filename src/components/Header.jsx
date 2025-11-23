@@ -59,6 +59,10 @@ const Header = ({ onOpenLoginPopup }) => {
   }
 
   function handleLearnerCoursesClick() {
+    if (!isLoggedIn) {
+      dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
+      return;
+    }
     navigate("/purchased");
   }
 
@@ -71,10 +75,18 @@ const Header = ({ onOpenLoginPopup }) => {
   }
 
   function handleFavoritesClick() {
+    if (!isLoggedIn) {
+      dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
+      return;
+    }
     navigate("/favorites");
   }
 
   function handleCartClick() {
+    if (!isLoggedIn) {
+      dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
+      return;
+    }
     navigate("/cart");
   }
 
@@ -441,7 +453,7 @@ const Header = ({ onOpenLoginPopup }) => {
                 title="Khóa học"
               >
                 <List className="nav-icon" />
-                {state.myCourses.length > 0 && (
+                {state.myCourses?.length > 0 && (
                   <span className="badge">{state.myCourses.length}</span>
                 )}
                 <span className="nav-label">Khóa học</span>
@@ -454,7 +466,7 @@ const Header = ({ onOpenLoginPopup }) => {
                 title="Yêu thích"
               >
                 <Heart className="nav-icon" />
-                {state.favorites.length > 0 && (
+                {state.favorites?.length > 0 && (
                   <span className="badge">{state.favorites.length}</span>
                 )}
                 <span className="nav-label">Yêu thích</span>
@@ -467,7 +479,7 @@ const Header = ({ onOpenLoginPopup }) => {
                 title="Giỏ hàng"
               >
                 <ShoppingCart className="nav-icon" />
-                {state.cart.length > 0 && (
+                {state.cart?.length > 0 && (
                   <span className="badge">{state.cart.length}</span>
                 )}
                 <span className="nav-label">Giỏ hàng</span>
