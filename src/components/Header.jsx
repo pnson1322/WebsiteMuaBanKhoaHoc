@@ -490,16 +490,23 @@ const Header = ({ onOpenLoginPopup }) => {
           {isLoggedIn ? (
             <div className="user-menu destop-only">
               <button className="nav-button user-button" title={user?.fullName}>
-                {user?.avatar ? (
+                {user?.avatarUrl ? (
                   <img
-                    src={user.avatar}
+                    src={user.avatarUrl}
                     alt={user.fullName}
                     className="user-avatar"
                   />
                 ) : (
-                  <User className="nav-icon" />
+                  <>
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        user.fullName
+                      )}&background=random&color=fff`}
+                      alt={user.fullName}
+                      className="user-avatar"
+                    />
+                  </>
                 )}
-                <span className="nav-label">{user?.fullName}</span>
               </button>
 
               <div className="user-dropdown">
@@ -553,16 +560,18 @@ const Header = ({ onOpenLoginPopup }) => {
               {isLoggedIn ? (
                 <div className="mobile-user-info">
                   <div className="mobile-user-profile">
-                    {user?.avatar ? (
+                    {user?.avatarUrl ? (
                       <img
-                        src={user.avatar}
-                        alt={user.name}
+                        src={user.avatarUrl}
+                        alt={user.fullName}
                         className="user-avatar"
                       />
                     ) : (
-                      <User className="nav-icon" />
+                      <>
+                        <User className="nav-icon" />
+                        <span>{user?.fullName}</span>
+                      </>
                     )}
-                    <span>{user?.name}</span>
                   </div>
                   <button onClick={handleLogout} className="mobile-logout-btn">
                     <LogOut className="nav-icon" />

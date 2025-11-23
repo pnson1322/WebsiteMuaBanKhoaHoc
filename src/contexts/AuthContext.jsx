@@ -135,9 +135,24 @@ export const AuthProvider = ({ children }) => {
     // Lưu tokens nếu có
     if (tokens?.accessToken) {
       localStorage.setItem("accessToken", tokens.accessToken);
-    }
-    if (tokens?.refreshToken) {
+    if (tokens?.refreshToken)
       localStorage.setItem("refreshToken", tokens.refreshToken);
+    localStorage.setItem("isLoggedIn", "true");
+
+    try {
+      const fullUserData = await userAPI.getUserDetail();
+
+      setIsLoggedIn(true);
+      setUser(fullUserData);
+      localStorage.setItem("currentUser", JSON.stringify(fullUserData));
+    } catch (error) {
+      console.error("Login success but failed to fetch details", error);
+      const fallbackUser = {
+        ...userData,
+      };
+      setIsLoggedIn(true);
+      setUser(fallbackUser);
+      localStorage.setItem("currentUser", JSON.stringify(fallbackUser));
     }
 
     // 🔄 Sync cart và favorites từ backend sau khi login

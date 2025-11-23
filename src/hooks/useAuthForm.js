@@ -66,11 +66,7 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
       // Lưu access token
       localStorage.setItem("token", userData.token);
 
-      login({
-        email: userData.email,
-        fullName: userData.fullName,
-        role: userData.role,
-      });
+      login(userData);
 
       showSuccess("Đăng nhập thành công!");
       if (onSuccess) {
