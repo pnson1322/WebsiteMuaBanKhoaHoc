@@ -130,7 +130,11 @@ export const userAPI = {
         if (fullName !== undefined && fullName !== null && fullName !== "") {
             formData.append("fullName", fullName);
         }
-        if (phoneNumber !== undefined && phoneNumber !== null && phoneNumber !== "") {
+        if (
+            phoneNumber !== undefined &&
+            phoneNumber !== null &&
+            phoneNumber !== ""
+        ) {
             formData.append("phoneNumber", phoneNumber);
         }
         if (avatarFile) {

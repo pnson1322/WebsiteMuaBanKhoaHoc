@@ -19,17 +19,17 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState("");
 
   const validateForm = useCallback(() => {
     const newErrors = {};
     if (mode === "register" && !formData.name.trim())
       newErrors.name = "Vui lòng nhập họ tên";
-    if (!formData.email.trim())
-      newErrors.email = "Vui lòng nhập email";
+    if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = "Email không hợp lệ";
-    if (!formData.password)
-      newErrors.password = "Vui lòng nhập mật khẩu";
+    if (!formData.password) newErrors.password = "Vui lòng nhập mật khẩu";
     else if (formData.password.length < 6)
       newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
     if (mode === "register" && formData.password !== formData.confirmPassword)
@@ -38,55 +38,69 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
     return Object.keys(newErrors).length === 0;
   }, [mode, formData]);
 
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-  }, [errors]);
+  const handleChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    },
+    [errors]
+  );
 
   // ✅ Login: Lưu access token vào localStorage, refreshToken tự động lưu vào cookie
   const handleLogin = useCallback(async () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      const res = await instance.post("/api/auth/login", {
-        email: formData.email,
-        password: formData.password,
-      },
+      const res = await instance.post(
+        "/api/auth/login",
+        {
+          email: formData.email,
+          password: formData.password,
+        },
         { withCredentials: true }
       );
 
-
       const userData = res.data;
 
-      // ✅ Chỉ lưu access token, KHÔNG lưu refreshToken (đã có trong cookie)
+      // Lưu access token
       localStorage.setItem("token", userData.token);
 
-      // ✅ Lưu thông tin user vào context
-      login({
-        email: userData.email,
-        fullName: userData.fullName,
-        role: userData.role,
-      });
+      login(userData);
 
       showSuccess("Đăng nhập thành công!");
-
       if (onSuccess) {
         onSuccess();
-        navigate("/");
-      } else {
         navigate("/");
       }
     } catch (error) {
       console.error("Login error:", error);
-      const errorMsg = error.response?.data?.message ||
+
+      // ⭐ THÊM PHẦN NÀY – BẮT LỖI SAI MẬT KHẨU
+      if (error.response?.status === 401) {
+        showError("Sai mật khẩu, vui lòng thử lại!");
+        setLoading(false);
+        return;
+      }
+
+      const errorMsg =
+        error.response?.data?.message ||
         error.response?.data?.Message ||
         "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản!";
+
       showError(errorMsg);
     } finally {
       setLoading(false);
     }
-  }, [formData, validateForm, login, navigate, onSuccess, showError, showSuccess]);
+  }, [
+    formData,
+    validateForm,
+    login,
+    navigate,
+    onSuccess,
+    showError,
+    showSuccess,
+  ]);
 
   // ✅ Register: KHÔNG login tự động, yêu cầu verify email
   const handleRegister = useCallback(async () => {
@@ -95,8 +109,7 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
     let Role = formData.role;
     if (Role == "Học viên") {
       Role = "Buyer";
-    }
-    else {
+    } else {
       Role = "Seller";
     }
     try {
@@ -104,28 +117,32 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
         fullName: formData.name,
         email: formData.email,
         password: formData.password,
-        role: Role
+        role: Role,
       });
 
       // ✅ Hiển thị message từ BE
-      const message = res.data?.message || "Đăng ký thành công! Vui lòng kiểm tra email để xác thực.";
+      const message =
+        res.data?.message ||
+        "Đăng ký thành công! Vui lòng kiểm tra email để xác thực.";
       showSuccess(message);
 
-      // ✅ Chờ 2s rồi chuyển sang form login
-      setTimeout(() => {
-        setMode("login");
-        setFormData({
-          name: "",
-          email: formData.email, // Giữ email để user dễ login
-          password: "", // ✅ XÓA password vì lý do bảo mật
-          confirmPassword: "",
-          role: "Học viên",
-        });
-        setErrors({});
-      }, 2000);
+      // ✅ Lưu email và mở VerifyEmailModal
+      setVerifyEmail(formData.email);
+      setShowVerifyEmailModal(true);
+
+      // ✅ Reset form
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        role: "Học viên",
+      });
+      setErrors({});
     } catch (error) {
       console.error("Register error:", error);
-      const errorMsg = error.response?.data?.message ||
+      const errorMsg =
+        error.response?.data?.message ||
         error.response?.data?.Message ||
         "Đăng ký thất bại. Vui lòng thử lại!";
       showError(errorMsg);
@@ -145,6 +162,39 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
       showError("Có lỗi khi đăng xuất, vui lòng thử lại!");
     }
   }, [logout, navigate, showSuccess, showError]);
+
+  // ✅ Gửi lại email xác thực
+  const handleResendOTP = useCallback(async () => {
+    try {
+      await instance.post("/api/auth/resend-verification-email", {
+        email: verifyEmail,
+      });
+      console.log("🔄 Gửi lại email xác thực cho:", verifyEmail);
+      showSuccess("Đã gửi lại email xác thực!");
+    } catch (error) {
+      console.error("❌ Lỗi khi gửi lại email xác thực:", error);
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.Message ||
+        "Có lỗi khi gửi lại email xác thực!";
+      showError(errorMsg);
+    }
+  }, [verifyEmail, showSuccess, showError]);
+
+  // ✅ Đóng VerifyEmailModal và chuyển sang login với email đã điền sẵn
+  const handleCloseVerifyModal = useCallback(() => {
+    setShowVerifyEmailModal(false);
+    setMode("login");
+
+    // Điền sẵn email vào form login
+    setFormData({
+      name: "",
+      email: verifyEmail,
+      password: "",
+      confirmPassword: "",
+      role: "Học viên",
+    });
+  }, [verifyEmail]);
 
   const handleSubmit = useCallback(
     (e) => {
@@ -177,6 +227,10 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
     handleLogout, // ✅ Export thêm handleLogout
     switchMode,
     setMode,
+    showVerifyEmailModal,
+    verifyEmail,
+    handleResendOTP,
+    handleCloseVerifyModal,
   };
 };
 

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppState } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import "./Header.css";
 import {
   Search,
@@ -19,31 +20,11 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import NotificationPopup from "./NotificationPopup";
+import { notificationAPI } from "../services/notificationAPI";
 
 import test from "../assets/test.jpg";
 import momo from "../assets/momo.png";
 import test2 from "../assets/test2.jpg";
-
-const initialNotifications = [
-  {
-    id: 1,
-    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
-    time: "Vừa xong",
-    isRead: true, // Đã đọc
-  },
-  {
-    id: 2,
-    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
-    time: "Vừa xong",
-    isRead: true, // Đã đọc
-  },
-  {
-    id: 3,
-    text: 'Đinh Sang Sơn đã mua khóa học "Kỹ Năng Bán Hàng Online" với giá 100.000đ',
-    time: "1 phút trước",
-    isRead: false, // Chưa đọc
-  },
-];
 
 const ALL_COURSES = [
   { id: 1, name: "Lập trình React cơ bản", imageUrl: test },
@@ -58,6 +39,7 @@ const Header = ({ onOpenLoginPopup }) => {
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
   const { isLoggedIn, user, logout } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   function handleLogoClick() {
@@ -129,7 +111,8 @@ const Header = ({ onOpenLoginPopup }) => {
     navigate("/register");
   }
 
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const notificationRef = useRef(null);
@@ -153,23 +136,112 @@ const Header = ({ onOpenLoginPopup }) => {
     };
   }, [isNotificationOpen]);
 
+  useEffect(() => {
+    if (!user || user.role !== "Seller") {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        const [notificationList, unreadCountAPI] = await Promise.all([
+          notificationAPI.getNotification(),
+          notificationAPI.getUnreadCount(),
+        ]);
+
+        console.log(notificationList);
+        console.log(unreadCountAPI);
+
+        setNotifications(
+          (notificationList || []).map((item) => {
+            const d = new Date(item.createdAt);
+            const dateStr = d.toLocaleDateString("vi-VN");
+
+            return {
+              id: item.id,
+              text: item.message,
+              date: dateStr,
+              isRead: item.isRead,
+              sellerId: item.sellerId,
+            };
+          })
+        );
+        setUnreadCount(unreadCountAPI);
+      } catch (err) {
+        showError("Lỗi: " + err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const handleNoficationClick = () => {
     setIsNotificationOpen((prev) => !prev);
   };
 
-  const markOneAsRead = (id) => {
+  const markOneAsRead = async (id) => {
+    const targetNotif = notifications.find((n) => n.id === id);
+    if (!targetNotif) return;
+
+    if (targetNotif.isRead) return;
+
     setNotifications((currentNotifs) =>
       currentNotifs.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
+
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+
+    try {
+      await notificationAPI.markAsRead(id, targetNotif.sellerId);
+    } catch (err) {
+      showError("Lỗi: " + err.message);
+    }
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications((currentNotifs) =>
       currentNotifs.map((n) => ({ ...n, isRead: true }))
     );
+
+    setUnreadCount(0);
+
+    try {
+      await notificationAPI.markAllAsRead();
+    } catch (err) {
+      showError("Lỗi: " + err.message);
+    }
   };
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const handleDeleteOne = async (id) => {
+    const targetNotif = notifications.find((n) => n.id === id);
+    if (!targetNotif) return;
+
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+
+    if (!targetNotif.isRead) {
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+
+    try {
+      await notificationAPI.deleteNotification(id, targetNotif.sellerId);
+    } catch (err) {
+      showError("Lỗi: " + err.message);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (window.confirm("Bạn có chắc muốn xóa tất cả thông báo?")) {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+
+    try {
+      await notificationAPI.deleteAllNotifications();
+    } catch (err) {
+      showError("Lỗi: " + err);
+    }
+  };
 
   const [suggestions, setSuggestions] = useState([]);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -351,6 +423,8 @@ const Header = ({ onOpenLoginPopup }) => {
                     notifications={notifications}
                     onMarkOneAsRead={markOneAsRead}
                     onMarkAllAsRead={markAllAsRead}
+                    onDeleteOne={handleDeleteOne}
+                    onDeleteAll={handleDeleteAll}
                   />
                 )}
               </div>
@@ -404,16 +478,23 @@ const Header = ({ onOpenLoginPopup }) => {
           {isLoggedIn ? (
             <div className="user-menu destop-only">
               <button className="nav-button user-button" title={user?.fullName}>
-                {user?.avatar ? (
+                {user?.avatarUrl ? (
                   <img
-                    src={user.avatar}
+                    src={user.avatarUrl}
                     alt={user.fullName}
                     className="user-avatar"
                   />
                 ) : (
-                  <User className="nav-icon" />
+                  <>
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        user.fullName
+                      )}&background=random&color=fff`}
+                      alt={user.fullName}
+                      className="user-avatar"
+                    />
+                  </>
                 )}
-                <span className="nav-label">{user?.fullName}</span>
               </button>
 
               <div className="user-dropdown">
@@ -467,16 +548,18 @@ const Header = ({ onOpenLoginPopup }) => {
               {isLoggedIn ? (
                 <div className="mobile-user-info">
                   <div className="mobile-user-profile">
-                    {user?.avatar ? (
+                    {user?.avatarUrl ? (
                       <img
-                        src={user.avatar}
-                        alt={user.name}
+                        src={user.avatarUrl}
+                        alt={user.fullName}
                         className="user-avatar"
                       />
                     ) : (
-                      <User className="nav-icon" />
+                      <>
+                        <User className="nav-icon" />
+                        <span>{user?.fullName}</span>
+                      </>
                     )}
-                    <span>{user?.name}</span>
                   </div>
                   <button onClick={handleLogout} className="mobile-logout-btn">
                     <LogOut className="nav-icon" />

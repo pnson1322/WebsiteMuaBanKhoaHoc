@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 import { useAppState, useAppDispatch } from "../contexts/AppContext";
 import { useToast } from "../contexts/ToastContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { coursesAPI } from "../services/api";
+import { reviewAPI } from "../services/reviewAPI";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -23,7 +24,7 @@ const CourseDetail = () => {
   const { user } = useAuth();
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
-  const { showSuccess, showFavorite, showUnfavorite } = useToast();
+  const { showSuccess, showError, showFavorite, showUnfavorite } = useToast();
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,7 @@ const CourseDetail = () => {
     fetchData();
   }, [id]);
 
+  // Comment
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [ratingEdit, setRatingEdit] = useState(0);
@@ -52,20 +54,178 @@ const CourseDetail = () => {
   const [sortMode, setSortMode] = useState("all-comment");
   const [editComment, setEditComment] = useState(0);
 
-  useEffect(() => {
-    if (course?.commentList) {
-      setCommentList(course.commentList);
+  const fetchReviews = useCallback(async () => {
+    try {
+      const data = await reviewAPI.getReviewByCourseId(id);
+
+      const formattedReviews = data.map((item) => {
+        const d = new Date(item.createdAt || Date.now());
+        const dateStr = d.toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+
+        return {
+          id: item.id,
+          comment: item.comment,
+          rate: item.rating,
+          date: dateStr,
+          user: {
+            id: item.userId,
+            name: item.userName || "Người dùng ẩn danh",
+            image:
+              item.image ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                item.userName
+              )}&background=random&color=fff`,
+          },
+        };
+      });
+
+      console.log(formattedReviews);
+
+      const sorted = sortComments(formattedReviews, sortMode);
+      setCommentList(sorted);
+    } catch (err) {
+      showError("Lỗi tải bình luận:", err);
     }
-  }, [course]);
+  }, [id, sortMode]);
 
   useEffect(() => {
-    if (editComment !== 0 && course?.commentList) {
-      const comment = course.commentList.find((c) => c.id === editComment);
+    fetchReviews();
+  }, [fetchReviews]);
+
+  useEffect(() => {
+    if (editComment !== 0 && commentList.length > 0) {
+      const comment = commentList.find((c) => c.id === editComment);
       if (comment) setRatingEdit(comment.rate);
     } else {
       setRatingEdit(0);
     }
-  }, [editComment, course?.commentList]);
+  }, [editComment, commentList]);
+
+  const sortComments = (list, mode) => {
+    const sortedList = [...list];
+    switch (mode) {
+      case "all-comment":
+        return sortedList;
+      case "one-star":
+        return sortedList.filter((a) => a.rate == 1);
+      case "two-star":
+        return sortedList.filter((a) => a.rate == 2);
+      case "three-star":
+        return sortedList.filter((a) => a.rate == 3);
+      case "four-star":
+        return sortedList.filter((a) => a.rate == 4);
+      case "five-star":
+        return sortedList.filter((a) => a.rate == 5);
+      default:
+        return sortedList;
+    }
+  };
+
+  const handleSortChange = (e) => {
+    const newMode = e.target.value;
+    setSortMode(newMode);
+    if (newMode === "all-comment") {
+      fetchReviews();
+    } else {
+      setCommentList((prev) => sortComments(prev, newMode));
+    }
+  };
+
+  const submitComment = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      showError("Vui lòng đăng nhập để đánh giá.");
+      return;
+    }
+
+    const form = e.target;
+    const content = form?.comment?.value?.trim() || "";
+    if (!rating || !content) {
+      showError("Vui lòng chọn số sao và nhập nội dung.");
+      return;
+    }
+
+    try {
+      await reviewAPI.createReview({
+        courseId: id,
+        rating: rating,
+        comment: content,
+      });
+
+      showSuccess("Đã gửi đánh giá thành công!");
+      setRating(0);
+      setHover(0);
+      form.reset();
+
+      fetchReviews();
+    } catch (err) {
+      showError(
+        "Gửi đánh giá thất bại: " + (err.response?.data?.message || err.message)
+      );
+    }
+  };
+
+  const submitEditComment = async () => {
+    if (!editComment) return;
+    const textarea = document.getElementById("comment-edit");
+    const content = textarea?.value?.trim() || "";
+    if (!ratingEdit || !content) {
+      showError("Nội dung đánh giá không được để trống.");
+      return;
+    }
+
+    try {
+      await reviewAPI.updateReview({
+        reviewId: editComment,
+        rating: ratingEdit,
+        comment: content,
+      });
+
+      showSuccess("Cập nhật đánh giá thành công!");
+      setEditComment(0);
+      setRatingEdit(0);
+      setHoverEdit(0);
+
+      fetchReviews();
+    } catch (err) {
+      showError(
+        "Cập nhật thất bại: " + (err.response?.data?.message || err.message)
+      );
+    }
+  };
+
+  const handleDeleteComment = async () => {
+    if (!editComment) return;
+
+    if (!window.confirm("Bạn có chắc chắn muốn xóa đánh giá này?")) return;
+
+    try {
+      await reviewAPI.deleteReviewByBuyer(editComment);
+
+      showSuccess("Đã xóa đánh giá.");
+      setEditComment(0);
+      setRatingEdit(0);
+      setHoverEdit(0);
+
+      fetchReviews();
+    } catch (err) {
+      showError(
+        "Xóa thất bại: " + (err.response?.data?.message || err.message)
+      );
+    }
+  };
+
+  const handleCommentClick = (commentId, userId) => {
+    console.log(commentId);
+    console.log(userId);
+    console.log(user);
+
+    if (user && userId === user.id) setEditComment(commentId);
+  };
 
   if (loading) {
     return (
@@ -121,101 +281,6 @@ const CourseDetail = () => {
       style: "currency",
       currency: "VND",
     }).format(price);
-  };
-
-  const submitComment = (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const content = form?.comment?.value?.trim() || "";
-    if (!rating || !content) return;
-
-    const today = new Date();
-    const dateStr = today.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-
-    const newComment = {
-      id: Date.now(),
-      user: {
-        id: user?.id || 0,
-        name: user?.fullName || "Người dùng",
-        image: user?.image || test,
-      },
-      date: dateStr,
-      comment: content,
-      rate: rating,
-    };
-
-    const updated = [newComment, ...commentList];
-    const sorted = sortComments(updated, sortMode);
-    setCommentList(sorted);
-    setCourse((prev) => ({ ...prev, commentList: sorted }));
-
-    setRating(0);
-    setHover(0);
-    form.reset();
-  };
-
-  const submitEditComment = () => {
-    if (!editComment) return;
-    const textarea = document.getElementById("comment-edit");
-    const content = textarea?.value?.trim() || "";
-    if (!ratingEdit || !content) return;
-
-    const updated = commentList.map((c) =>
-      c.id === editComment ? { ...c, comment: content, rating: ratingEdit } : c
-    );
-    const sorted = sortComments(updated, sortMode);
-    setCommentList(sorted);
-    setCourse((prev) => ({ ...prev, commentList: sorted }));
-
-    setEditComment(0);
-    setRatingEdit(0);
-    setHoverEdit(0);
-  };
-
-  const handleDeleteComment = () => {
-    if (!editComment) return;
-    const updated = commentList.filter((c) => c.id !== editComment);
-    const sorted = sortComments(updated, sortMode);
-    setCommentList(sorted);
-    setCourse((prev) => ({ ...prev, commentList: sorted }));
-
-    setEditComment(0);
-    setRatingEdit(0);
-    setHoverEdit(0);
-  };
-
-  const handleSortChange = (e) => {
-    const newMode = e.target.value;
-    setSortMode(newMode);
-    setCommentList(sortComments(course.commentList, newMode));
-  };
-
-  const sortComments = (list, mode) => {
-    const sortedList = [...list];
-    switch (mode) {
-      case "all-comment":
-        return sortedList;
-      case "one-star":
-        return sortedList.filter((a) => a.rate == 1);
-      case "two-star":
-        return sortedList.filter((a) => a.rate == 2);
-      case "three-star":
-        return sortedList.filter((a) => a.rate == 3);
-      case "four-star":
-        return sortedList.filter((a) => a.rate == 4);
-      case "five-star":
-        return sortedList.filter((a) => a.rate == 5);
-      default:
-        return sortedList;
-    }
-  };
-
-  const handleCommentClick = (commentId, userId) => {
-    if (userId === 2) setEditComment(commentId);
   };
 
   return (
@@ -415,7 +480,7 @@ const CourseDetail = () => {
             </select>
           </div>
 
-          {course.commentList.length === 0 ? (
+          {commentList.length === 0 && sortMode === "all-comment" ? (
             <div className="empty-cart">
               <MessageCircle className="empty-icon" />
               <h3>Chưa có đánh giá nào</h3>

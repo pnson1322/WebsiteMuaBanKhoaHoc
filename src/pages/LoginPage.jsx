@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AuthLayout from "../components/Auth/AuthLayout";
 import useAuthForm from "../hooks/useAuthForm";
+import VerifyEmailModal from "../components/AdminUser/VerifyEmailModal/VerifyEmailModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const LoginPage = () => {
@@ -30,6 +31,10 @@ const LoginPage = () => {
     handleSubmit,
     switchMode,
     setMode,
+    showVerifyEmailModal,
+    verifyEmail,
+    handleResendOTP,
+    handleCloseVerifyModal,
   } = useAuthForm(getInitialMode(), () => {
     setSuccess(true);
     navigate("/");
@@ -50,16 +55,26 @@ const LoginPage = () => {
   };
 
   return (
-    <AuthLayout
-      mode={mode}
-      formData={formData}
-      onChange={handleChange}
-      onSubmit={handleSubmit}
-      errors={errors}
-      success={success}
-      loading={loading}
-      onSwitchMode={toggleMode}
-    />
+    <>
+      <AuthLayout
+        mode={mode}
+        formData={formData}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        errors={errors}
+        success={success}
+        loading={loading}
+        onSwitchMode={toggleMode}
+      />
+
+      {/* ✅ Verify Email Modal */}
+      <VerifyEmailModal
+        isOpen={showVerifyEmailModal}
+        email={verifyEmail}
+        onClose={handleCloseVerifyModal}
+        onResendOTP={handleResendOTP}
+      />
+    </>
   );
 };
 

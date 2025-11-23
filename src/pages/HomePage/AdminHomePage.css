@@ -79,6 +79,7 @@
   background: transparent;
   border: none;
   text-align: center;
+  cursor: pointer;
 }
 
 .chart-item-button:hover {

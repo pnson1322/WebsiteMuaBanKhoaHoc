@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ForgotPasswordPopup from "./ForgotPasswordPopup";
+import PasswordStrengthBar from "../common/PasswordStrengthBar";
 import {
   AuthFormWrapper,
   FormGroup,
@@ -141,6 +142,9 @@ const AuthForm = ({
               )}
             </FormGroup>
 
+            {/* Password Strength Bar */}
+            <PasswordStrengthBar password={formData.password} />
+
             {/* ==== VAI TRÒ ==== */}
             <FormGroup>
               <Label>Vai trò</Label>
@@ -154,7 +158,6 @@ const AuthForm = ({
                 >
                   <option>Học viên</option>
                   <option>Người bán</option>
-                  <option>Admin</option>
                 </Input>
                 <ChevronDown className="select-arrow" size={18} />
               </InputContainer>
