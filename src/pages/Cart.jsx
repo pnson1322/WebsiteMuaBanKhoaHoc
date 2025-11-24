@@ -264,8 +264,8 @@ const Cart = () => {
       </div>
 
       {showPayment && (
-        // <PaymentPopup onClose={closePopup} course={selectedCourses} />
-        <CourseDetailPopup onClose={closePopup} course={selectedCourses[0]} />
+        <PaymentPopup onClose={closePopup} course={selectedCourses} />
+        //<CourseDetailPopup onClose={closePopup} course={selectedCourses[0]} />
       )}
     </div>
   );

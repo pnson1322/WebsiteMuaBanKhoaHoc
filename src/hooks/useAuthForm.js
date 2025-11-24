@@ -78,7 +78,7 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
 
       // ⭐ THÊM PHẦN NÀY – BẮT LỖI SAI MẬT KHẨU
       if (error.response?.status === 401) {
-        showError("Sai mật khẩu, vui lòng thử lại!");
+        showError("Email hoặc mật khẩu không khớp, vui lòng thử lại!");
         setLoading(false);
         return;
       }

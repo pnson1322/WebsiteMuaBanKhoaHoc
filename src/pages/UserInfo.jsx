@@ -58,8 +58,8 @@ const UserInfo = () => {
           data.role === "Admin"
             ? "Quản lý"
             : data.role === "Buyer"
-            ? "Học viên"
-            : "Người bán"
+              ? "Học viên"
+              : "Người bán"
         );
 
         setAvatarPreview(data.avatarUrl || data.image || null);
@@ -165,7 +165,7 @@ const UserInfo = () => {
     } catch (err) {
       showError(
         err.response?.data?.message ||
-          "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại"
+        "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại"
       );
     } finally {
       setIsChangingPassword(false);
