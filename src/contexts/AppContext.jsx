@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
-import { coursesAPI } from "../services/api"; // ✅ thêm import API
+import { courseAPI } from "../services/courseAPI"; // ⭐ Dùng API thật
+import { setAppDispatchContext } from "./AuthContext";
 
 // Initial state
 const initialState = {
-  myCourses: JSON.parse(localStorage.getItem("myCourses")) || [],
   courses: [],
   filteredCourses: [],
   favorites: JSON.parse(localStorage.getItem("favorites")) || [],
@@ -11,30 +11,31 @@ const initialState = {
   searchTerm: "",
   selectedCategory: "Tất cả",
   selectedPriceRange: { label: "Tất cả", min: 0, max: Infinity },
-  suggestions: [],
   isLoadingSuggestions: false,
   error: null,
   cart: JSON.parse(localStorage.getItem("cart")) || [],
+  showLoginPopup: false,
 };
 
 // Action types
 const actionTypes = {
   SET_COURSES: "SET_COURSES",
-  ADD_COURSE: "ADD_COURSE",
   SET_FILTERED_COURSES: "SET_FILTERED_COURSES",
   SET_SEARCH_TERM: "SET_SEARCH_TERM",
   SET_CATEGORY: "SET_CATEGORY",
   SET_PRICE_RANGE: "SET_PRICE_RANGE",
   ADD_TO_FAVORITES: "ADD_TO_FAVORITES",
   REMOVE_FROM_FAVORITES: "REMOVE_FROM_FAVORITES",
+  SET_FAVORITES: "SET_FAVORITES",
   ADD_TO_VIEW_HISTORY: "ADD_TO_VIEW_HISTORY",
-  SET_SUGGESTIONS: "SET_SUGGESTIONS",
   SET_LOADING_SUGGESTIONS: "SET_LOADING_SUGGESTIONS",
   SET_ERROR: "SET_ERROR",
   ADD_TO_CART: "ADD_TO_CART",
   REMOVE_FROM_CART: "REMOVE_FROM_CART",
-  CLEAR_VIEW_HISTORY: "CLEAR_VIEW_HISTORY",
-  TOGGLE_COURSE_APPROVAL: "TOGGLE_COURSE_APPROVAL",
+  SET_CART: "SET_CART",
+  RESET_USER_DATA: "RESET_USER_DATA", // Reset cart, favorites khi logout
+  SHOW_LOGIN_POPUP: "SHOW_LOGIN_POPUP",
+  HIDE_LOGIN_POPUP: "HIDE_LOGIN_POPUP",
 };
 
 // Reducer
@@ -42,10 +43,6 @@ const appReducer = (state, action) => {
   switch (action.type) {
     case actionTypes.SET_COURSES:
       return { ...state, courses: action.payload };
-
-    case actionTypes.ADD_COURSE:
-      const newCourses = [...state.courses, action.payload];
-      return { ...state, courses: newCourses };
 
     case actionTypes.SET_FILTERED_COURSES:
       return { ...state, filteredCourses: action.payload };
@@ -60,35 +57,27 @@ const appReducer = (state, action) => {
       return { ...state, selectedPriceRange: action.payload };
 
     case actionTypes.ADD_TO_FAVORITES:
-      const newFavorites = [...state.favorites, action.payload];
-      localStorage.setItem("favorites", JSON.stringify(newFavorites));
-      return { ...state, favorites: newFavorites };
+      const newFav = [...state.favorites, action.payload];
+      localStorage.setItem("favorites", JSON.stringify(newFav));
+      return { ...state, favorites: newFav };
 
     case actionTypes.REMOVE_FROM_FAVORITES:
-      const updatedFavorites = state.favorites.filter(
-        (id) => id !== action.payload
-      );
-      localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
-      return { ...state, favorites: updatedFavorites };
+      const updatedFav = state.favorites.filter((id) => id !== action.payload);
+      localStorage.setItem("favorites", JSON.stringify(updatedFav));
+      return { ...state, favorites: updatedFav };
 
-    case actionTypes.ADD_TO_VIEW_HISTORY: {
-      const courseId = action.payload;
+    case actionTypes.SET_FAVORITES:
+      localStorage.setItem("favorites", JSON.stringify(action.payload));
+      return { ...state, favorites: action.payload };
 
-      // 1️⃣ Xóa khóa học nếu đã tồn tại (tránh trùng ID)
-      const updatedHistory = state.viewHistory.filter((id) => id !== courseId);
-
-      // 2️⃣ Đưa khóa học mới lên đầu danh sách
-      const newHistory = [courseId, ...updatedHistory].slice(0, 10); // giới hạn 10 khóa gần nhất
-
-      // 3️⃣ Lưu vào localStorage để giữ lại sau khi refresh
-      localStorage.setItem("viewHistory", JSON.stringify(newHistory));
-
-      // 4️⃣ Cập nhật state
-      return { ...state, viewHistory: newHistory };
-    }
-
-    case actionTypes.SET_SUGGESTIONS:
-      return { ...state, suggestions: action.payload };
+    case actionTypes.ADD_TO_VIEW_HISTORY:
+      const id = action.payload;
+      const updatedHistory = [
+        id,
+        ...state.viewHistory.filter((i) => i !== id),
+      ].slice(0, 10);
+      localStorage.setItem("viewHistory", JSON.stringify(updatedHistory));
+      return { ...state, viewHistory: updatedHistory };
 
     case actionTypes.SET_LOADING_SUGGESTIONS:
       return { ...state, isLoadingSuggestions: action.payload };
@@ -102,32 +91,41 @@ const appReducer = (state, action) => {
       return { ...state, cart: newCart };
 
     case actionTypes.REMOVE_FROM_CART:
-      const updatedCart = state.cart.filter((id) => id !== action.payload);
-      localStorage.setItem("cart", JSON.stringify(updatedCart));
-      return { ...state, cart: updatedCart };
+      const cartAfter = state.cart.filter((i) => i !== action.payload);
+      localStorage.setItem("cart", JSON.stringify(cartAfter));
+      return { ...state, cart: cartAfter };
 
-    case actionTypes.CLEAR_VIEW_HISTORY:
+    case actionTypes.SET_CART:
+      localStorage.setItem("cart", JSON.stringify(action.payload));
+      return { ...state, cart: action.payload };
+
+    case actionTypes.RESET_USER_DATA:
+      // Reset về guest state - clear cart và favorites
+      localStorage.removeItem("cart");
+      localStorage.removeItem("favorites");
       localStorage.removeItem("viewHistory");
-      return { ...state, viewHistory: [] };
+      return {
+        ...state,
+        cart: [],
+        favorites: [],
+        viewHistory: [],
+      };
 
-    case actionTypes.TOGGLE_COURSE_APPROVAL: {
-      const { courseId, approved } = action.payload;
-      const updatedCourses = state.courses.map((course) =>
-        course.id === courseId ? { ...course, approved } : course
-      );
-      return { ...state, courses: updatedCourses };
-    }
+    case actionTypes.SHOW_LOGIN_POPUP:
+      return { ...state, showLoginPopup: true };
+
+    case actionTypes.HIDE_LOGIN_POPUP:
+      return { ...state, showLoginPopup: false };
 
     default:
       return state;
   }
 };
 
-// Contexts
+// Context
 const AppContext = createContext();
 const AppDispatchContext = createContext();
 
-// Hooks
 export const useAppState = () => useContext(AppContext);
 export const useAppDispatch = () => useContext(AppDispatchContext);
 
@@ -135,52 +133,160 @@ export const useAppDispatch = () => useContext(AppDispatchContext);
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // ✅ Fetch danh sách khoá học từ API một lần
+  // 🔗 Export dispatch context để AuthContext có thể gọi
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const res = await coursesAPI.getCoursesWithPagination(1, 200);
-        dispatch({ type: actionTypes.SET_COURSES, payload: res.courses });
-      } catch (err) {
-        dispatch({ type: actionTypes.SET_ERROR, payload: err.message });
-      }
-    };
-    fetchCourses();
+    setAppDispatchContext({
+      resetUserData: () => dispatch({ type: actionTypes.RESET_USER_DATA }),
+      syncUserData: async () => {
+        const token =
+          localStorage.getItem("token") || localStorage.getItem("accessToken");
+        if (!token) return;
+
+        try {
+          const { favoriteAPI } = await import("../services/favoriteAPI");
+          const favoritesFromAPI = await favoriteAPI.getFavorites();
+          const favoriteIds = favoritesFromAPI.map((item) => item.courseId);
+          dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
+        } catch (err) {
+          console.error("❌ Error syncing user data:", err);
+        }
+      },
+    });
   }, []);
 
-  // ✅ Tự động lọc khi state thay đổi
+  useEffect(() => {
+    setAppDispatchContext({
+      resetUserData: () => dispatch({ type: actionTypes.RESET_USER_DATA }),
+      syncUserData: async () => {
+        const token =
+          localStorage.getItem("token") || localStorage.getItem("accessToken");
+        if (!token) return;
+
+        try {
+          const { cartAPI } = await import("../services/cartAPI");
+          const cartFromAPI = await cartAPI.getCart();
+          const cartIds = cartFromAPI.items.map((item) => item.courseId);
+          dispatch({ type: actionTypes.SET_CART, payload: cartIds });
+        } catch (err) {
+          console.error("❌ Error syncing user data:", err);
+        }
+      },
+    });
+  }, []);
+
+  // ⭐ Load khóa học từ API thật
+  // ✅ Load cho TẤT CẢ: không đăng nhập, Buyer, Admin, Seller
+  // ⚠️ Chỉ skip ở trang /login và /register để tránh API call không cần thiết
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    const isAuthPage = currentPath === "/login" || currentPath === "/register";
+
+    if (isAuthPage) {
+      console.log("⏭️ Skipping course load on auth page:", currentPath);
+      return;
+    }
+
+    console.log("📚 Loading courses for all users");
+
+    const loadCourses = async () => {
+      try {
+        dispatch({ type: actionTypes.SET_LOADING_SUGGESTIONS, payload: true });
+
+        const res = await courseAPI.getCourses({ page: 1, pageSize: 100 });
+
+        console.log("📦 API Response:", res);
+
+        // ✅ Kiểm tra response structure
+        if (!res || !res.items) {
+          console.error("❌ Invalid response structure:", res);
+          throw new Error("API trả về dữ liệu không đúng format");
+        }
+
+        const normalized = res.items.map((c) => ({
+          ...c,
+          courseId: c.id,
+          image: c.imageUrl,
+        }));
+
+        dispatch({ type: actionTypes.SET_COURSES, payload: normalized });
+        console.log("✅ Courses loaded successfully:", normalized.length);
+      } catch (err) {
+        console.error("❌ Lỗi load courses:", {
+          message: err.message,
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          isNetworkError: err.code === "ERR_NETWORK",
+        });
+
+        // ⚠️ Xử lý các loại lỗi khác nhau
+        if (err.response?.status === 401) {
+          console.warn(
+            "⚠️ Backend requires auth for /api/Course - setting empty courses"
+          );
+          dispatch({ type: actionTypes.SET_COURSES, payload: [] });
+          dispatch({ type: actionTypes.SET_ERROR, payload: null }); // Clear error
+        } else if (err.code === "ERR_NETWORK") {
+          console.error("🌐 Network error - cannot connect to backend");
+          dispatch({
+            type: actionTypes.SET_ERROR,
+            payload: "Không thể kết nối đến server. Vui lòng kiểm tra kết nối.",
+          });
+        } else if (err.response?.status === 500) {
+          console.error("💥 Server error");
+          dispatch({
+            type: actionTypes.SET_ERROR,
+            payload: "Lỗi server. Vui lòng thử lại sau.",
+          });
+        } else {
+          dispatch({
+            type: actionTypes.SET_ERROR,
+            payload: `Lỗi: ${err.message}`,
+          });
+        }
+      } finally {
+        dispatch({ type: actionTypes.SET_LOADING_SUGGESTIONS, payload: false });
+      }
+    };
+
+    loadCourses();
+  }, []);
+
+  // ⭐ Auto filter
   useEffect(() => {
     let filtered = state.courses;
 
-    // Tìm kiếm
+    // Search
     if (state.searchTerm) {
+      const term = state.searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (course) =>
-          course.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-          course.description
-            .toLowerCase()
-            .includes(state.searchTerm.toLowerCase()) ||
-          course.category.toLowerCase().includes(state.searchTerm.toLowerCase())
+        (c) =>
+          c.title.toLowerCase().includes(term) ||
+          c.description.toLowerCase().includes(term) ||
+          c.categoryName?.toLowerCase().includes(term)
       );
     }
 
-    // Danh mục
+    // Category
     if (state.selectedCategory !== "Tất cả") {
       filtered = filtered.filter(
-        (course) => course.category === state.selectedCategory
+        (c) => c.categoryName === state.selectedCategory
       );
     }
 
-    // Khoảng giá
+    // Price range
     if (state.selectedPriceRange.label !== "Tất cả") {
       filtered = filtered.filter(
-        (course) =>
-          course.price >= state.selectedPriceRange.min &&
-          course.price <= state.selectedPriceRange.max
+        (c) =>
+          c.price >= state.selectedPriceRange.min &&
+          c.price <= state.selectedPriceRange.max
       );
     }
 
-    dispatch({ type: actionTypes.SET_FILTERED_COURSES, payload: filtered });
+    dispatch({
+      type: actionTypes.SET_FILTERED_COURSES,
+      payload: filtered,
+    });
   }, [
     state.courses,
     state.searchTerm,
@@ -188,9 +294,44 @@ export const AppProvider = ({ children }) => {
     state.selectedPriceRange,
   ]);
 
+  // 🔄 Function để reset user data khi logout
+  const resetUserData = () => {
+    console.log("🗑️ Resetting user data (cart, favorites, viewHistory)");
+    dispatch({ type: actionTypes.RESET_USER_DATA });
+  };
+
+  // 🔄 Function để sync data từ backend khi login
+  const syncUserData = async () => {
+    const token =
+      localStorage.getItem("token") || localStorage.getItem("accessToken");
+    if (!token) {
+      console.log("⚠️ No token found - skipping sync");
+      return;
+    }
+
+    console.log("🔄 Syncing user data from backend...");
+
+    try {
+      // Sync favorites
+      const { favoriteAPI } = await import("../services/favoriteAPI");
+      const favoritesFromAPI = await favoriteAPI.getFavorites();
+      const favoriteIds = favoritesFromAPI.map((item) => item.courseId);
+      dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
+      console.log("✅ Favorites synced:", favoriteIds.length);
+
+      // TODO: Sync cart từ backend nếu có API
+      // const cartFromAPI = await cartAPI.getCart();
+      // dispatch({ type: actionTypes.SET_CART, payload: cartFromAPI });
+    } catch (err) {
+      console.error("❌ Error syncing user data:", err);
+    }
+  };
+
   return (
     <AppContext.Provider value={state}>
-      <AppDispatchContext.Provider value={{ dispatch, actionTypes }}>
+      <AppDispatchContext.Provider
+        value={{ dispatch, actionTypes, resetUserData, syncUserData }}
+      >
         {children}
       </AppDispatchContext.Provider>
     </AppContext.Provider>

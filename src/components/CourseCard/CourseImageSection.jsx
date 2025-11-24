@@ -6,7 +6,7 @@ const CourseImageSection = ({ course, isFavorite, onToggleFavorite }) => {
     <div className="course-image-container">
       <img
         src={
-          course.image ||
+          course.imageUrl ||
           "https://images.unsplash.com/photo-1529101091764-c3526daf38fe"
         }
         alt={course.title}

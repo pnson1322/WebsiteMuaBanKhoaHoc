@@ -3,20 +3,28 @@ import Header from "./Header";
 import "./Layout.css";
 import Footer from "./Footer";
 import LoginPopup from "./Auth/LoginPopup";
-import { useState } from "react";
+import { useAppState, useAppDispatch } from "../contexts/AppContext";
 
 export const Layout = () => {
-  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const state = useAppState();
+  const { dispatch, actionTypes } = useAppDispatch();
+
   return (
     <div className="app">
-      <Header onOpenLoginPopup={() => setShowLoginPopup(true)} />
+      <Header
+        onOpenLoginPopup={() =>
+          dispatch({ type: actionTypes.SHOW_LOGIN_POPUP })
+        }
+      />
 
       <main className="main-content">
         <Outlet />
       </main>
 
-      {showLoginPopup && (
-        <LoginPopup onClose={() => setShowLoginPopup(false)} />
+      {state.showLoginPopup && (
+        <LoginPopup
+          onClose={() => dispatch({ type: actionTypes.HIDE_LOGIN_POPUP })}
+        />
       )}
 
       <Footer />

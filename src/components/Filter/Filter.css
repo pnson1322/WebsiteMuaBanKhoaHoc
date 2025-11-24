@@ -14,6 +14,7 @@
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #f8f9fa;
+  flex-wrap: wrap;
 }
 
 .filter-icon {
@@ -27,6 +28,16 @@
   color: #2d3748;
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+.filter-count {
+  margin-left: auto;
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  background: #f0f4ff;
+  border-radius: 12px;
 }
 
 .filter-section {
@@ -212,6 +223,3 @@
     font-size: 0.8rem;
   }
 }
-
-
-

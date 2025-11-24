@@ -6,6 +6,7 @@ import { BarChart, LineChart, PieChart } from "@mui/x-charts";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
 import SellerStatsSummary from "../../components/Seller/SellerStatsSummary";
 import { dashboardAPI } from "../../services/dashboardAPI";
+import { courseAPI } from "../../services/courseAPI";
 
 // Simple hook to observe an element's width for responsive charts
 function useElementWidth(initialWidth = 500) {
@@ -27,12 +28,6 @@ function useElementWidth(initialWidth = 500) {
 }
 
 const SellerHomePage = () => {
-  const [courses, setCourses] = useState([
-    { id: 1, name: "React Cơ Bản", students: 120, revenue: 3000000 },
-    { id: 2, name: "Java Nâng Cao", students: 200, revenue: 5000000 },
-    { id: 3, name: "Python AI", students: 180, revenue: 4000000 },
-    { id: 4, name: "Kotlin Android", students: 90, revenue: 2500000 },
-  ]);
   const { showSuccess, showError } = useToast();
 
   const [totalCourses, setTotalCourses] = useState(0);
@@ -43,6 +38,7 @@ const SellerHomePage = () => {
   const [dataLineChart, setDataLineChart] = useState([]);
   const [dataPieChart, setDataPieChart] = useState([]);
   const [dataBarChart, setDataBarChart] = useState([]);
+  const [topCourses, setTopCourses] = useState([]);
 
   const COLORS = [
     "#4254fb",
@@ -70,12 +66,14 @@ const SellerHomePage = () => {
           revenue,
           monthlyRevenue,
           montlyBuyer,
+          topCourseAPI,
         ] = await Promise.all([
           dashboardAPI.getCourseStatsByCategory(),
           dashboardAPI.getSellerStats(),
           dashboardAPI.getSellerTotalRevenue(),
           dashboardAPI.getSellerRevenue(),
           dashboardAPI.getMonthlyBuyerStats(),
+          courseAPI.getTopCourse(1, 4),
         ]);
 
         const total = categoryStats.reduce((sum, category) => {
@@ -103,6 +101,7 @@ const SellerHomePage = () => {
           })
         );
         setDataBarChart(montlyBuyer);
+        setTopCourses(topCourseAPI.items);
       } catch (err) {
         showError("Lỗi: " + err);
       }
@@ -110,10 +109,6 @@ const SellerHomePage = () => {
 
     fetchData();
   }, []);
-
-  const topCourses = [...courses]
-    .sort((a, b) => b.students - a.students)
-    .slice(0, 3);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -265,14 +260,14 @@ const SellerHomePage = () => {
                 </div>
 
                 <div className="top-courses-main">
-                  <div className="top-courses-name">{item.name}</div>
+                  <div className="top-courses-name">{item.title}</div>
                   <div className="top-courses-students">
-                    {item.students + " "} học viên
+                    {item.totalPurchased + " "} học viên
                   </div>
                 </div>
 
                 <div className="top-courses-revenue">
-                  {formatPrice(item.revenue)}
+                  {formatPrice(item.price)}
                 </div>
               </div>
             ))}

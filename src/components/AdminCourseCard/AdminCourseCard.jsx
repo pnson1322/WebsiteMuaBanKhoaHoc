@@ -34,21 +34,19 @@ const AdminCourseCard = ({ course, onToggleApproval }) => {
     >
       {/* Ảnh */}
       <div className="course-image-container">
-        <img src={course.image} alt={course.name} className="course-image" />
+        <img src={course.image} alt={course.title} className="course-image" />
         <div className="course-category">{course.category}</div>
       </div>
 
       {/* Nội dung */}
       <div className="course-content">
-        <h3 className="course-title">{course.name}</h3>
+        <h3 className="course-title">{course.title}</h3>
         <p className="course-description">{course.shortDescription}</p>
 
         {/* Footer */}
         <div className="course-footer">
           <div className="course-instructor">
-            <span className="instructor-badge">
-              👨‍🏫 {course.instructor.name}
-            </span>
+            <span className="instructor-badge">👨‍🏫 {course.teacherName}</span>
           </div>
 
           <CourseStats course={course} />
