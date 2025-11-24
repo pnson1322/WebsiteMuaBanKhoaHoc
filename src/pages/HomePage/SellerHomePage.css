@@ -86,6 +86,7 @@ img {
   border-radius: 8px;
   padding: 0.5rem 1rem;
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
@@ -117,8 +118,13 @@ img {
   background: #ca8a04;
 }
 
+.index-4 {
+  background: red;
+}
+
 .top-courses-main {
   margin-right: auto;
+  flex: 1;
 }
 
 .top-courses-name {
@@ -137,6 +143,7 @@ img {
   color: #38a169;
   font-size: 1rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 @media (max-width: 1024px) {

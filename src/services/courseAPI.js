@@ -86,4 +86,23 @@ export const courseAPI = {
       throw error;
     }
   },
+
+  // /api/Course: GET: Lấy top khoá học bán chạy
+  async getTopCourse(page = 1, pageSize = 3, SortBy = "popular") {
+    const res = await instance.get("/api/Course", {
+      params: {
+        page: page,
+        pageSize: pageSize,
+        SortBy: SortBy,
+      },
+    });
+
+    return res.data;
+  },
+
+  // /api/Course/{id}: GET: Lấy chi tiết khóa học
+  async getCourseById(id) {
+    const res = await instance.get(`/api/Course/${id}`);
+    return res.data;
+  },
 };

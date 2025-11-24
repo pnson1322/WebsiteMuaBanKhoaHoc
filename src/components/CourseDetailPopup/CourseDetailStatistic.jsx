@@ -427,18 +427,15 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
         </div>
 
         <div className="review-list">
-          {commentList.length === 0 ? (
-            sortMode ===
-            "all-comment"(
-              <div className="empty-cart">
-                <MessageCircle className="empty-icon" />
-                <h3>Chưa có đánh giá nào</h3>
-                <p>
-                  Hãy là người đầu tiên chia sẻ trải nghiệm của bạn về khóa học
-                  này
-                </p>
-              </div>
-            )
+          {commentList.length === 0 && sortMode === "all-comment" ? (
+            <div className="empty-cart">
+              <MessageCircle className="empty-icon" />
+              <h3>Chưa có đánh giá nào</h3>
+              <p>
+                Hãy là người đầu tiên chia sẻ trải nghiệm của bạn về khóa học
+                này
+              </p>
+            </div>
           ) : commentList.length === 0 ? (
             <div className="empty-cart">
               <MessageCircle className="empty-icon" />
