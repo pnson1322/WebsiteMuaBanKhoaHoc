@@ -64,11 +64,15 @@ export const courseAPI = {
         status: error.response?.status,
         message: error.message,
         data: error.response?.data,
-        hasToken: !!localStorage.getItem("token"),
+        hasToken:
+          !!localStorage.getItem("accessToken") ||
+          !!localStorage.getItem("token"),
       });
 
       // Nếu 401 và chưa có token, thử với public instance
-      if (error.response?.status === 401 && !localStorage.getItem("token")) {
+      const hasToken =
+        localStorage.getItem("accessToken") || localStorage.getItem("token");
+      if (error.response?.status === 401 && !hasToken) {
         console.log("🔓 Trying public API call for /api/Course");
         try {
           const res = await publicInstance.get("/api/Course", { params });

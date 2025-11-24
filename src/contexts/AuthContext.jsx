@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
     logger.info("AUTH_CLEAR_COMPLETE", "Auth state cleared successfully");
   };
 
-  const login = (userData, tokens) => {
+  const login = async (userData, tokens) => {
     logger.info("AUTH_LOGIN", "User logging in", {
       userId: userData.id,
       email: userData.email,
@@ -135,9 +135,10 @@ export const AuthProvider = ({ children }) => {
     // Lưu tokens nếu có
     if (tokens?.accessToken) {
       localStorage.setItem("accessToken", tokens.accessToken);
-    if (tokens?.refreshToken)
+    }
+    if (tokens?.refreshToken) {
       localStorage.setItem("refreshToken", tokens.refreshToken);
-    localStorage.setItem("isLoggedIn", "true");
+    }
 
     try {
       const fullUserData = await userAPI.getUserDetail();

@@ -12,7 +12,9 @@ logger.info("AXIOS_INSTANCE", "Axios instance created", {
 
 instance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    // ✅ Ưu tiên accessToken, fallback về token
+    const token =
+      localStorage.getItem("accessToken") || localStorage.getItem("token");
 
     logger.debug(
       "AXIOS_REQUEST",
@@ -148,8 +150,9 @@ instance.interceptors.response.use(
 
         const res = await axios.post(refreshURL, {}, { withCredentials: true });
 
-        const newToken = res.data.token;
-        localStorage.setItem("token", newToken);
+        const newToken = res.data.token || res.data.accessToken;
+        localStorage.setItem("accessToken", newToken);
+        localStorage.setItem("token", newToken); // Backward compatibility
 
         logger.info("AUTH_REFRESH_SUCCESS", "Token refreshed successfully", {
           hasNewToken: !!newToken,
