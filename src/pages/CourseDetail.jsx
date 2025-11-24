@@ -15,7 +15,7 @@ import { useAppState, useAppDispatch } from "../contexts/AppContext";
 import { useToast } from "../contexts/ToastContext";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { coursesAPI } from "../services/api";
+import { courseAPI } from "../services/courseAPI";
 import { reviewAPI } from "../services/reviewAPI";
 
 const CourseDetail = () => {
@@ -34,7 +34,7 @@ const CourseDetail = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await coursesAPI.getCourseById(id);
+        const data = await courseAPI.getCourseById(id);
         setCourse(data);
       } catch (err) {
         setError("Không tìm thấy khóa học");
@@ -405,7 +405,7 @@ const CourseDetail = () => {
           <div className="content-section">
             <h2>🎯 Đối tượng học viên</h2>
             <ul className="target-list">
-              {course.intendedLearners?.map((item, index) => (
+              {course.targetLearners?.map((item, index) => (
                 <li key={index}>{item.description}</li>
               ))}
             </ul>
@@ -414,7 +414,7 @@ const CourseDetail = () => {
           <div className="content-section">
             <h2>💪 Kỹ năng đạt được</h2>
             <div className="skills-grid">
-              {course.skillsAcquired?.map((skill, idx) => (
+              {course.courseSkills?.map((skill, idx) => (
                 <span className="skill-tag" key={skill + idx}>
                   {skill.description}
                 </span>

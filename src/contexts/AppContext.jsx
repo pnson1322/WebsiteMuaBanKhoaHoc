@@ -154,6 +154,26 @@ export const AppProvider = ({ children }) => {
     });
   }, []);
 
+  useEffect(() => {
+    setAppDispatchContext({
+      resetUserData: () => dispatch({ type: actionTypes.RESET_USER_DATA }),
+      syncUserData: async () => {
+        const token =
+          localStorage.getItem("token") || localStorage.getItem("accessToken");
+        if (!token) return;
+
+        try {
+          const { cartAPI } = await import("../services/cartAPI");
+          const cartFromAPI = await cartAPI.getCart();
+          const cartIds = cartFromAPI.items.map((item) => item.courseId);
+          dispatch({ type: actionTypes.SET_CART, payload: cartIds });
+        } catch (err) {
+          console.error("❌ Error syncing user data:", err);
+        }
+      },
+    });
+  }, []);
+
   // ⭐ Load khóa học từ API thật
   // ✅ Load cho TẤT CẢ: không đăng nhập, Buyer, Admin, Seller
   // ⚠️ Chỉ skip ở trang /login và /register để tránh API call không cần thiết
