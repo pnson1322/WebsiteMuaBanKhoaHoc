@@ -11,12 +11,11 @@ import {
 } from "lucide-react";
 import { CourseCardSkeleton } from "../components/LoadingSkeleton";
 import PaymentPopup from "../components/PaymentPopup";
-import CourseDetailPopup from "../components/CourseDetailPopup/CourseDetailPopup";
 
 const Cart = () => {
   const navigate = useNavigate();
   const state = useAppState();
-  const { dispatch, actionTypes } = useAppDispatch();
+  const { removeFromCart, clearCart } = useAppDispatch();
 
   const [cartCourses, setCartCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +25,7 @@ const Cart = () => {
 
   useEffect(() => {
     try {
-      if (!state.courses || state.courses.length === 0) {
+      if (!state.courses) {
         setLoading(true);
         return;
       }
@@ -54,14 +53,24 @@ const Cart = () => {
     navigate(`/course/${course.id}`);
   };
 
-  const removeFromCart = (courseId) => {
-    dispatch({ type: actionTypes.REMOVE_FROM_CART, payload: courseId });
+  const handleRemoveItem = async (courseId) => {
+    const result = await removeFromCart(courseId);
+    if (result.success) {
+      setSelectedIds((prev) => prev.filter((id) => id !== courseId));
+    } else {
+      alert("Có lỗi khi xóa sản phẩm!");
+    }
   };
 
-  const clearCart = () => {
-    state.cart.forEach((courseId) => {
-      dispatch({ type: actionTypes.REMOVE_FROM_CART, payload: courseId });
-    });
+  const handleClearCart = async () => {
+    if (window.confirm("Bạn có chắc muốn xóa tất cả?")) {
+      const result = await clearCart();
+      if (result.success) {
+        setSelectedIds([]);
+      } else {
+        alert("Lỗi khi xóa giỏ hàng");
+      }
+    }
   };
 
   const formatPrice = (price) =>
@@ -145,7 +154,7 @@ const Cart = () => {
           </div>
 
           {cartCourses.length > 0 && (
-            <button className="clear-cart-btn" onClick={clearCart}>
+            <button className="clear-cart-btn" onClick={handleClearCart}>
               <Trash2 className="trash-icon" />
               Xóa tất cả
             </button>
@@ -185,9 +194,9 @@ const Cart = () => {
                   />
 
                   <div className="cart-item-info">
-                    <h3 className="cart-item-title">{course.name}</h3>
+                    <h3 className="cart-item-title">{course.title}</h3>
                     <p className="cart-item-instructor">
-                      👨‍🏫 {course.instructor.name}
+                      👨‍🏫 {course.teacherName}
                     </p>
                     <p className="cart-item-description">
                       {course.shortDescription}
@@ -213,7 +222,7 @@ const Cart = () => {
                     </button>
                     <button
                       className="remove-btn"
-                      onClick={() => removeFromCart(course.id)}
+                      onClick={() => handleRemoveItem(course.id)}
                     >
                       <Trash2 className="remove-icon" />
                       Xóa
@@ -265,7 +274,6 @@ const Cart = () => {
 
       {showPayment && (
         <PaymentPopup onClose={closePopup} course={selectedCourses} />
-        //<CourseDetailPopup onClose={closePopup} course={selectedCourses[0]} />
       )}
     </div>
   );
