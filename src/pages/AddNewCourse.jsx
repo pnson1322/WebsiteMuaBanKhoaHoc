@@ -1,35 +1,47 @@
 import { Image } from "lucide-react";
 import "./AddNewCourse.css";
-import { useState } from "react";
-import { useAppState, useAppDispatch } from "../contexts/AppContext";
+import { useEffect, useState } from "react";
+import { useAppDispatch } from "../contexts/AppContext";
 import { useToast } from "../contexts/ToastContext";
+import { courseAPI } from "../services/courseAPI";
+import { categoryAPI } from "../services/categoryAPI";
 
 const AddNewCourse = () => {
-  const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
   const { showSuccess, showError } = useToast();
-  const [name, setName] = useState("");
-  const [instructor, setInstructor] = useState({
-    id: "",
-    name: "",
-    email: "",
-    phone: "",
-  });
-  const [category, setCategory] = useState("");
+
+  const [title, setTitle] = useState("");
+  const [teacherName, setTeacherName] = useState("");
+  const [categoryId, setCategoryId] = useState(0);
   const [level, setLevel] = useState("");
   const [price, setPrice] = useState(0);
-  const [duration, setDuration] = useState("");
+  const [durationHours, setDurationHours] = useState(0);
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
-  const [contentList, setContentList] = useState([]);
-  const [intendedLearners, setIntendedLearners] = useState([]);
-  const [skillsAcquired, setSkillsAcquired] = useState([]);
+  const [courseContents, setCourseContents] = useState([]);
+  const [targetLearners, setTargetLearners] = useState([]);
+  const [courseSkills, setCourseSkills] = useState([]);
+  const [cate, setCate] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await categoryAPI.getAll();
+        setCate(res);
+      } catch (err) {
+        showError(err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     setImage(file);
+    console.log("File đã chọn:", file);
     const previewUrl = URL.createObjectURL(file);
     setImagePreviewUrl(previewUrl);
   };
@@ -46,33 +58,46 @@ const AddNewCourse = () => {
 
   const addIntendedLearner = () => {
     if (intendedLearnerInput.trim()) {
-      setIntendedLearners([...intendedLearners, intendedLearnerInput.trim()]);
+      setTargetLearners([
+        ...targetLearners,
+        {
+          id: 0,
+          description: intendedLearnerInput.trim(),
+        },
+      ]);
       setIntendedLearnerInput("");
     }
   };
 
   const removeIntendedLearner = (index) => {
-    setIntendedLearners(intendedLearners.filter((_, i) => i !== index));
+    setTargetLearners(targetLearners.filter((_, i) => i !== index));
   };
 
   const addSkill = () => {
     if (skillInput.trim()) {
-      setSkillsAcquired([...skillsAcquired, skillInput.trim()]);
+      setCourseSkills([
+        ...courseSkills,
+        {
+          id: 0,
+          description: skillInput.trim(),
+        },
+      ]);
       setSkillInput("");
     }
   };
 
   const removeSkill = (index) => {
-    setSkillsAcquired(skillsAcquired.filter((_, i) => i !== index));
+    setCourseSkills(courseSkills.filter((_, i) => i !== index));
   };
 
   const addContent = () => {
     if (contentTitleInput.trim() && contentDesInput.trim()) {
-      setContentList([
-        ...contentList,
+      setCourseContents([
+        ...courseContents,
         {
+          id: 0,
           title: contentTitleInput.trim(),
-          des: contentDesInput.trim(),
+          description: contentDesInput.trim(),
         },
       ]);
       setContentTitleInput("");
@@ -81,22 +106,22 @@ const AddNewCourse = () => {
   };
 
   const removeContent = (index) => {
-    setContentList(contentList.filter((_, i) => i !== index));
+    setCourseContents(courseContents.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      if (!name.trim()) {
+      if (!title.trim()) {
         showError("Vui lòng nhập tên khóa học");
         return;
       }
-      if (!instructor.name.trim()) {
+      if (!teacherName.trim()) {
         showError("Vui lòng nhập tên giảng viên");
         return;
       }
-      if (!category) {
+      if (!categoryId) {
         showError("Vui lòng chọn danh mục");
         return;
       }
@@ -108,55 +133,34 @@ const AddNewCourse = () => {
         showError("Vui lòng nhập giá khóa học hợp lệ");
         return;
       }
-      if (!duration.trim()) {
+      if (!durationHours.trim()) {
         showError("Vui lòng nhập thời lượng khóa học");
         return;
       }
 
-      const maxId =
-        state.courses.length > 0
-          ? Math.max(...state.courses.map((c) => c.id || 0))
-          : 0;
-      const newId = maxId + 1;
-
-      const imageUrl = image ? URL.createObjectURL(image) : "";
-
-      const shortDescription = description
-        ? description.substring(0, 100) +
-          (description.length > 100 ? "..." : "")
-        : "";
-
       const payload = {
-        id: newId,
-        name,
+        title,
         description,
-        shortDescription,
-        instructor,
-        category,
+        teacherName,
+        categoryId,
         level,
         price: Number(price) || 0,
-        duration,
-        image: imageUrl,
-        contentList,
-        intendedLearners,
-        skillsAcquired,
-        rating: 0,
-        students: 0,
+        durationHours,
+        image: image,
+        courseContents,
+        courseSkills,
+        targetLearners,
       };
-
-      const courseName = name;
 
       dispatch({ type: actionTypes.ADD_COURSE, payload });
       console.log("Create course payload", payload);
 
+      await courseAPI.createCourse(payload);
+
       clearForm();
 
-      console.log(state.courses);
-
-      showSuccess(`✅ Đã tạo khóa học "${courseName}" thành công!`);
+      showSuccess(`✅ Đã tạo khóa học "${title}" thành công!`);
     } catch (error) {
-      console.log(state.courses);
-
       showError(
         `❌ Lỗi khi tạo khóa học: ${error.message || "Đã có lỗi xảy ra"}`
       );
@@ -165,23 +169,18 @@ const AddNewCourse = () => {
   };
 
   const clearForm = () => {
-    setName("");
-    setInstructor({
-      id: "",
-      name: "",
-      email: "",
-      phone: "",
-    });
-    setCategory("");
+    setTitle("");
+    setTeacherName("");
+    setCategoryId(0);
     setLevel("");
     setPrice("");
-    setDuration("");
+    setDurationHours(0);
     setDescription("");
     setImage(null);
     setImagePreviewUrl("");
-    setContentList([]);
-    setIntendedLearners([]);
-    setSkillsAcquired([]);
+    setCourseContents([]);
+    setCourseSkills([]);
+    setTargetLearners([]);
     setIntendedLearnerInput("");
     setSkillInput("");
     setContentTitleInput("");
@@ -209,8 +208,8 @@ const AddNewCourse = () => {
                   <input
                     type="text"
                     placeholder="Nhập tên khóa học"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     required
                   />
                 </div>
@@ -219,13 +218,8 @@ const AddNewCourse = () => {
                   <input
                     type="text"
                     placeholder="Nhập tên giảng viên"
-                    value={instructor.name}
-                    onChange={(e) =>
-                      setInstructor((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
+                    value={teacherName}
+                    onChange={(e) => setTeacherName(e.target.value)}
                     required
                   />
                 </div>
@@ -233,16 +227,16 @@ const AddNewCourse = () => {
                 <div className="form-field">
                   <label>Danh mục *</label>
                   <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(Number(e.target.value))}
                     required
                   >
-                    <option value="" disabled>
+                    <option value="0" disabled>
                       Chọn danh mục
                     </option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Lập trình">Lập trình</option>
-                    <option value="Thiết kế">Thiết kế</option>
+                    {cate.map((item) => {
+                      return <option value={item.id}>{item.name}</option>;
+                    })}
                   </select>
                 </div>
                 <div className="form-field">
@@ -275,10 +269,10 @@ const AddNewCourse = () => {
                 <div className="form-field">
                   <label>Thời lượng khóa học *</label>
                   <input
-                    type="text"
+                    type="number"
                     placeholder="Ví dụ: 92 tiếng"
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
+                    value={durationHours}
+                    onChange={(e) => setDurationHours(e.target.value)}
                     required
                   />
                 </div>
@@ -332,9 +326,9 @@ const AddNewCourse = () => {
               <div className="list-section">
                 <div className="list-section-title">Đối tượng học viên</div>
                 <div className="list-items">
-                  {intendedLearners.map((item, index) => (
+                  {targetLearners.map((item, index) => (
                     <div key={index} className="list-item">
-                      <span>{item}</span>
+                      <span>{item.description}</span>
                       <button
                         type="button"
                         className="remove-item-btn"
@@ -373,9 +367,9 @@ const AddNewCourse = () => {
               <div className="list-section">
                 <div className="list-section-title">Kỹ năng đạt được</div>
                 <div className="list-items">
-                  {skillsAcquired.map((item, index) => (
+                  {courseSkills.map((item, index) => (
                     <div key={index} className="list-item">
-                      <span>{item}</span>
+                      <span>{item.description}</span>
                       <button
                         type="button"
                         className="remove-item-btn"
@@ -414,11 +408,13 @@ const AddNewCourse = () => {
               <div className="list-section">
                 <div className="list-section-title">Nội dung khóa học</div>
                 <div className="content-items">
-                  {contentList.map((item, index) => (
+                  {courseContents.map((item, index) => (
                     <div key={index} className="content-item-wrapper">
                       <div className="content-item-info">
                         <div className="content-item-title">{item.title}</div>
-                        <div className="content-item-des">{item.des}</div>
+                        <div className="content-item-des">
+                          {item.description}
+                        </div>
                       </div>
                       <button
                         type="button"

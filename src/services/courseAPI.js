@@ -54,7 +54,7 @@ export const courseAPI = {
     try {
       // Thử với instance có auth trước (cho logged-in users)
       console.log("📡 Fetching courses with auth instance", { params });
-      const res = await instance.get("/api/Course", { params });
+      const res = await instance.get("/api/Course/all", { params });
       console.log("✅ Courses fetched successfully", {
         count: res.data?.items?.length,
       });
@@ -103,6 +103,57 @@ export const courseAPI = {
   // /api/Course/{id}: GET: Lấy chi tiết khóa học
   async getCourseById(id) {
     const res = await instance.get(`/api/Course/${id}`);
+    return res.data;
+  },
+
+  // /api/Course: POST: Tạo khoá học
+  async createCourse(payload) {
+    console.log(payload);
+    const formData = new FormData();
+
+    formData.append("Title", payload.title);
+    formData.append("TeacherName", payload.teacherName);
+    formData.append("Description", payload.description || "");
+    formData.append("Price", payload.price);
+    formData.append("Level", payload.level);
+    formData.append("DurationHours", payload.durationHours);
+    formData.append("CategoryId", payload.categoryId);
+
+    if (payload.image instanceof File) {
+      formData.append("Image", payload.image);
+    }
+
+    if (payload.courseContents && payload.courseContents.length > 0) {
+      payload.courseContents.forEach((item, index) => {
+        formData.append(`CourseContents[${index}].Id`, 0);
+        formData.append(`CourseContents[${index}].Title`, item.title);
+        formData.append(
+          `CourseContents[${index}].Description`,
+          item.description
+        );
+      });
+    }
+
+    if (payload.courseSkills && payload.courseSkills.length > 0) {
+      payload.courseSkills.forEach((item, index) => {
+        formData.append(`CourseSkills[${index}].Id`, 0);
+        formData.append(`CourseSkills[${index}].Description`, item.description);
+      });
+    }
+
+    if (payload.targetLearners && payload.targetLearners.length > 0) {
+      payload.targetLearners.forEach((item, index) => {
+        formData.append(`TargetLearners[${index}].Id`, 0);
+        formData.append(
+          `TargetLearners[${index}].Description`,
+          item.description
+        );
+      });
+    }
+
+    const res = await instance.post("/api/Course", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return res.data;
   },
 };

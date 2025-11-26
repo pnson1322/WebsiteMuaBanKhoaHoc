@@ -21,9 +21,9 @@ import { reviewAPI } from "../services/reviewAPI";
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const state = useAppState();
-  const { dispatch, actionTypes } = useAppDispatch();
+  const { addToCart, addToFavorite, removeFromFavorite } = useAppDispatch();
   const { showSuccess, showError, showFavorite, showUnfavorite } = useToast();
 
   const [course, setCourse] = useState(null);
@@ -259,20 +259,44 @@ const CourseDetail = () => {
   const isFavorite = course && state.favorites.includes(course.id);
   const isInCart = course && state.cart.includes(course.id);
 
-  const handleToggleFavorite = () => {
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      showError("Vui lòng đăng nhập để sử dụng tính năng yêu thích");
+      return;
+    }
+
     if (isFavorite) {
-      dispatch({ type: actionTypes.REMOVE_FROM_FAVORITES, payload: course.id });
-      showUnfavorite(`💔 Đã bỏ yêu thích "${course.title}"`);
+      const result = await removeFromFavorite(course.id);
+      if (result.success) {
+        showUnfavorite(`💔 Đã bỏ yêu thích "${course.title}"`);
+      } else {
+        showError("Lỗi khi bỏ yêu thích");
+      }
     } else {
-      dispatch({ type: actionTypes.ADD_TO_FAVORITES, payload: course.id });
-      showFavorite(`❤️ Đã thêm "${course.title}" vào yêu thích!`);
+      const result = await addToFavorite(course.id);
+      if (result.success) {
+        showFavorite(`❤️ Đã thêm "${course.title}" vào yêu thích!`);
+      } else {
+        showError("Lỗi khi thêm yêu thích");
+      }
     }
   };
 
-  const handleAddToCart = () => {
-    if (!isInCart) {
-      dispatch({ type: actionTypes.ADD_TO_CART, payload: course.id });
+  const handleAddToCart = async () => {
+    if (!user) {
+      showError("Vui lòng đăng nhập để mua khóa học");
+      navigate("/login");
+      return;
+    }
+
+    if (isInCart) return;
+
+    const result = await addToCart(user.id, course.id);
+
+    if (result.success) {
       showSuccess(`🛒 Đã thêm "${course.title}" vào giỏ hàng!`);
+    } else {
+      showError("Lỗi khi thêm vào giỏ hàng. Vui lòng thử lại.");
     }
   };
 
@@ -309,16 +333,14 @@ const CourseDetail = () => {
                 📧 Email:{" "}
                 <strong>
                   <a href={"mailto:" + course.instructor?.email}>
-                    {course.instructor?.email}
+                    {course.email}
                   </a>
                 </strong>
               </div>
               <div>
                 📞 Số điện thoại:{" "}
                 <strong>
-                  <a href={"tel:" + course.instructor?.phone}>
-                    {course.instructor?.phone}
-                  </a>
+                  <a href={"tel:" + course.instructor?.phone}>{course.phone}</a>
                 </strong>
               </div>
             </div>
@@ -364,24 +386,27 @@ const CourseDetail = () => {
               <span className="price-value">{formatPrice(course.price)}</span>
             </div>
 
-            <div className="course-actions">
-              <button
-                className={`favorite-btn ${isFavorite ? "favorited" : ""}`}
-                onClick={handleToggleFavorite}
-              >
-                <Heart className="action-icon" />
-                {isFavorite ? "Đã yêu thích" : "Yêu thích"}
-              </button>
+            {!isLoggedIn ||
+              (user.role === "Buyer" && (
+                <div className="course-actions">
+                  <button
+                    className={`favorite-btn ${isFavorite ? "favorited" : ""}`}
+                    onClick={handleToggleFavorite}
+                  >
+                    <Heart className="action-icon" />
+                    {isFavorite ? "Đã yêu thích" : "Yêu thích"}
+                  </button>
 
-              <button
-                className={`cart-btn ${isInCart ? "in-cart" : ""}`}
-                onClick={handleAddToCart}
-                disabled={isInCart}
-              >
-                <ShoppingCart className="action-icon" />
-                {isInCart ? "Đã thêm vào giỏ" : "Thêm vào giỏ hàng"}
-              </button>
-            </div>
+                  <button
+                    className={`cart-btn ${isInCart ? "in-cart" : ""}`}
+                    onClick={handleAddToCart}
+                    disabled={isInCart}
+                  >
+                    <ShoppingCart className="action-icon" />
+                    {isInCart ? "Đã thêm vào giỏ" : "Thêm vào giỏ hàng"}
+                  </button>
+                </div>
+              ))}
           </div>
         </div>
 
@@ -540,6 +565,7 @@ const CourseDetail = () => {
                   <div className="comment-section comment-edit">
                     <form
                       onSubmit={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         submitEditComment();
                       }}

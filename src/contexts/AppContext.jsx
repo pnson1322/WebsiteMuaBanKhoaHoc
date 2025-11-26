@@ -1,6 +1,15 @@
-import React, { createContext, useContext, useReducer, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { courseAPI } from "../services/courseAPI"; // ⭐ Dùng API thật
 import { setAppDispatchContext } from "./AuthContext";
+import { cartAPI } from "../services/cartAPI";
+import { favoriteAPI } from "../services/favoriteAPI";
 
 // Initial state
 const initialState = {
@@ -133,46 +142,133 @@ export const useAppDispatch = () => useContext(AppDispatchContext);
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // 🔗 Export dispatch context để AuthContext có thể gọi
-  useEffect(() => {
-    setAppDispatchContext({
-      resetUserData: () => dispatch({ type: actionTypes.RESET_USER_DATA }),
-      syncUserData: async () => {
-        const token =
-          localStorage.getItem("token") || localStorage.getItem("accessToken");
-        if (!token) return;
-
+  const cartActions = useMemo(
+    () => ({
+      addToCart: async (userId, courseId) => {
         try {
-          const { favoriteAPI } = await import("../services/favoriteAPI");
-          const favoritesFromAPI = await favoriteAPI.getFavorites();
-          const favoriteIds = favoritesFromAPI.map((item) => item.courseId);
-          dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
-        } catch (err) {
-          console.error("❌ Error syncing user data:", err);
+          await cartAPI.createCartItem(userId, courseId);
+          dispatch({ type: actionTypes.ADD_TO_CART, payload: courseId });
+          return { success: true };
+        } catch (error) {
+          console.error("Lỗi thêm vào giỏ:", error);
+          return { success: false, error };
         }
       },
-    });
+
+      removeFromCart: async (courseId) => {
+        try {
+          await cartAPI.deleteCartItem(courseId);
+          dispatch({ type: actionTypes.REMOVE_FROM_CART, payload: courseId });
+          return { success: true };
+        } catch (error) {
+          console.error("Lỗi xóa khỏi giỏ:", error);
+          return { success: false, error };
+        }
+      },
+
+      clearCart: async () => {
+        try {
+          await cartAPI.deleteCart();
+          dispatch({ type: actionTypes.RESET_USER_DATA });
+          return { success: true };
+        } catch (error) {
+          console.error("Lỗi làm trống giỏ:", error);
+          return { success: false, error };
+        }
+      },
+    }),
+    []
+  );
+
+  const favoriteActions = useMemo(
+    () => ({
+      addToFavorite: async (courseId) => {
+        try {
+          await favoriteAPI.addFavorite(courseId);
+          dispatch({ type: actionTypes.ADD_TO_FAVORITES, payload: courseId });
+          return { success: true };
+        } catch (error) {
+          console.error("Lỗi thêm yêu thích:", error);
+          return { success: false, error };
+        }
+      },
+
+      removeFromFavorite: async (courseId) => {
+        try {
+          await favoriteAPI.removeFavorite(courseId);
+          dispatch({
+            type: actionTypes.REMOVE_FROM_FAVORITES,
+            payload: courseId,
+          });
+          return { success: true };
+        } catch (error) {
+          console.error("Lỗi xóa yêu thích:", error);
+          return { success: false, error };
+        }
+      },
+
+      clearFavorites: async () => {
+        try {
+          await favoriteAPI.clearFavorites();
+          dispatch({ type: actionTypes.SET_FAVORITES, payload: [] });
+          return { success: true };
+        } catch (error) {
+          return { success: false, error };
+        }
+      },
+    }),
+    []
+  );
+
+  const resetUserData = useCallback(() => {
+    console.log("🗑️ Resetting user data");
+    dispatch({ type: actionTypes.RESET_USER_DATA });
   }, []);
 
-  useEffect(() => {
-    setAppDispatchContext({
-      resetUserData: () => dispatch({ type: actionTypes.RESET_USER_DATA }),
-      syncUserData: async () => {
-        const token =
-          localStorage.getItem("token") || localStorage.getItem("accessToken");
-        if (!token) return;
+  const syncUserData = useCallback(async () => {
+    const token =
+      localStorage.getItem("token") || localStorage.getItem("accessToken");
+    if (!token) return;
 
-        try {
-          const { cartAPI } = await import("../services/cartAPI");
-          const cartFromAPI = await cartAPI.getCart();
-          const cartIds = cartFromAPI.items.map((item) => item.courseId);
+    console.log("🔄 Syncing user data (Cart & Favorites)...");
+
+    try {
+      const [favoriteRes, cartRes] = await Promise.allSettled([
+        favoriteAPI.getFavorites(),
+        cartAPI.getCart(),
+      ]);
+
+      // Xử lý Favorites
+      if (favoriteRes.status === "fulfilled") {
+        const favoriteData = favoriteRes.value;
+        // Kiểm tra xem API trả về mảng trực tiếp hay object { items: [] }
+        // Giả sử API trả về mảng các object [{ courseId: 1, ... }]
+        const favoriteIds = Array.isArray(favoriteData)
+          ? favoriteData.map((item) => item.courseId || item.id) // Fallback nếu cấu trúc khác
+          : [];
+        dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
+      }
+
+      // Xử lý Cart
+      if (cartRes.status === "fulfilled") {
+        const cartData = cartRes.value;
+        if (cartData && cartData.items) {
+          const cartIds = cartData.items.map((item) => item.courseId);
           dispatch({ type: actionTypes.SET_CART, payload: cartIds });
-        } catch (err) {
-          console.error("❌ Error syncing user data:", err);
         }
-      },
-    });
+      }
+    } catch (err) {
+      console.error("❌ General sync error:", err);
+    }
   }, []);
+
+  // Set context cho Auth
+  useEffect(() => {
+    setAppDispatchContext({
+      resetUserData,
+      syncUserData,
+    });
+  }, [resetUserData, syncUserData]);
 
   // ⭐ Load khóa học từ API thật
   // ✅ Load cho TẤT CẢ: không đăng nhập, Buyer, Admin, Seller
@@ -294,43 +390,17 @@ export const AppProvider = ({ children }) => {
     state.selectedPriceRange,
   ]);
 
-  // 🔄 Function để reset user data khi logout
-  const resetUserData = () => {
-    console.log("🗑️ Resetting user data (cart, favorites, viewHistory)");
-    dispatch({ type: actionTypes.RESET_USER_DATA });
-  };
-
-  // 🔄 Function để sync data từ backend khi login
-  const syncUserData = async () => {
-    const token =
-      localStorage.getItem("token") || localStorage.getItem("accessToken");
-    if (!token) {
-      console.log("⚠️ No token found - skipping sync");
-      return;
-    }
-
-    console.log("🔄 Syncing user data from backend...");
-
-    try {
-      // Sync favorites
-      const { favoriteAPI } = await import("../services/favoriteAPI");
-      const favoritesFromAPI = await favoriteAPI.getFavorites();
-      const favoriteIds = favoritesFromAPI.map((item) => item.courseId);
-      dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
-      console.log("✅ Favorites synced:", favoriteIds.length);
-
-      // TODO: Sync cart từ backend nếu có API
-      // const cartFromAPI = await cartAPI.getCart();
-      // dispatch({ type: actionTypes.SET_CART, payload: cartFromAPI });
-    } catch (err) {
-      console.error("❌ Error syncing user data:", err);
-    }
-  };
-
   return (
     <AppContext.Provider value={state}>
       <AppDispatchContext.Provider
-        value={{ dispatch, actionTypes, resetUserData, syncUserData }}
+        value={{
+          dispatch,
+          actionTypes,
+          resetUserData,
+          syncUserData,
+          ...cartActions,
+          ...favoriteActions,
+        }}
       >
         {children}
       </AppDispatchContext.Provider>
