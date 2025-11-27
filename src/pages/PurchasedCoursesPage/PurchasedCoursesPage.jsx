@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Search, Filter as FilterIcon } from "lucide-react";
+import { Search, Filter as FilterIcon, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { coursesAPI } from "../../services/api";
+import { courseAPI } from "../../services/courseAPI";
 import PurchasedCourseCard from "../../components/PurchasedCourseCard/PurchasedCourseCard";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext"; // ✅ Kết nối AppContext
 import Filter from "../../components/Filter/Filter";
@@ -17,15 +17,32 @@ const PurchasedCoursesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
 
-  // 🧠 Lấy danh sách khóa học đã mua (mock hoặc API thật)
+  // 🧠 Lấy danh sách khóa học đã mua từ API
   useEffect(() => {
     const loadCourses = async () => {
       setLoading(true);
       try {
-        const data = await coursesAPI.getPurchasedCourses();
-        setCourses(data);
-        setFiltered(data);
+        const response = await courseAPI.getPurchasedCourses({
+          page: currentPage,
+          pageSize: pageSize,
+        });
+
+        // Normalize data như Favorites page
+        const normalized = (response.items || []).map((item) => ({
+          ...item,
+          imageUrl:
+            item.imageUrl ??
+            "https://via.placeholder.com/400x250?text=No+Image",
+          categoryName: item.categoryName ?? "Khóa học",
+        }));
+
+        setCourses(normalized);
+        setFiltered(normalized);
+        setTotalPages(response.totalPages || 1);
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu:", err);
       } finally {
@@ -33,7 +50,7 @@ const PurchasedCoursesPage = () => {
       }
     };
     loadCourses();
-  }, []);
+  }, [currentPage]);
 
   // 🔍 Tìm kiếm + sắp xếp + lọc danh mục & giá
   useEffect(() => {
@@ -43,14 +60,14 @@ const PurchasedCoursesPage = () => {
     if (searchTerm.trim()) {
       result = result.filter(
         (c) =>
-          c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.instructor.name.toLowerCase().includes(searchTerm.toLowerCase())
+          c.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          c.teacherName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // 2️⃣ Lọc theo danh mục (AppContext)
     if (state.selectedCategory && state.selectedCategory !== "Tất cả") {
-      result = result.filter((c) => c.category === state.selectedCategory);
+      result = result.filter((c) => c.categoryName === state.selectedCategory);
     }
 
     // 3️⃣ Lọc theo khoảng giá (AppContext)
@@ -68,12 +85,14 @@ const PurchasedCoursesPage = () => {
     switch (sortOrder) {
       case "newest":
         result.sort(
-          (a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate)
+          (a, b) =>
+            new Date(b.purchaseDate || 0) - new Date(a.purchaseDate || 0)
         );
         break;
       case "oldest":
         result.sort(
-          (a, b) => new Date(a.purchaseDate) - new Date(b.purchaseDate)
+          (a, b) =>
+            new Date(a.purchaseDate || 0) - new Date(b.purchaseDate || 0)
         );
         break;
       case "priceLow":
@@ -140,8 +159,27 @@ const PurchasedCoursesPage = () => {
           <p className="loading-text">⏳ Đang tải dữ liệu...</p>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <p>😢 Bạn chưa mua khóa học nào.</p>
-            <button onClick={() => navigate("/")}>Khám phá thêm</button>
+            <div className="empty-state-icon">📚</div>
+            <h2>Chưa có khóa học nào</h2>
+            <p>
+              Bạn chưa mua khóa học nào. Hãy khám phá hàng ngàn khóa học chất
+              lượng cao
+              <br />
+              để bắt đầu hành trình học tập của bạn ngay hôm nay!
+            </p>
+            <div className="empty-state-buttons">
+              <button onClick={() => navigate("/")}>
+                <Search className="icon" size={18} />
+                Khám phá khóa học
+              </button>
+              <button
+                className="secondary"
+                onClick={() => navigate("/favorites")}
+              >
+                <Heart className="icon" size={18} />
+                Xem yêu thích
+              </button>
+            </div>
           </div>
         ) : (
           <div className="courses-grid">

@@ -106,6 +106,77 @@ export const courseAPI = {
     return res.data;
   },
 
+  /**
+   * 📌 GET /User/my-courses
+   * Lấy danh sách khóa học đã mua của người dùng
+   * Query: page=1, pageSize=10
+   */
+  async getPurchasedCourses({ page = 1, pageSize = 10 } = {}) {
+    const res = await instance.get("/User/my-courses", {
+      params: { page, pageSize },
+    });
+    return res.data;
+  },
+
+  /**
+   * 📌 GET /api/Course (Admin)
+   * Lấy tất cả khóa học trong database bao gồm cả chưa duyệt
+   * Query: page=1, pageSize=10, IncludeUnApproved=false, IncludeRestricted=false
+   */
+  async getAdminCourses({
+    page = 1,
+    pageSize = 10,
+    Q = null,
+    CategoryId = null,
+    SellerId = null,
+    MinPrice = null,
+    MaxPrice = null,
+    SortBy = null,
+    Level = null,
+    IncludeUnApproved = false,
+    IncludeRestricted = false,
+  } = {}) {
+    const params = {
+      page,
+      pageSize,
+      Q,
+      CategoryId,
+      SellerId,
+      MinPrice,
+      MaxPrice,
+      SortBy,
+      Level,
+      IncludeUnApproved,
+      IncludeRestricted,
+    };
+
+    // Loại bỏ params null
+    Object.keys(params).forEach(
+      (key) => params[key] === null && delete params[key]
+    );
+
+    const res = await instance.get("/api/Course", { params });
+    return res.data;
+  },
+
+  /**
+   * 📌 PUT /api/Course/{id}/approve
+   * Duyệt khóa học
+   */
+  async approveCourse(courseId) {
+    const res = await instance.put(`/api/Course/${courseId}/approve`);
+    return res.data;
+  },
+
+  /**
+   * 📌 PUT /api/Course/{id}/restrict
+   * Hạn chế khóa học
+   */
+  async restrictCourse(courseId) {
+    const res = await instance.put(`/api/Course/${courseId}/restrict`);
+    return res.data;
+  },
+
   // /api/Course: POST: Tạo khoá học
   async createCourse(payload) {
     console.log(payload);

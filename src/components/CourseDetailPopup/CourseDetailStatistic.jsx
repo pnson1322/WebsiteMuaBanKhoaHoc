@@ -1,5 +1,5 @@
 import "./CourseDetailStatistic.css";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { BarChart2, MessageCircle, Star } from "lucide-react";
 import { LineChart } from "@mui/x-charts";
 import { reviewAPI } from "../../services/reviewAPI";

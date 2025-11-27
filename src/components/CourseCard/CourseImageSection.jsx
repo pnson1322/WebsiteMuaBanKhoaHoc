@@ -13,7 +13,7 @@ const CourseImageSection = ({ course, isFavorite, onToggleFavorite }) => {
         className="course-image"
       />
 
-      <div className="course-category">{course.level}</div>
+      <div className="course-category">{course.categoryName}</div>
 
       <button
         className={`favorite-button ${isFavorite ? "favorite" : ""}`}

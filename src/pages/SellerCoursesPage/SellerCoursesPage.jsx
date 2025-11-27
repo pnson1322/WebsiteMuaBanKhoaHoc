@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppState } from "../../contexts/AppContext";
 import Filter from "../../components/Filter/Filter";
 import PurchasedCourseCard from "../../components/PurchasedCourseCard/PurchasedCourseCard";
+import CourseDetailPopup from "../../components/CourseDetailPopup/CourseDetailPopup";
 import "../PurchasedCoursesPage/PurchasedCoursesPage.css";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
 import SellerStatsSummary from "../../components/Seller/SellerStatsSummary";
@@ -20,6 +21,9 @@ const SellerCoursesPage = () => {
   const [totalStudents, setTotalStudents] = useState(0);
   const [rating, setRating] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
+
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,10 +66,8 @@ const SellerCoursesPage = () => {
     if (searchTerm.trim()) {
       result = result.filter(
         (c) =>
-          c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (c.instructor?.name || "")
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
+          (c.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (c.teacherName || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -112,7 +114,15 @@ const SellerCoursesPage = () => {
     state.selectedPriceRange,
   ]);
 
-  const handleViewDetails = (course) => navigate(`/course/${course.id}`);
+  const handleViewDetails = (course) => {
+    setSelectedCourse(course);
+    setShowPopup(true);
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setSelectedCourse(null);
+  };
 
   return (
     <div className="purchased-page">
@@ -213,6 +223,9 @@ const SellerCoursesPage = () => {
           </div>
         )}
       </div>
+      {showPopup && selectedCourse && (
+        <CourseDetailPopup course={selectedCourse} onClose={handleClosePopup} />
+      )}
     </div>
   );
 };
