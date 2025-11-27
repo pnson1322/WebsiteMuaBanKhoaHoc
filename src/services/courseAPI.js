@@ -156,4 +156,85 @@ export const courseAPI = {
     });
     return res.data;
   },
+
+  // /api/course/{id}: PUT: Sửa khóa học
+  async updateCourse(id, data) {
+    const formData = new FormData();
+
+    formData.append("Title", data.title);
+    formData.append("TeacherName", data.teacherName);
+    formData.append("Description", data.description);
+    formData.append("Price", data.price);
+    formData.append("Level", data.level);
+    formData.append("DurationHours", data.durationHours);
+    formData.append("CategoryId", data.categoryId);
+
+    if (imageFile) {
+      formData.append("Image", data.imageFile);
+    }
+
+    const res = await instance.put(`/api/course/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  },
+
+  // /api/course/{id}: DELETE: Xóa khóa học
+  async deleteCourse(id) {
+    const res = await instance.delete(`/api/course/${id}`);
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/contents: POST: thêm nội dung khóa học
+  async addCourseContent(courseId, { title, description }) {
+    const payload = { title, description };
+    const res = await instance.post(
+      `/api/Course/${courseId}/contents`,
+      payload
+    );
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/contents/{contentId}: DELETE: Xóa nội dung khóa học
+  async deleteCourseContent(courseId, contentId) {
+    const res = await instance.delete(
+      `/api/Course/${courseId}/contents/${contentId}`
+    );
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/skills: POST: Thêm kỹ năng đạt được
+  async addCourseSkill(courseId, description) {
+    const payload = { id: 0, description };
+    const res = await instance.post(`/api/Course/${courseId}/skills`, payload);
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/skills/{skillId}: DELETE: Xóa kỹ năng đạt được
+  async deleteCourseSkill(courseId, skillId) {
+    const res = await instance.delete(
+      `/api/Course/${courseId}/skills/${skillId}`
+    );
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/target-learners: POST: Thêm đối tượng học viên
+  async addTargetLearner(courseId, description) {
+    const payload = { id: 0, description };
+    const res = await instance.post(
+      `/api/Course/${courseId}/target-learners`,
+      payload
+    );
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/target-learners/{learnerId}: DELETE: Xóa đối tượng học viên
+  async deleteTargetLearner(courseId, learnerId) {
+    const res = await instance.delete(
+      `/api/Course/${courseId}/target-learners/${learnerId}`
+    );
+    return res.data;
+  },
 };

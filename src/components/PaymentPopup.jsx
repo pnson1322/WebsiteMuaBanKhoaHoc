@@ -31,7 +31,7 @@ const PaymentPopup = ({ onClose, course }) => {
             {course.map((item) => {
               return (
                 <div className="course-item">
-                  <div className="course-name">{item.name}</div>
+                  <div className="course-name">{item.title}</div>
 
                   <div className="course-price">{formatPrice(item.price)}</div>
                 </div>

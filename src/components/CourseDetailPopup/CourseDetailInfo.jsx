@@ -3,8 +3,10 @@ import "./CourseDetailInfo.css";
 
 export default function CourseDetailInfo({
   course,
-  formData,
   isEditable,
+  targetLearners,
+  courseContents,
+  courseSkills,
   addIntendedLearner,
   addContent,
   addSkill,
@@ -28,7 +30,7 @@ export default function CourseDetailInfo({
   };
 
   const handleAddContent = () => {
-    addContent({ title: contentTitleInput, des: contentDesInput });
+    addContent({ title: contentTitleInput, description: contentDesInput });
     setContentTitleInput("");
     setContentDesInput("");
   };
@@ -38,14 +40,14 @@ export default function CourseDetailInfo({
       <div className="list-section">
         <div className="list-section-title">Đối tượng học viên</div>
         <div className="list-items">
-          {formData.targetLearners.map((item, index) => (
-            <div key={index} className="list-item">
-              <span>{item}</span>
+          {targetLearners.map((item) => (
+            <div key={item.id} className="list-item">
+              <span>{item.description}</span>
               {isEditable && (
                 <button
                   type="button"
                   className="remove-item-btn"
-                  onClick={() => removeIntendedLearner(index)}
+                  onClick={() => removeIntendedLearner(item.id)}
                 >
                   X
                 </button>
@@ -61,7 +63,7 @@ export default function CourseDetailInfo({
               placeholder="Thêm đối tượng"
               value={intendedLearnerInput}
               onChange={(e) => setIntendedLearnerInput(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
                   handleAddLearner();
@@ -79,18 +81,17 @@ export default function CourseDetailInfo({
         )}
       </div>
 
-      {/* Kỹ năng đạt được */}
       <div className="list-section">
         <div className="list-section-title">Kỹ năng đạt được</div>
         <div className="list-items">
-          {formData.courseSkills.map((item, index) => (
-            <div key={index} className="list-item">
-              <span>{item}</span>
+          {courseSkills.map((item) => (
+            <div key={item.id} className="list-item">
+              <span>{item.description}</span>
               {isEditable && (
                 <button
                   type="button"
                   className="remove-item-btn"
-                  onClick={() => removeSkill(index)}
+                  onClick={() => removeSkill(item.id)}
                 >
                   X
                 </button>
@@ -106,7 +107,7 @@ export default function CourseDetailInfo({
               placeholder="Thêm kĩ năng"
               value={skillInput}
               onChange={(e) => setSkillInput(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
                   handleAddSkill();
@@ -124,21 +125,20 @@ export default function CourseDetailInfo({
         )}
       </div>
 
-      {/* Nội dung khóa học */}
       <div className="list-section">
         <div className="list-section-title">Nội dung khóa học</div>
         <div className="content-items">
-          {formData.courseContents.map((item, index) => (
-            <div key={index} className="content-item-wrapper">
+          {courseContents.map((item) => (
+            <div key={item.id} className="content-item-wrapper">
               <div className="content-item-info">
                 <div className="content-item-title">{item.title}</div>
-                <div className="content-item-des">{item.des}</div>
+                <div className="content-item-des">{item.description}</div>
               </div>
               {isEditable && (
                 <button
                   type="button"
                   className="remove-item-btn"
-                  onClick={() => removeContent(index)}
+                  onClick={() => removeContent(item.id)}
                 >
                   X
                 </button>
@@ -159,7 +159,7 @@ export default function CourseDetailInfo({
               placeholder="Mô tả"
               value={contentDesInput}
               onChange={(e) => setContentDesInput(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
                   handleAddContent();

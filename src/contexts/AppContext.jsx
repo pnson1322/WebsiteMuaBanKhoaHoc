@@ -144,9 +144,9 @@ export const AppProvider = ({ children }) => {
 
   const cartActions = useMemo(
     () => ({
-      addToCart: async (userId, courseId) => {
+      addToCart: async (courseId) => {
         try {
-          await cartAPI.createCartItem(userId, courseId);
+          await cartAPI.createCartItem(courseId);
           dispatch({ type: actionTypes.ADD_TO_CART, payload: courseId });
           return { success: true };
         } catch (error) {

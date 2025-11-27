@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { CourseCardSkeleton } from "../components/LoadingSkeleton";
 import PaymentPopup from "../components/PaymentPopup";
+import { cartAPI } from "../services/cartAPI";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -32,12 +33,29 @@ const Cart = () => {
 
       const filtered = state.courses.filter((c) => state.cart.includes(c.id));
       setCartCourses(filtered);
+      console.log(cartCourses);
       setLoading(false);
     } catch (err) {
       setError("Không thể tải giỏ hàng!");
       setLoading(false);
     }
   }, [state.courses, state.cart]);
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const res = await cartAPI.getCart();
+  //       setCartCourses(res);
+  //       console.log(cartCourses);
+  //       setLoading(false);
+  //     } catch (err) {
+  //       setError("Không thể tải giỏ hàng!" + err);
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, []);
 
   const closePopup = () => setShowPayment(false);
 
@@ -54,6 +72,7 @@ const Cart = () => {
   };
 
   const handleRemoveItem = async (courseId) => {
+    console.log(courseId);
     const result = await removeFromCart(courseId);
     if (result.success) {
       setSelectedIds((prev) => prev.filter((id) => id !== courseId));
@@ -161,6 +180,8 @@ const Cart = () => {
           )}
         </div>
 
+        {console.log("in ra cartCourses trước khi render")}
+        {console.log(cartCourses)}
         {cartCourses.length === 0 ? (
           <div className="empty-cart">
             <ShoppingCart className="empty-icon" />
@@ -189,7 +210,7 @@ const Cart = () => {
 
                   <img
                     src={course.image}
-                    alt={course.name}
+                    alt={course.title}
                     className="cart-item-image"
                   />
 
@@ -199,11 +220,11 @@ const Cart = () => {
                       👨‍🏫 {course.teacherName}
                     </p>
                     <p className="cart-item-description">
-                      {course.shortDescription}
+                      {course.description}
                     </p>
                     <div className="cart-item-details">
                       <span className="cart-item-category">
-                        {course.category}
+                        {course.categoryName}
                       </span>
                       <span className="cart-item-level">{course.level}</span>
                     </div>

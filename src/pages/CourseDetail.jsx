@@ -291,7 +291,7 @@ const CourseDetail = () => {
 
     if (isInCart) return;
 
-    const result = await addToCart(user.id, course.id);
+    const result = await addToCart(course.id);
 
     if (result.success) {
       showSuccess(`🛒 Đã thêm "${course.title}" vào giỏ hàng!`);

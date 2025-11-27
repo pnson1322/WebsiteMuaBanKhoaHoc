@@ -4,42 +4,74 @@ import { useState } from "react";
 import CourseDetailInfo from "./CourseDetailInfo";
 import CourseDetailStudents from "./CourseDetailStudents";
 import CourseDetailStatistic from "./CourseDetailStatistic";
+import { categoryAPI } from "../../services/categoryAPI";
 
 export default function CourseDetailMain({
   course,
-  user,
   formData,
+  user,
   isEditable,
   handleChange,
   handleSubmit,
   handleImageChange,
   handleRemoveImage,
+  targetLearners,
+  courseSkills,
+  courseContents,
   addIntendedLearner,
   addContent,
   addSkill,
   removeContent,
   removeIntendedLearner,
   removeSkill,
-  setInfo,
-  setStudents,
-  setStatistic,
 }) {
-  const {
-    name,
-    instructorName,
-    category,
-    level,
-    price,
-    duration,
-    description,
-    imageUrl,
-  } = formData;
+  const { title, teacherName, level, price, durationHours, description } =
+    formData;
 
-  const studentsCount = course?.students || 0;
-  const rating = course?.rating || 0;
-  const commentsCount = course?.commentList?.length || 0;
+  const [imageUrl, setImageUrl] = useState(course.imageUrl);
+  const [cate, setCate] = useState([]);
+  const [categoryId, setCategoryId] = useState(formData.categoryId);
+  const studentsCount = course?.totalPurchased || 0;
+  const rating = course?.averageRating || 0;
+  const commentsCount = course?.commentCount || 0;
 
   const [active, setActive] = useState("info");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await categoryAPI.getAll();
+        setCate(res);
+        setCategoryId(cate.filter((item) => item.name === course.categoryName));
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleImageUrlChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      setImageUrl(URL.createObjectURL(file));
+
+      handleImageChange(e);
+    }
+  };
+
+  const handleRemoveImageUrl = () => {
+    setImageUrl(null);
+
+    handleRemoveImage();
+  };
+
+  const handleCategoryChange = (e) => {
+    setCategoryId(e.target.value);
+
+    handleImageChange(e);
+  };
 
   return (
     <div className="course-detail-main">
@@ -56,7 +88,7 @@ export default function CourseDetailMain({
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleImageChange}
+                    onChange={handleImageUrlChange}
                     style={{ display: "none" }}
                     disabled={!isEditable}
                   />
@@ -73,7 +105,7 @@ export default function CourseDetailMain({
                     <button
                       type="button"
                       className="course-detail-remove-image"
-                      onClick={handleRemoveImage}
+                      onClick={handleRemoveImageUrl}
                     >
                       Xóa ảnh
                     </button>
@@ -92,10 +124,10 @@ export default function CourseDetailMain({
                   <input
                     type="text"
                     placeholder="Nhập tên khóa học"
-                    value={name}
+                    value={title}
                     readOnly={!isEditable}
                     onChange={handleChange}
-                    name="name"
+                    name="title"
                     required
                   />
                 </div>
@@ -105,10 +137,10 @@ export default function CourseDetailMain({
                   <input
                     type="text"
                     placeholder="Nhập tên giảng viên"
-                    value={instructorName}
+                    value={teacherName}
                     readOnly={!isEditable}
                     onChange={handleChange}
-                    name="instructorName"
+                    name="teacherName"
                     required
                   />
                 </div>
@@ -116,18 +148,18 @@ export default function CourseDetailMain({
                 <div className="form-field">
                   <label>Danh mục *</label>
                   <select
-                    value={category}
+                    value={categoryId}
                     disabled={!isEditable}
-                    onChange={handleChange}
-                    name="category"
+                    onChange={handleCategoryChange}
+                    name="categoryId"
                     required
                   >
-                    <option value="" disabled>
+                    <option value="0" disabled>
                       Chọn danh mục
                     </option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Lập trình">Lập trình</option>
-                    <option value="Thiết kế">Thiết kế</option>
+                    {cate.map((item) => {
+                      return <option value={item.id}>{item.name}</option>;
+                    })}
                   </select>
                 </div>
 
@@ -166,12 +198,12 @@ export default function CourseDetailMain({
                 <div className="form-field">
                   <label>Thời lượng (giờ) *</label>
                   <input
-                    type="text"
+                    type="number"
                     placeholder="Ví dụ: 92 tiếng"
-                    value={duration}
+                    value={durationHours}
                     readOnly={!isEditable}
                     onChange={handleChange}
-                    name="duration"
+                    name="durationHours"
                     required
                   />
                 </div>
@@ -209,23 +241,22 @@ export default function CourseDetailMain({
 
         <div className="nav-buttons">
           <button
+            type="button"
             className={`nav-button-popup ${
               active === "info" ? "active-nav-btn" : ""
             }`}
             onClick={() => {
-              setInfo();
               setActive("info");
             }}
           >
             Thông tin
           </button>
           <button
+            type="button"
             className={`nav-button-popup ${
               active === "students" ? "active-nav-btn" : ""
             }`}
             onClick={() => {
-              setStudents();
-
               setActive("students");
             }}
           >
@@ -233,12 +264,11 @@ export default function CourseDetailMain({
           </button>
 
           <button
+            type="button"
             className={`nav-button-popup ${
               active === "statistic" ? "active-nav-btn" : ""
             }`}
             onClick={() => {
-              setStatistic();
-
               setActive("statistic");
             }}
           >
@@ -248,8 +278,11 @@ export default function CourseDetailMain({
 
         {active === "info" ? (
           <CourseDetailInfo
-            formData={formData}
+            course={course}
             isEditable={isEditable}
+            targetLearners={targetLearners}
+            courseContents={courseContents}
+            courseSkills={courseSkills}
             addIntendedLearner={addIntendedLearner}
             addContent={addContent}
             addSkill={addSkill}
@@ -258,7 +291,7 @@ export default function CourseDetailMain({
             removeSkill={removeSkill}
           />
         ) : active === "students" ? (
-          <CourseDetailStudents course={course} isEditable={isEditable} />
+          <CourseDetailStudents course={course} />
         ) : (
           <CourseDetailStatistic
             course={course}

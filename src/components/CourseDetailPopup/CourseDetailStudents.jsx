@@ -2,7 +2,7 @@ import "./CourseDetailStudents";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
-export default function CourseDetailStudents({ course, isEditable }) {
+export default function CourseDetailStudents({ course }) {
   const formatPrice = (price) => {
     if (typeof price !== "number") return price;
     return new Intl.NumberFormat("vi-VN", {
@@ -39,7 +39,6 @@ export default function CourseDetailStudents({ course, isEditable }) {
               // Giả sử 'enrollment.user' là object chứa tên,
               // hoặc có thể là 'enrollment.studentName'
               const studentName = enrollment.user?.name || "Học viên ẩn danh";
-              const statusInfo = getStatusInfo(enrollment.status);
 
               return (
                 <div key={enrollment.id} className="student-card">
