@@ -150,12 +150,14 @@ export default function CourseDetailInfo({
           <div className="content-input-group">
             <input
               type="text"
+              className="list-input"
               placeholder="Tiêu đề"
               value={contentTitleInput}
               onChange={(e) => setContentTitleInput(e.target.value)}
             />
             <input
               type="text"
+              className="list-input"
               placeholder="Mô tả"
               value={contentDesInput}
               onChange={(e) => setContentDesInput(e.target.value)}

@@ -4,9 +4,9 @@ import { X } from "lucide-react";
 import CourseDetailMain from "./CourseDetailMain";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { courseAPI } from "../../services/courseAPI";
-import { useToast } from "../contexts/ToastContext";
+import { useToast } from "../../contexts/ToastContext";
 
 export default function CourseDetailPopup({ onClose, course }) {
   const { user } = useAuth();
@@ -23,15 +23,30 @@ export default function CourseDetailPopup({ onClose, course }) {
     durationHours: course.durationHours || 0,
     description: course.description || "",
     imageFile: null,
+    deleteImage: false,
   });
 
-  const [targetLearners, setTargetLearners] = useState(
-    course.targetLearners || []
-  );
-  const [courseSkills, setCourseSkills] = useState(course.courseSkills || []);
-  const [courseContents, setCourseContents] = useState(
-    course.courseContents || []
-  );
+  const [targetLearners, setTargetLearners] = useState([]);
+  const [courseSkills, setCourseSkills] = useState([]);
+  const [courseContents, setCourseContents] = useState([]);
+
+  useEffect(() => {
+    const fetchLatestData = async () => {
+      try {
+        const freshCourseData = await courseAPI.getCourseById(course.id);
+
+        if (freshCourseData) {
+          setTargetLearners(freshCourseData.targetLearners || []);
+          setCourseSkills(freshCourseData.courseSkills || []);
+          setCourseContents(freshCourseData.courseContents || []);
+        }
+      } catch (error) {
+        console.error("Lỗi đồng bộ dữ liệu:", error);
+      }
+    };
+
+    fetchLatestData();
+  }, [course.id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +63,7 @@ export default function CourseDetailPopup({ onClose, course }) {
       setFormData((prevData) => ({
         ...prevData,
         imageFile: file,
+        deleteImage: false,
       }));
     }
   };
@@ -56,23 +72,25 @@ export default function CourseDetailPopup({ onClose, course }) {
     setFormData((prevData) => ({
       ...prevData,
       imageFile: null,
+      deleteImage: true,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isEditable) return;
 
-    console.log("Dữ liệu gửi đi:", formData);
-    // TODO:
-    // 1. Bạn cần upload `formData.imageFile` (nếu có) lên server (ví dụ: Firebase Storage, Cloudinary)
-    // 2. Nhận lại URL ảnh đã upload
-    // 3. Gửi *toàn bộ* formData (với URL ảnh mới) lên API để cập nhật CSDL
-    // 4. Sau khi thành công, gọi onClose()
+    console.log(formData);
 
-    // Ví dụ tạm:
-    alert("Đã lưu (xem console log)!");
-    // onClose();
+    try {
+      await courseAPI.updateCourse(course.id, formData);
+
+      showSuccess("Cập nhật thành công!");
+    } catch (err) {
+      const message =
+        err.response?.data?.message || err.message || "Có lỗi xảy ra";
+      showError(message);
+    }
   };
 
   const addIntendedLearner = async (learnerDescription) => {

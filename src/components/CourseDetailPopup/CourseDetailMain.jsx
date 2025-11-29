@@ -1,10 +1,11 @@
 import { Image } from "lucide-react";
 import "./CourseDetailMain.css";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import CourseDetailInfo from "./CourseDetailInfo";
 import CourseDetailStudents from "./CourseDetailStudents";
 import CourseDetailStatistic from "./CourseDetailStatistic";
 import { categoryAPI } from "../../services/categoryAPI";
+import { courseAPI } from "../../services/courseAPI";
 
 export default function CourseDetailMain({
   course,
@@ -28,12 +29,31 @@ export default function CourseDetailMain({
   const { title, teacherName, level, price, durationHours, description } =
     formData;
 
-  const [imageUrl, setImageUrl] = useState(course.imageUrl);
+  const [imageUrl, setImageUrl] = useState(null);
   const [cate, setCate] = useState([]);
-  const [categoryId, setCategoryId] = useState(formData.categoryId);
+  const [categoryId, setCategoryId] = useState(0);
+
   const studentsCount = course?.totalPurchased || 0;
   const rating = course?.averageRating || 0;
-  const commentsCount = course?.commentCount || 0;
+  const [commentsCount, setCommentsCount] = useState(0);
+
+  const fetchComment = useCallback(async () => {
+    if (!course?.id) return;
+    try {
+      const data = await courseAPI.getCourseById(course.id);
+
+      console.log(data);
+
+      setCommentsCount(data.commentCount);
+      setImageUrl(data.imageUrl);
+    } catch (err) {
+      console.error("Lỗi tải số comment:", err);
+    }
+  }, [course?.id]);
+
+  useEffect(() => {
+    fetchComment();
+  }, [fetchComment]);
 
   const [active, setActive] = useState("info");
 
@@ -42,7 +62,20 @@ export default function CourseDetailMain({
       try {
         const res = await categoryAPI.getAll();
         setCate(res);
-        setCategoryId(cate.filter((item) => item.name === course.categoryName));
+
+        if (course && course.categoryName) {
+          const foundCategory = res.find(
+            (item) => item.name === course.categoryName
+          );
+
+          if (foundCategory) {
+            setCategoryId(foundCategory.id);
+
+            handleChange({
+              target: { name: "categoryId", value: foundCategory.id },
+            });
+          }
+        }
       } catch (err) {
         console.log(err);
       }
@@ -70,7 +103,7 @@ export default function CourseDetailMain({
   const handleCategoryChange = (e) => {
     setCategoryId(e.target.value);
 
-    handleImageChange(e);
+    handleChange(e);
   };
 
   return (
@@ -294,6 +327,7 @@ export default function CourseDetailMain({
           <CourseDetailStudents course={course} />
         ) : (
           <CourseDetailStatistic
+            fetchComment={fetchComment}
             course={course}
             user={user}
             isEditable={isEditable}

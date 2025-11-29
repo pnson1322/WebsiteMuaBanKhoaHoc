@@ -239,8 +239,9 @@ export const courseAPI = {
     formData.append("Level", data.level);
     formData.append("DurationHours", data.durationHours);
     formData.append("CategoryId", data.categoryId);
+    formData.append("DeleteImage", data.deleteImage);
 
-    if (imageFile) {
+    if (data.imageFile instanceof File) {
       formData.append("Image", data.imageFile);
     }
 
@@ -306,6 +307,12 @@ export const courseAPI = {
     const res = await instance.delete(
       `/api/Course/${courseId}/target-learners/${learnerId}`
     );
+    return res.data;
+  },
+
+  // /api/Course/student/{courseId}: GET: Lấy danh sách học viên của một khóa học
+  async getStudentList(courseId) {
+    const res = await instance.get(`/api/Course/student/${courseId}`);
     return res.data;
   },
 };
