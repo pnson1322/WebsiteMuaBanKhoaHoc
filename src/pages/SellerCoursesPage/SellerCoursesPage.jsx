@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Search, Filter as FilterIcon, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "../../contexts/AppContext";
+import { useAuth } from "../../contexts/AuthContext";
 import Filter from "../../components/Filter/Filter";
 import PurchasedCourseCard from "../../components/PurchasedCourseCard/PurchasedCourseCard";
 import CourseDetailPopup from "../../components/CourseDetailPopup/CourseDetailPopup";
@@ -9,10 +10,12 @@ import "../PurchasedCoursesPage/PurchasedCoursesPage.css";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
 import SellerStatsSummary from "../../components/Seller/SellerStatsSummary";
 import { dashboardAPI } from "../../services/dashboardAPI";
+import { courseAPI } from "../../services/courseAPI";
 
 const SellerCoursesPage = () => {
   const navigate = useNavigate();
   const state = useAppState();
+  const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
@@ -25,6 +28,12 @@ const SellerCoursesPage = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
+  // State cho danh sách khóa học từ API
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch thống kê seller
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -48,20 +57,39 @@ const SellerCoursesPage = () => {
     fetchData();
   }, []);
 
-  // Lọc các khóa học mới thêm từ trang AddNewCourse: mặc định rating = 0, students = 0
-  const sellerNewCourses = useMemo(() => {
-    return (state.courses || []).filter(
-      (c) =>
-        Number(c?.rating) === 0 ||
-        Number(c?.students) === 0 ||
-        [1, 2, 3].includes(Number(c.id))
-    );
-  }, [state.courses]);
-
-  const [filtered, setFiltered] = useState(sellerNewCourses);
-
+  // Fetch danh sách khóa học của seller từ API
   useEffect(() => {
-    let result = [...sellerNewCourses];
+    const fetchSellerCourses = async () => {
+      if (!user?.id) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await courseAPI.getSellerCourses({
+          SellerId: user.id,
+          page: 1,
+          pageSize: 100, // Lấy nhiều để hiển thị tất cả
+          IncludeUnApproved: true, // Bao gồm cả khóa học chưa được duyệt
+        });
+
+        setCourses(response.items);
+      } catch (err) {
+        console.error("Lỗi khi tải khóa học của seller:", err);
+        setError("Không thể tải danh sách khóa học. Vui lòng thử lại.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSellerCourses();
+  }, [user?.id]);
+
+  const [filtered, setFiltered] = useState([]);
+
+  // Lọc và sắp xếp khóa học
+  useEffect(() => {
+    let result = [...courses];
 
     if (searchTerm.trim()) {
       result = result.filter(
@@ -71,9 +99,9 @@ const SellerCoursesPage = () => {
       );
     }
 
-    // Lọc theo danh mục & khoảng giá dựa trên AppContext (tương tự Purchased)
+    // Lọc theo danh mục & khoảng giá dựa trên AppContext
     if (state.selectedCategory && state.selectedCategory !== "Tất cả") {
-      result = result.filter((c) => c.category === state.selectedCategory);
+      result = result.filter((c) => c.categoryName === state.selectedCategory);
     }
 
     if (
@@ -89,7 +117,6 @@ const SellerCoursesPage = () => {
     // Sắp xếp
     switch (sortOrder) {
       case "newest":
-        // Không có purchaseDate, dùng id giảm dần như proxy "mới thêm"
         result.sort((a, b) => Number(b.id) - Number(a.id));
         break;
       case "oldest":
@@ -107,7 +134,7 @@ const SellerCoursesPage = () => {
 
     setFiltered(result);
   }, [
-    sellerNewCourses,
+    courses,
     searchTerm,
     sortOrder,
     state.selectedCategory,
@@ -204,9 +231,18 @@ const SellerCoursesPage = () => {
         </div>
 
         {/* Danh sách khóa học */}
-        {filtered.length === 0 ? (
+        {loading ? (
           <div className="empty-state">
-            <p>Chưa có khóa học mới nào. Hãy thêm khóa học đầu tiên!</p>
+            <p>Đang tải khóa học...</p>
+          </div>
+        ) : error ? (
+          <div className="empty-state">
+            <p style={{ color: "#e74c3c" }}>{error}</p>
+            <button onClick={() => window.location.reload()}>Thử lại</button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state">
+            <p>Chưa có khóa học nào. Hãy thêm khóa học đầu tiên!</p>
             <button onClick={() => navigate("/add-new-course")}>
               Thêm khóa học
             </button>

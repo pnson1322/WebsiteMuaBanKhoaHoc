@@ -31,20 +31,44 @@ const PurchasedCoursesPage = () => {
           pageSize: pageSize,
         });
 
-        // Normalize data như Favorites page
-        const normalized = (response.items || []).map((item) => ({
-          ...item,
-          imageUrl:
-            item.imageUrl ??
-            "https://via.placeholder.com/400x250?text=No+Image",
-          categoryName: item.categoryName ?? "Khóa học",
-        }));
+        console.log("📦 Purchased courses response:", response);
+        console.log("📊 Total items:", response?.items?.length || 0);
+        console.log("📄 Total pages:", response?.totalPages || 0);
+
+        if (!response || !response.items) {
+          console.warn("⚠️ No items in response");
+          setCourses([]);
+          setFiltered([]);
+          setTotalPages(1);
+          return;
+        }
+
+        // Map dữ liệu từ API về format component
+        const normalized = response.items.map((item) => {
+          console.log("🔍 Processing course:", item.title, item);
+          return {
+            ...item,
+            imageUrl:
+              item.imageUrl ||
+              "https://via.placeholder.com/400x250?text=No+Image",
+            categoryName: item.categoryName || "Khóa học",
+            shortDescription: item.description || "",
+            // Đảm bảo các thuộc tính số không bị undefined
+            averageRating: item.averageRating || 0,
+            totalPurchased: item.totalPurchased || 0,
+            durationHours: item.durationHours || 0,
+            price: item.price || 0,
+          };
+        });
+
+        console.log("✅ Normalized courses:", normalized);
 
         setCourses(normalized);
         setFiltered(normalized);
         setTotalPages(response.totalPages || 1);
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
+        console.error("❌ Lỗi khi tải dữ liệu:", err);
+        console.error("Error details:", err.response?.data);
       } finally {
         setLoading(false);
       }

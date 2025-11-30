@@ -100,6 +100,38 @@ export const courseAPI = {
     return res.data;
   },
 
+  /**
+   * 📌 GET /api/Course
+   * Lấy danh sách khóa học của seller
+   * Header: Authorization: Bearer <token>
+   * Query: SellerId: int
+   */
+  async getSellerCourses({
+    page = 1,
+    pageSize = 10,
+    SellerId = null,
+    IncludeUnApproved = false,
+  } = {}) {
+    const params = {
+      page,
+      pageSize,
+      SellerId,
+      IncludeUnApproved,
+    };
+
+    // Loại bỏ params null
+    Object.keys(params).forEach(
+      (key) => params[key] === null && delete params[key]
+    );
+
+    console.log("📡 Fetching seller courses", { params });
+    const res = await instance.get("/api/Course", { params });
+    console.log("✅ Seller courses fetched successfully", {
+      count: res.data?.items?.length,
+    });
+    return res.data;
+  },
+
   // /api/Course/{id}: GET: Lấy chi tiết khóa học
   async getCourseById(id) {
     const res = await instance.get(`/api/Course/${id}`);
@@ -109,11 +141,48 @@ export const courseAPI = {
   /**
    * 📌 GET /User/my-courses
    * Lấy danh sách khóa học đã mua của người dùng
-   * Query: page=1, pageSize=10
+   * Header: Authorization: Bearer <token>
+   * Query:
+   * - page=1, pageSize=10
+   * - Q=null(string)
+   * - CategoryId=null, SellerId=null (int)
+   * - MinPrice=null, MaxPrice=null (number-double)
+   * - SortBy=null(price_asc, price_desc, rating_desc, popular)
+   * - Level=null
    */
-  async getPurchasedCourses({ page = 1, pageSize = 10 } = {}) {
-    const res = await instance.get("/User/my-courses", {
-      params: { page, pageSize },
+  async getPurchasedCourses({
+    page = 1,
+    pageSize = 10,
+    Q = null,
+    CategoryId = null,
+    SellerId = null,
+    MinPrice = null,
+    MaxPrice = null,
+    SortBy = null,
+    Level = null,
+  } = {}) {
+    const params = {
+      page,
+      pageSize,
+      Q,
+      CategoryId,
+      SellerId,
+      MinPrice,
+      MaxPrice,
+      SortBy,
+      Level,
+    };
+
+    // Loại bỏ params null
+    Object.keys(params).forEach(
+      (key) => params[key] === null && delete params[key]
+    );
+
+    console.log("📡 Fetching purchased courses", { params });
+    const res = await instance.get("/User/my-courses", { params });
+    console.log("✅ Purchased courses fetched successfully", {
+      count: res.data?.items?.length,
+      totalPages: res.data?.totalPages,
     });
     return res.data;
   },

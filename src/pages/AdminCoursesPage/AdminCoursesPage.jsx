@@ -31,11 +31,38 @@ const AdminCoursesPage = () => {
     const loadCourses = async () => {
       setLoading(true);
       try {
+        // Xác định CategoryId từ selectedCategory
+        const categoryId =
+          state.selectedCategory && state.selectedCategory !== "Tất cả"
+            ? state.categories?.find(
+                (cat) => cat.name === state.selectedCategory
+              )?.id
+            : null;
+
+        // Xác định MinPrice và MaxPrice từ selectedPriceRange
+        const minPrice =
+          state.selectedPriceRange?.label !== "Tất cả"
+            ? state.selectedPriceRange?.min
+            : null;
+        const maxPrice =
+          state.selectedPriceRange?.label !== "Tất cả" &&
+          state.selectedPriceRange?.max !== Infinity
+            ? state.selectedPriceRange?.max
+            : null;
+
+        // Luôn lấy tất cả khóa học (approved, unapproved, restricted) để có thể filter ở client
         const response = await courseAPI.getAdminCourses({
           page: currentPage,
           pageSize: pageSize,
-          IncludeUnApproved: false,
-          IncludeRestricted: false,
+          Q: searchTerm.trim() || null,
+          CategoryId: categoryId,
+          SellerId: null,
+          MinPrice: minPrice,
+          MaxPrice: maxPrice,
+          SortBy: null,
+          Level: null,
+          IncludeUnApproved: true,
+          IncludeRestricted: true,
         });
 
         // Normalize data
@@ -56,50 +83,42 @@ const AdminCoursesPage = () => {
       }
     };
     loadCourses();
-  }, [currentPage]);
+  }, [
+    currentPage,
+    searchTerm,
+    approvalFilter,
+    state.selectedCategory,
+    state.selectedPriceRange,
+    state.categories,
+  ]);
 
+  // Filter courses theo trạng thái duyệt (client-side filter)
   useEffect(() => {
     let result = [...courses];
 
-    // 1️⃣ Tìm kiếm theo tên hoặc giảng viên
-    if (searchTerm.trim()) {
-      result = result.filter(
-        (c) =>
-          c.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.teacherName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // 2️⃣ Lọc theo danh mục (AppContext)
-    if (state.selectedCategory && state.selectedCategory !== "Tất cả") {
-      result = result.filter((c) => c.categoryName === state.selectedCategory);
-    }
-
-    // 3️⃣ Lọc theo khoảng giá (AppContext)
-    if (
-      state.selectedPriceRange &&
-      state.selectedPriceRange.label !== "Tất cả"
-    ) {
-      const range = state.selectedPriceRange;
-      result = result.filter(
-        (c) => c.price >= range.min && c.price <= range.max
-      );
-    }
-
-    // 4️⃣ Lọc theo trạng thái duyệt
+    // Lọc theo trạng thái duyệt
     if (approvalFilter === "approved") {
       result = result.filter(
         (c) => c.isApproved === true && c.isRestricted === false
       );
     } else if (approvalFilter === "pending") {
-      result = result.filter((c) => c.isApproved === false);
+      result = result.filter(
+        (c) => c.isApproved === false && c.isRestricted === false
+      );
     } else if (approvalFilter === "restricted") {
       result = result.filter((c) => c.isRestricted === true);
     }
+    // approvalFilter === "all" → hiển thị tất cả
 
     setFiltered(result);
+  }, [courses, approvalFilter]);
+
+  // Reset về trang 1 khi filter thay đổi
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
   }, [
-    courses,
     searchTerm,
     approvalFilter,
     state.selectedCategory,
