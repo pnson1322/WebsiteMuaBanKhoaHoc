@@ -88,17 +88,17 @@ instance.interceptors.response.use(
     }
 
     if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !isAuthRequest
+      error.response?.status === 401
+      && !originalRequest._retry
+      && !isAuthRequest
     ) {
       // ✅ Không thử refresh nếu đang ở login page hoặc không có refresh token
       const isLoginPage =
         window.location.pathname === "/login" ||
         window.location.pathname === "/register";
-      const hasRefreshToken =
-        document.cookie.includes("refreshToken") ||
-        localStorage.getItem("refreshToken");
+      const hasRefreshToken = true;
+      //   document.cookie.includes("refreshToken") ||
+      //   localStorage.getItem("refreshToken");
 
       if (isLoginPage || !hasRefreshToken) {
         logger.warn(
@@ -212,6 +212,12 @@ instance.interceptors.response.use(
 
         return Promise.reject(err);
       }
+    }
+    else {
+      console.log("Non-401 error or whitelisted request:", {
+        status: error.response?.status,
+        url: requestUrl,
+      });
     }
 
     return Promise.reject(error);

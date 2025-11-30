@@ -26,6 +26,8 @@ import AdminTransactions from "./pages/AdminTransactions/AdminTransactions";
 import CourseTransactionDetails from "./pages/CourseTransactionDetails/CourseTransactionDetails";
 import AdminCategories from "./pages/AdminCategories/AdminCategories";
 import AdminUsersPage from "./pages/AdminUsersPage/AdminUsersPage";
+import SellerChat from "./pages/Chat/SellerChat";
+
 function App() {
   return (
     <AuthProvider>
@@ -59,6 +61,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <SellerCoursesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Trang chat của seller */}
+                <Route
+                  path="seller-chat"
+                  element={
+                    <ProtectedRoute>
+                      <SellerChat />
                     </ProtectedRoute>
                   }
                 />
