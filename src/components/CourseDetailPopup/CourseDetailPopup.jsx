@@ -6,7 +6,7 @@ import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { useState } from "react";
 import { courseAPI } from "../../services/courseAPI";
-import { useToast } from "../contexts/ToastContext";
+import { useToast } from "../../contexts/ToastContext";
 
 export default function CourseDetailPopup({ onClose, course }) {
   const { user } = useAuth();

@@ -54,54 +54,59 @@ const AdminCourseCard = ({ course, onToggleApproval, onClick }) => {
           </div>
 
           <div className="course-actions admin-actions">
-            {/* Button trái: Hiển thị trạng thái (không thể bấm) */}
-            <button
-              className={`admin-status-btn ${
-                isRestricted
-                  ? "restricted"
-                  : isApproved
-                  ? "approved"
-                  : "pending"
-              }`}
-              disabled
-            >
-              {isRestricted ? (
-                <>
-                  <X className="action-icon" size={16} />
-                  Bị hạn chế
-                </>
-              ) : isApproved ? (
-                <>
-                  <Check className="action-icon" size={16} />
-                  Đã duyệt
-                </>
-              ) : (
-                <>
-                  <X className="action-icon" size={16} />
-                  Chưa duyệt
-                </>
-              )}
-            </button>
+            {/* Nếu bị hạn chế: chỉ hiển thị 1 button "Bị hạn chế" (disabled) */}
+            {isRestricted ? (
+              <button
+                className="admin-status-btn restricted"
+                disabled
+                style={{ width: "100%" }}
+              >
+                <X className="action-icon" size={16} />
+                Bị hạn chế
+              </button>
+            ) : (
+              <>
+                {/* Button trái: Hiển thị trạng thái (không thể bấm) */}
+                <button
+                  className={`admin-status-btn ${
+                    isApproved ? "approved" : "pending"
+                  }`}
+                  disabled
+                >
+                  {isApproved ? (
+                    <>
+                      <Check className="action-icon" size={16} />
+                      Đã duyệt
+                    </>
+                  ) : (
+                    <>
+                      <X className="action-icon" size={16} />
+                      Chưa duyệt
+                    </>
+                  )}
+                </button>
 
-            {/* Button phải: Toggle giữa Duyệt khóa học và Hạn chế */}
-            <button
-              className={`admin-toggle-btn ${
-                isApproved && !isRestricted ? "restrict" : "approve"
-              }`}
-              onClick={handleToggle}
-            >
-              {isApproved && !isRestricted ? (
-                <>
-                  <Pencil className="action-icon" size={16} />
-                  Hạn chế
-                </>
-              ) : (
-                <>
-                  <Check className="action-icon" size={16} />
-                  Duyệt khóa học
-                </>
-              )}
-            </button>
+                {/* Button phải: Toggle giữa Duyệt khóa học và Hạn chế */}
+                <button
+                  className={`admin-toggle-btn ${
+                    isApproved ? "restrict" : "approve"
+                  }`}
+                  onClick={handleToggle}
+                >
+                  {isApproved ? (
+                    <>
+                      <Pencil className="action-icon" size={16} />
+                      Hạn chế
+                    </>
+                  ) : (
+                    <>
+                      <Check className="action-icon" size={16} />
+                      Duyệt khóa học
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

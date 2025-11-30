@@ -47,40 +47,11 @@ const Filter = () => {
     return categoriesArray;
   }, [state.courses]);
 
-  // 📊 Đếm số courses cho mỗi category
-  const getCategoryCount = useMemo(() => {
-    const counts = {};
-    state.courses.forEach((course) => {
-      const cat = course.categoryName || "Khác";
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    counts["Tất cả"] = state.courses.length;
-    return counts;
-  }, [state.courses]);
-
-  // 📊 Đếm số courses cho mỗi price range
-  const getPriceRangeCount = useMemo(() => {
-    return priceRanges.map((range) => {
-      if (range.label === "Tất cả") {
-        return { ...range, count: state.courses.length };
-      }
-      const count = state.courses.filter(
-        (c) => c.price >= range.min && c.price <= range.max
-      ).length;
-      return { ...range, count };
-    });
-  }, [state.courses]);
-
   return (
     <div className="filter-container">
       <div className="filter-header">
         <FilterIcon className="filter-icon" />
         <h3>Bộ lọc khóa học</h3>
-        {state.filteredCourses.length > 0 && (
-          <span className="filter-count">
-            ({state.filteredCourses.length} khóa học)
-          </span>
-        )}
       </div>
 
       <FilterSection
@@ -90,20 +61,16 @@ const Filter = () => {
         onSelect={(value) =>
           dispatch({ type: actionTypes.SET_CATEGORY, payload: value })
         }
-        getOptionLabel={(option) => {
-          const count = getCategoryCount[option] || 0;
-          return `${option} (${count})`;
-        }}
       />
 
       <FilterSection
         title="💰 Khoảng giá"
-        options={getPriceRangeCount}
+        options={priceRanges}
         selectedValue={state.selectedPriceRange.label}
         onSelect={(range) =>
           dispatch({ type: actionTypes.SET_PRICE_RANGE, payload: range })
         }
-        getOptionLabel={(option) => `${option.label} (${option.count || 0})`}
+        getOptionLabel={(option) => option.label}
         getOptionValue={(option) => option.label}
       />
     </div>
