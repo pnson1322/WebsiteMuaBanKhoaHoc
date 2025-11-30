@@ -13,8 +13,8 @@ export const cartAPI = {
   },
 
   // /api/Cart/items: POST: Thêm khóa học vào giỏ hàng
-  async createCartItem({ userId, courseId }) {
-    const res = await instance.post("/api/Cart/items");
+  async createCartItem(courseId) {
+    const res = await instance.post(`/api/Cart/items/${courseId}`);
     return res.data;
   },
 

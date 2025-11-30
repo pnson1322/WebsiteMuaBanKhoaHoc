@@ -1,5 +1,5 @@
 import "./CourseDetailStatistic.css";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { BarChart2, MessageCircle, Star } from "lucide-react";
 import { LineChart } from "@mui/x-charts";
 import { reviewAPI } from "../../services/reviewAPI";
@@ -45,16 +45,23 @@ const StarDisplay = ({ rating }) => {
   );
 };
 
-export default function CourseDetailStatistic({ course, user, isEditable }) {
+export default function CourseDetailStatistic({
+  course,
+  user,
+  isEditable,
+  fetchComment,
+}) {
   const { showSuccess, showError } = useToast();
 
   // State cho form "Viết đánh giá mới"
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
+  const [reviewContent, setReviewContent] = useState("");
 
   // State cho form "Chỉnh sửa"
   const [ratingEdit, setRatingEdit] = useState(0);
   const [hoverEdit, setHoverEdit] = useState(0);
+  const [editContent, setEditContent] = useState("");
 
   // State quản lý danh sách
   const [commentList, setCommentList] = useState([]);
@@ -64,7 +71,6 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
   const fetchReviews = useCallback(async () => {
     try {
       const data = await reviewAPI.getReviewByCourseId(course.id);
-
       const formattedReviews = data.map((item) => {
         const d = new Date(item.createdAt || Date.now());
         const dateStr = d.toLocaleDateString("vi-VN", {
@@ -72,7 +78,6 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
           month: "2-digit",
           year: "numeric",
         });
-
         return {
           id: item.id,
           comment: item.comment,
@@ -89,13 +94,13 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
           },
         };
       });
-
-      console.log(formattedReviews);
-
       const sorted = sortComments(formattedReviews, sortMode);
       setCommentList(sorted);
+
+      console.log(commentList);
+      console.log(user.id);
     } catch (err) {
-      showError("Lỗi tải bình luận:", err);
+      showError("Lỗi tải bình luận: " + err.message);
     }
   }, [course.id, sortMode]);
 
@@ -103,55 +108,50 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
     fetchReviews();
   }, [fetchReviews]);
 
-  useEffect(() => {
-    if (editComment !== 0 && commentList.length > 0) {
-      const comment = commentList.find((c) => c.id === editComment);
-      if (comment) setRatingEdit(comment.rate);
-    } else {
-      setRatingEdit(0);
-    }
-  }, [editComment, commentList]);
+  const handleStartEdit = (comment) => {
+    setEditComment(comment.id);
+    setRatingEdit(comment.rate);
+    setEditContent(comment.comment);
+  };
 
-  // Hàm Gửi bình luận mới
-  const submitComment = async (e) => {
-    e.preventDefault();
+  const submitComment = async () => {
     if (!user) {
       showError("Vui lòng đăng nhập để đánh giá.");
       return;
     }
 
-    const form = e.target;
-    const content = form.comment.value?.trim() || "";
-    if (!rating || !content)
-      return alert("Vui lòng nhập đủ đánh giá và nội dung.");
+    const content = reviewContent.trim();
+    if (!rating || !content) {
+      showError("Vui lòng nhập đủ sao và nội dung.");
+      return;
+    }
 
     try {
       await reviewAPI.createReview({
-        courseId: id,
+        courseId: course.id,
         rating: rating,
         comment: content,
       });
 
       showSuccess("Đã gửi đánh giá thành công!");
+
       setRating(0);
       setHover(0);
-      form.reset();
+      setReviewContent("");
 
       fetchReviews();
+      fetchStats();
+      fetchComment();
     } catch (err) {
-      showError(
-        "Gửi đánh giá thất bại: " + (err.response?.data?.message || err.message)
-      );
+      const msg = err.response?.data?.message || err.message;
+      showError("Gửi đánh giá thất bại: " + msg);
     }
   };
 
-  // Hàm Gửi Cập nhật (Sửa)
-  const submitEditComment = async (e) => {
-    e.preventDefault();
+  const submitEditComment = async () => {
     if (!editComment) return;
 
-    const form = e.target;
-    const content = form.commentEdit.value?.trim() || "";
+    const content = editContent.trim();
     if (!ratingEdit || !content) {
       showError("Nội dung đánh giá không được để trống.");
       return;
@@ -168,31 +168,29 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
       setEditComment(0);
       setRatingEdit(0);
       setHoverEdit(0);
+      setEditContent("");
 
       fetchReviews();
+      fetchStats();
+      fetchComment();
     } catch (err) {
-      showError(
-        "Cập nhật thất bại: " + (err.response?.data?.message || err.message)
-      );
+      const msg = err.response?.data?.message || err.message;
+      showError("Cập nhật thất bại: " + msg);
     }
   };
 
-  // Hàm Xóa
   const handleDeleteComment = async (commentId) => {
     if (!commentId) return;
-
     if (!window.confirm("Bạn có chắc muốn xóa bình luận này?")) return;
-
     try {
       await reviewAPI.deleteReviewByAdmin(commentId);
-
       showSuccess("Đã xóa đánh giá.");
-
       fetchReviews();
+      fetchStats();
+      fetchComment();
     } catch (err) {
-      showError(
-        "Xóa thất bại: " + (err.response?.data?.message || err.message)
-      );
+      const msg = err.response?.data?.message || err.message;
+      showError("Xóa thất bại: " + msg);
     }
   };
 
@@ -226,7 +224,6 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
     }
   };
 
-  // Line Chart
   const [dataLineChart, setDataLineChart] = useState([]);
   const revenueLineColor = "#667eea";
 
@@ -236,7 +233,6 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
         const monthlyRevenue = await dashboardAPI.getCourseMonthlyRevenue(
           course.id
         );
-
         setDataLineChart(
           monthlyRevenue.map((i) => ({
             date: i.year + "-" + i.month,
@@ -244,56 +240,52 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
           }))
         );
       } catch (err) {
-        showError("Lỗi: " + err);
+        console.error(err);
       }
     };
-
     fetchData();
   }, []);
 
-  // Star Statistic
   const [ratingStats, setRatingStats] = useState({
     counts: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
     percentages: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
     total: 0,
   });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!course?.id) return;
-      try {
-        const data = await dashboardAPI.getCourseReviewStars(course.id);
+  const fetchStats = useCallback(async () => {
+    if (!course?.id) return;
+    try {
+      const data = await dashboardAPI.getCourseReviewStars(course.id);
+      const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+      let total = 0;
 
-        const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-        let total = 0;
-
-        data.forEach((item) => {
-          if (counts[item.star] !== undefined) {
-            counts[item.star] = item.count;
-            total += item.count;
-          }
-        });
-
-        const percentages = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-        if (total > 0) {
-          for (let i = 1; i <= 5; i++) {
-            percentages[i] = (counts[i] / total) * 100;
-          }
+      data.forEach((item) => {
+        if (counts[item.star] !== undefined) {
+          counts[item.star] = item.count;
+          total += item.count;
         }
+      });
 
-        setRatingStats({ counts, percentages, total });
-      } catch (err) {
-        console.error("Lỗi tải thống kê sao:", err);
+      const percentages = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+      if (total > 0) {
+        for (let i = 1; i <= 5; i++) {
+          percentages[i] = (counts[i] / total) * 100;
+        }
       }
-    };
-
-    fetchStats();
+      setRatingStats({ counts, percentages, total });
+    } catch (err) {
+      console.error("Lỗi tải thống kê sao:", err);
+    }
   }, [course?.id]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   return (
     <div className="course-statistic-tab">
       <div className="stats-grid-container">
-        {/* --- CỘT TRÁI: DOANH THU --- */}
+        {/* CỘT TRÁI: DOANH THU */}
         <div className="stats-card stats-chart-wrapper">
           <div className="stats-header">
             <BarChart2 size={18} className="stats-icon" />
@@ -326,10 +318,7 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
                 },
               ]}
               yAxis={[
-                {
-                  valueFormatter: (v) => `${v / 1000000} triệu`,
-                  min: 0,
-                },
+                { valueFormatter: (v) => `${v / 1000000} triệu`, min: 0 },
               ]}
               grid={{ horizontal: true }}
               margin={{ left: 40, right: 20, top: 20, bottom: 30 }}
@@ -350,7 +339,7 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
           </div>
         </div>
 
-        {/* --- CỘT PHẢI: PHÂN BỐ ĐÁNH GIÁ --- */}
+        {/* CỘT PHẢI: PHÂN BỐ ĐÁNH GIÁ */}
         <div className="stats-card stats-ratings-wrapper">
           <div className="stats-header">
             <Star size={18} className="stats-icon" />
@@ -363,9 +352,7 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
                 <div className="rating-bar-track">
                   <div
                     className="rating-bar-fill"
-                    style={{
-                      width: `${ratingStats.percentages[star]}%`,
-                    }}
+                    style={{ width: `${ratingStats.percentages[star]}%` }}
                   ></div>
                 </div>
                 <span className="rating-bar-count">
@@ -377,13 +364,14 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
         </div>
       </div>
 
-      {isEditable && (
+      {/* --- PHẦN VIẾT ĐÁNH GIÁ --- */}
+      {!isEditable && (
         <div className="review-section review-form-wrapper">
           <div className="review-section-header">
             <MessageCircle size={20} className="review-icon" />
             <h4>Viết đánh giá của bạn</h4>
           </div>
-          <form onSubmit={submitComment} className="review-form">
+          <div className="review-form">
             <div className="form-group">
               <label>Đánh giá:</label>
               <StarRating
@@ -399,15 +387,23 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
                 name="comment"
                 rows="4"
                 placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
+                value={reviewContent}
+                onChange={(e) => setReviewContent(e.target.value)}
               ></textarea>
             </div>
-            <button type="submit" className="btn btn-primary">
+
+            <button
+              type="button"
+              onClick={submitComment}
+              className="btn btn-primary"
+            >
               Gửi đánh giá
             </button>
-          </form>
+          </div>
         </div>
       )}
 
+      {/* --- DANH SÁCH BÌNH LUẬN --- */}
       <div className="review-section review-list-wrapper">
         <div className="review-section-header">
           <MessageCircle size={20} className="review-icon" />
@@ -431,16 +427,12 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
             <div className="empty-cart">
               <MessageCircle className="empty-icon" />
               <h3>Chưa có đánh giá nào</h3>
-              <p>
-                Hãy là người đầu tiên chia sẻ trải nghiệm của bạn về khóa học
-                này
-              </p>
+              <p>Hãy là người đầu tiên chia sẻ trải nghiệm.</p>
             </div>
           ) : commentList.length === 0 ? (
             <div className="empty-cart">
               <MessageCircle className="empty-icon" />
               <h3>Không tìm thấy bình luận phù hợp</h3>
-              <p>Không có đánh giá nào khớp với bộ lọc của bạn</p>
             </div>
           ) : (
             commentList.length > 0 &&
@@ -466,15 +458,20 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
                     </div>
                     <p className="review-body">{comment.comment}</p>
 
-                    {isEditable && user && user.id === comment.user.id && (
+                    {!isEditable && (
                       <div className="review-actions">
+                        {user &&
+                          String(user.id) === String(comment.user.id) && (
+                            <button
+                              type="button"
+                              className="btn btn-edit"
+                              onClick={() => handleStartEdit(comment)}
+                            >
+                              Sửa
+                            </button>
+                          )}
                         <button
-                          className="btn btn-edit"
-                          onClick={() => setEditComment(comment.id)}
-                        >
-                          Sửa
-                        </button>
-                        <button
+                          type="button"
                           className="btn btn-delete"
                           onClick={() => handleDeleteComment(comment.id)}
                         >
@@ -485,11 +482,8 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
                   </>
                 )}
 
-                {isEditable && editComment === comment.id && (
-                  <form
-                    onSubmit={submitEditComment}
-                    className="review-form review-form-edit"
-                  >
+                {!isEditable && editComment === comment.id && (
+                  <div className="review-form review-form-edit">
                     <div className="form-group">
                       <label>Đánh giá:</label>
                       <StarRating
@@ -502,24 +496,31 @@ export default function CourseDetailStatistic({ course, user, isEditable }) {
                     <div className="form-group">
                       <label>Nội dung đánh giá:</label>
                       <textarea
-                        name="commentEdit"
                         rows="4"
-                        defaultValue={comment.comment}
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
                       ></textarea>
                     </div>
                     <div className="review-actions-edit">
                       <button
                         type="button"
                         className="btn btn-secondary"
-                        onClick={() => setEditComment(0)}
+                        onClick={() => {
+                          setEditComment(0);
+                          setEditContent("");
+                        }}
                       >
                         Hủy
                       </button>
-                      <button type="submit" className="btn btn-primary">
+                      <button
+                        type="button"
+                        onClick={submitEditComment}
+                        className="btn btn-primary"
+                      >
                         Cập nhật
                       </button>
                     </div>
-                  </form>
+                  </div>
                 )}
               </div>
             ))

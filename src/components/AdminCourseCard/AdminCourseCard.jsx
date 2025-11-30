@@ -1,41 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Check, Pencil, X } from "lucide-react";
 import "../CourseCard/CourseCard.css";
 import CourseStats from "../../components/CourseCard/CourseStats";
 import "./AdminCourseCard.css";
-import { useNavigate } from "react-router-dom";
-const AdminCourseCard = ({ course, onToggleApproval }) => {
-  // Mặc định: nếu course.approved === undefined thì là false (chưa duyệt)
-  const [isApproved, setIsApproved] = useState(course.approved ?? false);
-  const navigate = useNavigate();
-  // Sync state với props khi course.approved thay đổi
-  useEffect(() => {
-    setIsApproved(course.approved ?? false);
-  }, [course.approved]);
+const AdminCourseCard = ({ course, onToggleApproval, onClick }) => {
+  const isApproved = course.isApproved ?? false;
+  const isRestricted = course.isRestricted ?? false;
 
   const handleToggle = (e) => {
     e.stopPropagation();
-    const newApproved = !isApproved;
-    setIsApproved(newApproved);
 
     // Gọi callback để cập nhật trong parent
     if (onToggleApproval) {
-      onToggleApproval(course.id, newApproved);
+      onToggleApproval(course.id, isApproved, isRestricted);
     }
   };
   const handleCardClick = () => {
-    navigate(`/course/${course.id}`);
+    if (onClick) {
+      onClick(course);
+    }
   };
   return (
     <div
       className="course-card"
-      style={{ cursor: "default" }}
+      style={{ cursor: "pointer" }}
       onClick={handleCardClick}
     >
       {/* Ảnh */}
       <div className="course-image-container">
-        <img src={course.image} alt={course.title} className="course-image" />
-        <div className="course-category">{course.category}</div>
+        <img
+          src={course.imageUrl}
+          alt={course.title}
+          className="course-image"
+        />
+        <div className="course-category">{course.categoryName}</div>
       </div>
 
       {/* Nội dung */}
@@ -59,11 +57,20 @@ const AdminCourseCard = ({ course, onToggleApproval }) => {
             {/* Button trái: Hiển thị trạng thái (không thể bấm) */}
             <button
               className={`admin-status-btn ${
-                isApproved ? "approved" : "pending"
+                isRestricted
+                  ? "restricted"
+                  : isApproved
+                  ? "approved"
+                  : "pending"
               }`}
               disabled
             >
-              {isApproved ? (
+              {isRestricted ? (
+                <>
+                  <X className="action-icon" size={16} />
+                  Bị hạn chế
+                </>
+              ) : isApproved ? (
                 <>
                   <Check className="action-icon" size={16} />
                   Đã duyệt
@@ -79,11 +86,11 @@ const AdminCourseCard = ({ course, onToggleApproval }) => {
             {/* Button phải: Toggle giữa Duyệt khóa học và Hạn chế */}
             <button
               className={`admin-toggle-btn ${
-                isApproved ? "restrict" : "approve"
+                isApproved && !isRestricted ? "restrict" : "approve"
               }`}
               onClick={handleToggle}
             >
-              {isApproved ? (
+              {isApproved && !isRestricted ? (
                 <>
                   <Pencil className="action-icon" size={16} />
                   Hạn chế

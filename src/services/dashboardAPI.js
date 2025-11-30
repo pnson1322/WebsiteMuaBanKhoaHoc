@@ -80,7 +80,7 @@ export const dashboardAPI = {
   // GET /dashboard/course/{courseId}/reviews-stars: Thống kê số lượng đánh giá theo số sao của khóa học (Seller)
   getCourseReviewStars: async (courseId) => {
     const res = await instance.get(
-      `/dashboard/course/${courseId}/reviews-stars`
+      `/dashboard/courses/${courseId}/review-stars`
     );
     return res.data;
   },

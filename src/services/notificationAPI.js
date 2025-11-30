@@ -35,12 +35,10 @@ export const notificationAPI = {
     return res.data;
   },
 
-  // DELETE /notification/{notificationId}?sellerId={sellerId}: Xóa một thông báo cụ thể
-  deleteNotification: async (notificationId, sellerId) => {
-    if (!notificationId || !sellerId) throw new Error("Missing ID or SellerID");
-    const res = await instance.delete(`/notification/${notificationId}`, {
-      params: { sellerId },
-    });
+  // DELETE /notification/{notificationId}: Xóa một thông báo cụ thể
+  deleteNotification: async (notificationId) => {
+    if (!notificationId) throw new Error("Missing ID or SellerID");
+    const res = await instance.delete(`/notification/${notificationId}`);
     return res.data;
   },
 

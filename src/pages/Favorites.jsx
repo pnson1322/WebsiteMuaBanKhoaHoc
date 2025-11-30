@@ -4,10 +4,12 @@ import { Heart, ArrowLeft, Trash2 } from "lucide-react";
 import { favoriteAPI } from "../services/favoriteAPI";
 import CourseCard from "../components/CourseCard/CourseCard";
 import logger from "../utils/logger";
+import { useAppDispatch } from "../contexts/AppContext";
 import "./Favorites.css";
 
 const Favorites = () => {
   const navigate = useNavigate();
+  const { dispatch, actionTypes } = useAppDispatch();
   const [favoriteCourses, setFavoriteCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,7 +36,7 @@ const Favorites = () => {
           count: data?.length || 0,
         });
 
-        // ⭐ Chuyển imageUrl → image để CourseCard đọc đúng
+        // ⭐ Chuyển imageUrl → image và đảm bảo categoryName tồn tại
         const normalized = (data || []).map((item) => ({
           ...item,
           id: item.courseId,
@@ -42,9 +44,14 @@ const Favorites = () => {
             item.imageUrl ??
             item.image ??
             "https://via.placeholder.com/400x250?text=No+Image",
+          categoryName: item.categoryName ?? item.category ?? "Khóa học",
         }));
 
         setFavoriteCourses(normalized);
+
+        // ⭐ Đồng bộ số lượng favorites vào AppContext để hiển thị đúng trên Header
+        const favoriteIds = normalized.map((item) => item.courseId);
+        dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
       } catch (err) {
         console.error("❌ Lỗi lấy danh sách yêu thích:", err);
 
@@ -106,6 +113,8 @@ const Favorites = () => {
     try {
       await favoriteAPI.clearFavorites();
       setFavoriteCourses([]);
+      // ⭐ Cập nhật AppContext
+      dispatch({ type: actionTypes.SET_FAVORITES, payload: [] });
     } catch (err) {
       console.error("❌ Lỗi:", err);
       alert("Không thể xóa danh sách yêu thích.");
@@ -119,6 +128,8 @@ const Favorites = () => {
     try {
       await favoriteAPI.removeFavorite(courseId);
       setFavoriteCourses((prev) => prev.filter((c) => c.id !== courseId));
+      // ⭐ Cập nhật AppContext
+      dispatch({ type: actionTypes.REMOVE_FROM_FAVORITES, payload: courseId });
     } catch (err) {
       console.error("❌ Lỗi khi xóa khóa học:", err);
       alert("Không thể xóa khóa học khỏi yêu thích.");
@@ -194,7 +205,6 @@ const Favorites = () => {
           <div className="favorites-title">
             <Heart className="favorites-icon" />
             <h1>Khóa học yêu thích</h1>
-            <span className="favorites-count">({favoriteCourses.length})</span>
           </div>
 
           {favoriteCourses.length > 0 && (

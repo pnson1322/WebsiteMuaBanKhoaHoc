@@ -54,7 +54,7 @@ export const courseAPI = {
     try {
       // Thử với instance có auth trước (cho logged-in users)
       console.log("📡 Fetching courses with auth instance", { params });
-      const res = await instance.get("/api/Course", { params });
+      const res = await instance.get("/api/Course/all", { params });
       console.log("✅ Courses fetched successfully", {
         count: res.data?.items?.length,
       });
@@ -103,6 +103,216 @@ export const courseAPI = {
   // /api/Course/{id}: GET: Lấy chi tiết khóa học
   async getCourseById(id) {
     const res = await instance.get(`/api/Course/${id}`);
+    return res.data;
+  },
+
+  /**
+   * 📌 GET /User/my-courses
+   * Lấy danh sách khóa học đã mua của người dùng
+   * Query: page=1, pageSize=10
+   */
+  async getPurchasedCourses({ page = 1, pageSize = 10 } = {}) {
+    const res = await instance.get("/User/my-courses", {
+      params: { page, pageSize },
+    });
+    return res.data;
+  },
+
+  /**
+   * 📌 GET /api/Course (Admin)
+   * Lấy tất cả khóa học trong database bao gồm cả chưa duyệt
+   * Query: page=1, pageSize=10, IncludeUnApproved=false, IncludeRestricted=false
+   */
+  async getAdminCourses({
+    page = 1,
+    pageSize = 10,
+    Q = null,
+    CategoryId = null,
+    SellerId = null,
+    MinPrice = null,
+    MaxPrice = null,
+    SortBy = null,
+    Level = null,
+    IncludeUnApproved = false,
+    IncludeRestricted = false,
+  } = {}) {
+    const params = {
+      page,
+      pageSize,
+      Q,
+      CategoryId,
+      SellerId,
+      MinPrice,
+      MaxPrice,
+      SortBy,
+      Level,
+      IncludeUnApproved,
+      IncludeRestricted,
+    };
+
+    // Loại bỏ params null
+    Object.keys(params).forEach(
+      (key) => params[key] === null && delete params[key]
+    );
+
+    const res = await instance.get("/api/Course", { params });
+    return res.data;
+  },
+
+  /**
+   * 📌 PUT /api/Course/{id}/approve
+   * Duyệt khóa học
+   */
+  async approveCourse(courseId) {
+    const res = await instance.put(`/api/Course/${courseId}/approve`);
+    return res.data;
+  },
+
+  /**
+   * 📌 PUT /api/Course/{id}/restrict
+   * Hạn chế khóa học
+   */
+  async restrictCourse(courseId) {
+    const res = await instance.put(`/api/Course/${courseId}/restrict`);
+    return res.data;
+  },
+
+  // /api/Course: POST: Tạo khoá học
+  async createCourse(payload) {
+    console.log(payload);
+    const formData = new FormData();
+
+    formData.append("Title", payload.title);
+    formData.append("TeacherName", payload.teacherName);
+    formData.append("Description", payload.description || "");
+    formData.append("Price", payload.price);
+    formData.append("Level", payload.level);
+    formData.append("DurationHours", payload.durationHours);
+    formData.append("CategoryId", payload.categoryId);
+
+    if (payload.image instanceof File) {
+      formData.append("Image", payload.image);
+    }
+
+    if (payload.courseContents && payload.courseContents.length > 0) {
+      payload.courseContents.forEach((item, index) => {
+        formData.append(`CourseContents[${index}].Id`, 0);
+        formData.append(`CourseContents[${index}].Title`, item.title);
+        formData.append(
+          `CourseContents[${index}].Description`,
+          item.description
+        );
+      });
+    }
+
+    if (payload.courseSkills && payload.courseSkills.length > 0) {
+      payload.courseSkills.forEach((item, index) => {
+        formData.append(`CourseSkills[${index}].Id`, 0);
+        formData.append(`CourseSkills[${index}].Description`, item.description);
+      });
+    }
+
+    if (payload.targetLearners && payload.targetLearners.length > 0) {
+      payload.targetLearners.forEach((item, index) => {
+        formData.append(`TargetLearners[${index}].Id`, 0);
+        formData.append(
+          `TargetLearners[${index}].Description`,
+          item.description
+        );
+      });
+    }
+
+    const res = await instance.post("/api/Course", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  // /api/course/{id}: PUT: Sửa khóa học
+  async updateCourse(id, data) {
+    const formData = new FormData();
+
+    formData.append("Title", data.title);
+    formData.append("TeacherName", data.teacherName);
+    formData.append("Description", data.description);
+    formData.append("Price", data.price);
+    formData.append("Level", data.level);
+    formData.append("DurationHours", data.durationHours);
+    formData.append("CategoryId", data.categoryId);
+    formData.append("DeleteImage", data.deleteImage);
+
+    if (data.imageFile instanceof File) {
+      formData.append("Image", data.imageFile);
+    }
+
+    const res = await instance.put(`/api/course/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  },
+
+  // /api/course/{id}: DELETE: Xóa khóa học
+  async deleteCourse(id) {
+    const res = await instance.delete(`/api/course/${id}`);
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/contents: POST: thêm nội dung khóa học
+  async addCourseContent(courseId, { title, description }) {
+    const payload = { title, description };
+    const res = await instance.post(
+      `/api/Course/${courseId}/contents`,
+      payload
+    );
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/contents/{contentId}: DELETE: Xóa nội dung khóa học
+  async deleteCourseContent(courseId, contentId) {
+    const res = await instance.delete(
+      `/api/Course/${courseId}/contents/${contentId}`
+    );
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/skills: POST: Thêm kỹ năng đạt được
+  async addCourseSkill(courseId, description) {
+    const payload = { id: 0, description };
+    const res = await instance.post(`/api/Course/${courseId}/skills`, payload);
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/skills/{skillId}: DELETE: Xóa kỹ năng đạt được
+  async deleteCourseSkill(courseId, skillId) {
+    const res = await instance.delete(
+      `/api/Course/${courseId}/skills/${skillId}`
+    );
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/target-learners: POST: Thêm đối tượng học viên
+  async addTargetLearner(courseId, description) {
+    const payload = { id: 0, description };
+    const res = await instance.post(
+      `/api/Course/${courseId}/target-learners`,
+      payload
+    );
+    return res.data;
+  },
+
+  // /api/Course/{courseId}/target-learners/{learnerId}: DELETE: Xóa đối tượng học viên
+  async deleteTargetLearner(courseId, learnerId) {
+    const res = await instance.delete(
+      `/api/Course/${courseId}/target-learners/${learnerId}`
+    );
+    return res.data;
+  },
+
+  // /api/Course/student/{courseId}: GET: Lấy danh sách học viên của một khóa học
+  async getStudentList(courseId) {
+    const res = await instance.get(`/api/Course/student/${courseId}`);
     return res.data;
   },
 };

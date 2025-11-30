@@ -11,12 +11,12 @@ import {
 } from "lucide-react";
 import { CourseCardSkeleton } from "../components/LoadingSkeleton";
 import PaymentPopup from "../components/PaymentPopup";
-import CourseDetailPopup from "../components/CourseDetailPopup/CourseDetailPopup";
+import { cartAPI } from "../services/cartAPI";
 
 const Cart = () => {
   const navigate = useNavigate();
   const state = useAppState();
-  const { dispatch, actionTypes } = useAppDispatch();
+  const { removeFromCart, clearCart } = useAppDispatch();
 
   const [cartCourses, setCartCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,19 +26,36 @@ const Cart = () => {
 
   useEffect(() => {
     try {
-      if (!state.courses || state.courses.length === 0) {
+      if (!state.courses) {
         setLoading(true);
         return;
       }
 
       const filtered = state.courses.filter((c) => state.cart.includes(c.id));
       setCartCourses(filtered);
+      console.log(cartCourses);
       setLoading(false);
     } catch (err) {
       setError("Không thể tải giỏ hàng!");
       setLoading(false);
     }
   }, [state.courses, state.cart]);
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const res = await cartAPI.getCart();
+  //       setCartCourses(res);
+  //       console.log(cartCourses);
+  //       setLoading(false);
+  //     } catch (err) {
+  //       setError("Không thể tải giỏ hàng!" + err);
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, []);
 
   const closePopup = () => setShowPayment(false);
 
@@ -54,14 +71,25 @@ const Cart = () => {
     navigate(`/course/${course.id}`);
   };
 
-  const removeFromCart = (courseId) => {
-    dispatch({ type: actionTypes.REMOVE_FROM_CART, payload: courseId });
+  const handleRemoveItem = async (courseId) => {
+    console.log(courseId);
+    const result = await removeFromCart(courseId);
+    if (result.success) {
+      setSelectedIds((prev) => prev.filter((id) => id !== courseId));
+    } else {
+      alert("Có lỗi khi xóa sản phẩm!");
+    }
   };
 
-  const clearCart = () => {
-    state.cart.forEach((courseId) => {
-      dispatch({ type: actionTypes.REMOVE_FROM_CART, payload: courseId });
-    });
+  const handleClearCart = async () => {
+    if (window.confirm("Bạn có chắc muốn xóa tất cả?")) {
+      const result = await clearCart();
+      if (result.success) {
+        setSelectedIds([]);
+      } else {
+        alert("Lỗi khi xóa giỏ hàng");
+      }
+    }
   };
 
   const formatPrice = (price) =>
@@ -145,13 +173,15 @@ const Cart = () => {
           </div>
 
           {cartCourses.length > 0 && (
-            <button className="clear-cart-btn" onClick={clearCart}>
+            <button className="clear-cart-btn" onClick={handleClearCart}>
               <Trash2 className="trash-icon" />
               Xóa tất cả
             </button>
           )}
         </div>
 
+        {console.log("in ra cartCourses trước khi render")}
+        {console.log(cartCourses)}
         {cartCourses.length === 0 ? (
           <div className="empty-cart">
             <ShoppingCart className="empty-icon" />
@@ -180,21 +210,21 @@ const Cart = () => {
 
                   <img
                     src={course.image}
-                    alt={course.name}
+                    alt={course.title}
                     className="cart-item-image"
                   />
 
                   <div className="cart-item-info">
-                    <h3 className="cart-item-title">{course.name}</h3>
+                    <h3 className="cart-item-title">{course.title}</h3>
                     <p className="cart-item-instructor">
-                      👨‍🏫 {course.instructor.name}
+                      👨‍🏫 {course.teacherName}
                     </p>
                     <p className="cart-item-description">
-                      {course.shortDescription}
+                      {course.description}
                     </p>
                     <div className="cart-item-details">
                       <span className="cart-item-category">
-                        {course.category}
+                        {course.categoryName}
                       </span>
                       <span className="cart-item-level">{course.level}</span>
                     </div>
@@ -213,7 +243,7 @@ const Cart = () => {
                     </button>
                     <button
                       className="remove-btn"
-                      onClick={() => removeFromCart(course.id)}
+                      onClick={() => handleRemoveItem(course.id)}
                     >
                       <Trash2 className="remove-icon" />
                       Xóa
@@ -265,7 +295,6 @@ const Cart = () => {
 
       {showPayment && (
         <PaymentPopup onClose={closePopup} course={selectedCourses} />
-        //<CourseDetailPopup onClose={closePopup} course={selectedCourses[0]} />
       )}
     </div>
   );

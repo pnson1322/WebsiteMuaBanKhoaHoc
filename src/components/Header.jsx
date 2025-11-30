@@ -34,6 +34,7 @@ const ALL_COURSES = [
   { id: 4, name: "Node.js và Express", imageUrl: test },
   { id: 5, name: "Giáo trình Python từ A-Z", imageUrl: test2 },
 ];
+import { courseAPI } from "../services/courseAPI";
 
 const Header = ({ onOpenLoginPopup }) => {
   const navigate = useNavigate();
@@ -394,7 +395,7 @@ const Header = ({ onOpenLoginPopup }) => {
     }
 
     try {
-      await notificationAPI.deleteNotification(id, targetNotif.sellerId);
+      await notificationAPI.deleteNotification(id);
       console.log(`✅ Deleted notification ${id}`);
     } catch (err) {
       console.error("❌ Error deleting notification:", err);
@@ -444,15 +445,39 @@ const Header = ({ onOpenLoginPopup }) => {
       return;
     }
 
-    const timerId = setTimeout(() => {
+    const timerId = setTimeout(async () => {
       console.log("Đang lấy gợi ý cho:", state.searchTerm);
 
       const filteredSuggestions = ALL_COURSES.filter((course) =>
         course.name.toLowerCase().includes(state.searchTerm.toLowerCase())
       );
 
-      setSuggestions(filteredSuggestions);
-      setIsDropdownVisible(filteredSuggestions.length > 0);
+      try {
+        const res = await courseAPI.getCourses({
+          page: 1,
+          pageSize: 100,
+        });
+
+        const coursesFromApi = res.items || [];
+
+        const filteredSuggestions = coursesFromApi.filter((course) =>
+          course.title.toLowerCase().includes(state.searchTerm.toLowerCase())
+        );
+
+        setSuggestions(
+          filteredSuggestions.map((item) => ({
+            id: item.id,
+            name: item.title,
+            imageUrl: item.imageUrl,
+          }))
+        );
+        setSuggestions(filteredSuggestions);
+        setIsDropdownVisible(filteredSuggestions.length > 0);
+      } catch (error) {
+        console.error("Lỗi khi lấy gợi ý tìm kiếm:", error);
+        setSuggestions([]);
+        setIsDropdownVisible(false);
+      }
     }, 300);
 
     return () => {
@@ -476,9 +501,12 @@ const Header = ({ onOpenLoginPopup }) => {
     };
   }, []);
 
-  const handleSuggestionClick = (suggestionName) => {
-    dispatch({ type: actionTypes.SET_SEARCH_TERM, payload: suggestionName });
+  const handleSuggestionClick = (suggestionTitle) => {
+    dispatch({ type: actionTypes.SET_SEARCH_TERM, payload: suggestionTitle });
+
     setIsDropdownVisible(false);
+
+    navigate(`/?search=${encodeURIComponent(suggestionTitle)}`);
   };
 
   return (
@@ -516,14 +544,14 @@ const Header = ({ onOpenLoginPopup }) => {
               {suggestions.map((suggestion) => (
                 <li
                   key={suggestion.id}
-                  onMouseDown={() => handleSuggestionClick(suggestion.name)}
+                  onMouseDown={() => handleSuggestionClick(suggestion.title)}
                   className="suggestion-item"
                 >
-                  <span className="suggestion-name">{suggestion.name}</span>
+                  <span className="suggestion-name">{suggestion.title}</span>
 
                   <img
                     src={suggestion.imageUrl}
-                    alt={suggestion.name}
+                    alt={suggestion.title}
                     className="suggestion-image"
                   />
                 </li>

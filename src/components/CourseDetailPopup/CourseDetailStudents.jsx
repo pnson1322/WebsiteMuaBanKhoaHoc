@@ -1,8 +1,11 @@
 import "./CourseDetailStudents";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
+import { courseAPI } from "../../services/courseAPI";
+import { useState, useEffect } from "react";
+import "./CourseDetailStudents.css";
 
-export default function CourseDetailStudents({ course, isEditable }) {
+export default function CourseDetailStudents({ course }) {
   const formatPrice = (price) => {
     if (typeof price !== "number") return price;
     return new Intl.NumberFormat("vi-VN", {
@@ -23,8 +26,26 @@ export default function CourseDetailStudents({ course, isEditable }) {
       return dateString;
     }
   };
-  const studentList = course?.enrollments || [];
-  const totalStudents = studentList.length;
+  const [studentList, setStudentList] = useState([]);
+  const [totalStudents, setTotalStudents] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await courseAPI.getStudentList(course.id);
+
+        console.log(course.id);
+        console.log(res);
+
+        setStudentList(res);
+        setTotalStudents(res.length);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="course-student-list">
@@ -35,26 +56,21 @@ export default function CourseDetailStudents({ course, isEditable }) {
       <SimpleBar style={{ maxHeight: "400px" }}>
         <div className="student-list-items">
           {studentList.length > 0 ? (
-            studentList.map((enrollment) => {
-              // Giả sử 'enrollment.user' là object chứa tên,
-              // hoặc có thể là 'enrollment.studentName'
-              const studentName = enrollment.user?.name || "Học viên ẩn danh";
-              const statusInfo = getStatusInfo(enrollment.status);
+            studentList.map((item) => {
+              const studentName = item.studentName || "Học viên ẩn danh";
 
               return (
-                <div key={enrollment.id} className="student-card">
-                  {/* Phần thông tin tên + thanh toán */}
+                <div className="student-card">
                   <div className="student-info">
                     <div className="student-name">{studentName}</div>
                     <div className="student-payment">
-                      Thanh toán: {formatPrice(enrollment.amount)}
+                      Thanh toán: {formatPrice(item.purchasedAmount)}
                     </div>
                   </div>
 
-                  {/* Phần trạng thái + ngày mua */}
                   <div className="student-status-section">
                     <div className="student-date">
-                      Mua ngày: {formatDate(enrollment.purchaseDate)}
+                      Mua ngày: {formatDate(item.enrollAt)}
                     </div>
                   </div>
                 </div>

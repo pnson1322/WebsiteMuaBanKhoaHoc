@@ -6,7 +6,7 @@
   --color-border: #e5e7eb;
   --color-background-light: #f9fafb;
   --color-star-filled: #facc15;
-  --color-star-empty: #d1d5db;
+  --color-star-empty: white;
 }
 
 .course-statistic-tab {

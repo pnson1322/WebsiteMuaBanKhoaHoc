@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Eye } from "lucide-react";
 import "../CourseCard/CourseCard.css"; // Dùng lại style gốc
 import CourseStats from "../../components/CourseCard/CourseStats";
@@ -13,7 +13,7 @@ const PurchasedCourseCard = ({ course, onViewDetails }) => {
           alt={course.title}
           className="course-image"
         />
-        <div className="course-category">{course.category}</div>
+        <div className="course-category">{course.categoryName}</div>
       </div>
 
       {/* Nội dung */}
