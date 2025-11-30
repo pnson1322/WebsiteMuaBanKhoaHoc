@@ -20,13 +20,11 @@ export const notificationAPI = {
     return res.data;
   },
 
-  // PUT /notification/mark-as-read/{notificationId}?sellerId={sellerId}: Đánh dấu một thông báo là đã đọc
-  markAsRead: async (notificationId, sellerId) => {
-    if (!notificationId || !sellerId) throw new Error("Missing ID or SellerID");
+  // PUT /notification/mark-as-read/{notificationId}: Đánh dấu một thông báo là đã đọc
+  markAsRead: async (notificationId) => {
+    if (!notificationId) throw new Error("Missing ID");
     const res = await instance.put(
-      `/notification/mark-as-read/${notificationId}`,
-      null,
-      { params: { sellerId } }
+      `/notification/mark-as-read/${notificationId}`
     );
     return res.data;
   },
@@ -37,12 +35,10 @@ export const notificationAPI = {
     return res.data;
   },
 
-  // DELETE /notification/{notificationId}?sellerId={sellerId}: Xóa một thông báo cụ thể
-  deleteNotification: async (notificationId, sellerId) => {
-    if (!notificationId || !sellerId) throw new Error("Missing ID or SellerID");
-    const res = await instance.delete(`/notification/${notificationId}`, {
-      params: { sellerId },
-    });
+  // DELETE /notification/{notificationId}: Xóa một thông báo cụ thể
+  deleteNotification: async (notificationId) => {
+    if (!notificationId) throw new Error("Missing ID or SellerID");
+    const res = await instance.delete(`/notification/${notificationId}`);
     return res.data;
   },
 

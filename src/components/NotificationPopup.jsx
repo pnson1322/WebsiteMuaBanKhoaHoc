@@ -33,7 +33,9 @@ export default function NotificationPopup({
 }) {
   const handleItemClick = (id, isRead) => {
     if (!isRead) {
+      console.log(`Clicked notification ${id}`);
       onMarkOneAsRead(id);
+
     }
   };
 
