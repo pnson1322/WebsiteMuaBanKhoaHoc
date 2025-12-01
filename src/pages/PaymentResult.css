@@ -1,0 +1,141 @@
+.payment-result-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  background-color: #f8f9fa;
+  padding: 20px;
+}
+
+.payment-card {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+  border-top: 5px solid transparent;
+}
+
+.payment-card.payment-result-success {
+  border-top-color: #22c55e;
+}
+
+.payment-card.payment-result-error {
+  border-top-color: #ef4444;
+}
+
+.payment-result-icon-wrapper {
+  margin-bottom: 20px;
+}
+
+.payment-card.payment-result-success .payment-result-status-icon {
+  color: #22c55e;
+}
+
+.payment-card.payment-result-error .payment-result-status-icon {
+  color: #ef4444;
+}
+
+.payment-result-status-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #1f2937;
+}
+
+.payment-result-status-message {
+  color: #6b7280;
+  margin-bottom: 30px;
+  font-size: 15px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+  color: #a50064;
+}
+
+.payment-result-transaction-details {
+  background-color: #f9fafb;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.payment-result-detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.payment-result-detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.payment-result-detail-row.payment-result-total {
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 12px;
+  margin-top: 12px;
+  font-size: 16px;
+}
+
+.payment-result-text-success {
+  color: #22c55e;
+}
+.payment-result-text-error {
+  color: #ef4444;
+}
+
+.payment-result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payment-result-btn-primary,
+.payment-result-btn-secondary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-size: 15px;
+}
+
+.payment-result-btn-primary {
+  background-color: #a50064;
+  color: white;
+}
+
+.payment-result-btn-primary:hover {
+  opacity: 0.8;
+}
+
+.payment-result-btn-secondary {
+  background-color: transparent;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.payment-result-btn-secondary:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}

@@ -169,7 +169,7 @@ export const AppProvider = ({ children }) => {
       clearCart: async () => {
         try {
           await cartAPI.deleteCart();
-          dispatch({ type: actionTypes.RESET_USER_DATA });
+          dispatch({ type: actionTypes.SET_CART, payload: [] });
           return { success: true };
         } catch (error) {
           console.error("Lỗi làm trống giỏ:", error);

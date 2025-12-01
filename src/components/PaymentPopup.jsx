@@ -1,8 +1,14 @@
-import { CreditCard, X } from "lucide-react";
+import { CreditCard, X, Loader2 } from "lucide-react";
 import "./PaymentPopup.css";
 import momo from "../assets/momo.png";
+import { useState } from "react";
+import { momoAPI } from "../services/momoAPI";
+import { useToast } from "../contexts/ToastContext";
 
 const PaymentPopup = ({ onClose, course }) => {
+  const { showError } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -12,6 +18,31 @@ const PaymentPopup = ({ onClose, course }) => {
 
   const selectedCount = course.length;
   const totalPrice = course.reduce((sum, course) => sum + course.price, 0);
+
+  const handlePayment = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const courseIds = course.map((item) => item.id);
+      const amount = totalPrice;
+
+      const data = await momoAPI.createMomoPayment({ courseIds, amount });
+
+      if (data && data.payUrl) {
+        window.location.href = data.payUrl;
+      } else {
+        showError("Không nhận được liên kết thanh toán. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error("Payment Error:", error);
+      const message =
+        error.response?.data?.message || error.message || "Có lỗi xảy ra";
+      showError("Lỗi thanh toán: " + message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="payment-overlay" onClick={onClose}>
@@ -55,9 +86,26 @@ const PaymentPopup = ({ onClose, course }) => {
               <div className="method-name">Thanh toán qua Ví MoMo</div>
             </div>
 
-            <button className="checkout-btn payment-btn">
-              <CreditCard className="checkout-icon" />
-              Thanh toán ngay
+            <button
+              className="checkout-btn payment-btn"
+              onClick={handlePayment}
+              disabled={isLoading}
+              style={{
+                opacity: isLoading ? 0.7 : 1,
+                cursor: isLoading ? "not-allowed" : "pointer",
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="checkout-icon animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="checkout-icon" />
+                  Thanh toán ngay
+                </>
+              )}
             </button>
 
             <div className="course-count payment-text">
