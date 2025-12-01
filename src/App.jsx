@@ -27,6 +27,7 @@ import CourseTransactionDetails from "./pages/CourseTransactionDetails/CourseTra
 import AdminCategories from "./pages/AdminCategories/AdminCategories";
 import AdminUsersPage from "./pages/AdminUsersPage/AdminUsersPage";
 import SellerChat from "./pages/Chat/SellerChat";
+import PaymentResult from "./pages/PaymentResult";
 
 function App() {
   return (
@@ -153,6 +154,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <CourseTransactionDetails />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Trang thông báo thanh toán */}
+                <Route
+                  path="payment-result"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentResult />
                     </ProtectedRoute>
                   }
                 />

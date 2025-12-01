@@ -106,6 +106,7 @@ h3 {
   padding: 1.5rem 1rem;
   border: 2px solid #e9e9ea;
   border-radius: 8px;
+  gap: 1rem;
 }
 
 .course-name {
@@ -178,6 +179,26 @@ h3 {
 
 .payment-text {
   text-align: center;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.checkout-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
 }
 
 /* Responsive */
