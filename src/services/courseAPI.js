@@ -239,7 +239,7 @@ export const courseAPI = {
 
   /**
    * 📌 PUT /api/Course/{id}/restrict
-   * Hạn chế khóa học
+   * Hạn chế hoặc bỏ hạn chế khóa học (toggle)
    */
   async restrictCourse(courseId) {
     const res = await instance.put(`/api/Course/${courseId}/restrict`);
@@ -308,9 +308,8 @@ export const courseAPI = {
     formData.append("Level", data.level);
     formData.append("DurationHours", data.durationHours);
     formData.append("CategoryId", data.categoryId);
-    formData.append("DeleteImage", data.deleteImage);
 
-    if (data.imageFile instanceof File) {
+    if (imageFile) {
       formData.append("Image", data.imageFile);
     }
 
@@ -376,12 +375,6 @@ export const courseAPI = {
     const res = await instance.delete(
       `/api/Course/${courseId}/target-learners/${learnerId}`
     );
-    return res.data;
-  },
-
-  // /api/Course/student/{courseId}: GET: Lấy danh sách học viên của một khóa học
-  async getStudentList(courseId) {
-    const res = await instance.get(`/api/Course/student/${courseId}`);
     return res.data;
   },
 };

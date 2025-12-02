@@ -54,16 +54,24 @@ const AdminCourseCard = ({ course, onToggleApproval, onClick }) => {
           </div>
 
           <div className="course-actions admin-actions">
-            {/* Nếu bị hạn chế: chỉ hiển thị 1 button "Bị hạn chế" (disabled) */}
+            {/* Nếu bị hạn chế: hiển thị trạng thái và nút Bỏ hạn chế */}
             {isRestricted ? (
-              <button
-                className="admin-status-btn restricted"
-                disabled
-                style={{ width: "100%" }}
-              >
-                <X className="action-icon" size={16} />
-                Bị hạn chế
-              </button>
+              <>
+                {/* Button trái: Hiển thị trạng thái bị hạn chế (không thể bấm) */}
+                <button className="admin-status-btn restricted" disabled>
+                  <X className="action-icon" size={16} />
+                  Bị hạn chế
+                </button>
+
+                {/* Button phải: Bỏ hạn chế */}
+                <button
+                  className="admin-toggle-btn approve"
+                  onClick={handleToggle}
+                >
+                  <Check className="action-icon" size={16} />
+                  Bỏ hạn chế
+                </button>
+              </>
             ) : (
               <>
                 {/* Button trái: Hiển thị trạng thái (không thể bấm) */}
