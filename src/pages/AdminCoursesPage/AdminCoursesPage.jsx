@@ -127,8 +127,28 @@ const AdminCoursesPage = () => {
 
   const handleToggleApproval = async (courseId, isApproved, isRestricted) => {
     try {
-      if (isApproved && !isRestricted) {
-        // Nếu đã duyệt → Hạn chế
+      console.log("🔄 Toggle approval:", {
+        courseId,
+        isApproved,
+        isRestricted,
+      });
+
+      if (isRestricted) {
+        // Nếu đang bị hạn chế → Bỏ hạn chế (toggle restrict)
+        console.log("📤 Calling restrictCourse to unrestrict:", courseId);
+        await courseAPI.restrictCourse(courseId);
+        // Cập nhật local state
+        setCourses((prev) =>
+          prev.map((c) =>
+            c.id === courseId
+              ? { ...c, isApproved: true, isRestricted: false }
+              : c
+          )
+        );
+        console.log("✅ Course unrestricted successfully");
+      } else if (isApproved && !isRestricted) {
+        // Nếu đã duyệt và chưa bị hạn chế → Hạn chế (toggle restrict)
+        console.log("📤 Calling restrictCourse:", courseId);
         await courseAPI.restrictCourse(courseId);
         // Cập nhật local state
         setCourses((prev) =>
@@ -136,8 +156,10 @@ const AdminCoursesPage = () => {
             c.id === courseId ? { ...c, isRestricted: true } : c
           )
         );
+        console.log("✅ Course restricted successfully");
       } else {
-        // Nếu chưa duyệt hoặc bị hạn chế → Duyệt
+        // Nếu chưa duyệt → Duyệt
+        console.log("📤 Calling approveCourse:", courseId);
         await courseAPI.approveCourse(courseId);
         // Cập nhật local state
         setCourses((prev) =>
@@ -147,10 +169,23 @@ const AdminCoursesPage = () => {
               : c
           )
         );
+        console.log("✅ Course approved successfully");
       }
     } catch (err) {
-      console.error("Lỗi khi thay đổi trạng thái khóa học:", err);
-      alert("Không thể thay đổi trạng thái khóa học.");
+      console.error("❌ Lỗi khi thay đổi trạng thái khóa học:", {
+        error: err,
+        response: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+
+      // Hiển thị thông báo lỗi chi tiết hơn
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.title ||
+        err.message ||
+        "Không thể thay đổi trạng thái khóa học.";
+      alert(`Lỗi: ${errorMessage}`);
     }
   };
 
