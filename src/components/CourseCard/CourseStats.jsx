@@ -1,7 +1,7 @@
 import React from "react";
 import { Star, Users, Clock } from "lucide-react";
 
-const CourseStats = ({ course }) => {
+const CourseStats = React.memo(({ course }) => {
   return (
     <div className="course-stats">
       <div className="stat">
@@ -15,6 +15,6 @@ const CourseStats = ({ course }) => {
       </div>
     </div>
   );
-};
+});
 
 export default CourseStats;

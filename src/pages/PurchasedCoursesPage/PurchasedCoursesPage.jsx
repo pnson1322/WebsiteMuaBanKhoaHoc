@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, Filter as FilterIcon, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { courseAPI } from "../../services/courseAPI";
@@ -13,7 +13,6 @@ const PurchasedCoursesPage = () => {
   const { dispatch, actionTypes } = useAppDispatch();
 
   const [courses, setCourses] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
   const [loading, setLoading] = useState(true);
@@ -76,16 +75,17 @@ const PurchasedCoursesPage = () => {
     loadCourses();
   }, [currentPage]);
 
-  // 🔍 Tìm kiếm + sắp xếp + lọc danh mục & giá
-  useEffect(() => {
+  // 🔍 Tìm kiếm + sắp xếp + lọc danh mục & giá với useMemo
+  const filtered = useMemo(() => {
     let result = [...courses];
 
     // 1️⃣ Tìm kiếm theo tên hoặc giảng viên
     if (searchTerm.trim()) {
+      const search = searchTerm.toLowerCase();
       result = result.filter(
         (c) =>
-          c.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.teacherName?.toLowerCase().includes(searchTerm.toLowerCase())
+          c.title?.toLowerCase().includes(search) ||
+          c.teacherName?.toLowerCase().includes(search)
       );
     }
 
@@ -129,7 +129,7 @@ const PurchasedCoursesPage = () => {
         break;
     }
 
-    setFiltered(result);
+    return result;
   }, [
     courses,
     searchTerm,
@@ -138,7 +138,10 @@ const PurchasedCoursesPage = () => {
     state.selectedPriceRange,
   ]);
 
-  const handleViewDetails = (course) => navigate(`/course/${course.id}`);
+  const handleViewDetails = useCallback(
+    (course) => navigate(`/course/${course.id}`),
+    [navigate]
+  );
 
   return (
     <div className="purchased-page">
