@@ -5,11 +5,13 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useState,
 } from "react";
 import { courseAPI } from "../services/courseAPI"; // ⭐ Dùng API thật
 import { setAppDispatchContext } from "./AuthContext";
 import { cartAPI } from "../services/cartAPI";
 import { favoriteAPI } from "../services/favoriteAPI";
+import { useDebounce } from "../hooks/useDebounce";
 
 // Initial state
 const initialState = {
@@ -141,6 +143,9 @@ export const useAppDispatch = () => useContext(AppDispatchContext);
 // Provider
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  // Debounce search term để tránh filter quá nhiều lần
+  const debouncedSearchTerm = useDebounce(state.searchTerm, 300);
 
   const cartActions = useMemo(
     () => ({
@@ -348,13 +353,13 @@ export const AppProvider = ({ children }) => {
     loadCourses();
   }, []);
 
-  // ⭐ Auto filter
-  useEffect(() => {
+  // ⭐ Auto filter với useMemo và debounced search để tránh re-render không cần thiết
+  const filteredCoursesResult = useMemo(() => {
     let filtered = state.courses;
 
-    // Search
-    if (state.searchTerm) {
-      const term = state.searchTerm.toLowerCase();
+    // Search - sử dụng debounced value để giảm số lần filter
+    if (debouncedSearchTerm) {
+      const term = debouncedSearchTerm.toLowerCase();
       filtered = filtered.filter(
         (c) =>
           c.title.toLowerCase().includes(term) ||
@@ -379,16 +384,21 @@ export const AppProvider = ({ children }) => {
       );
     }
 
-    dispatch({
-      type: actionTypes.SET_FILTERED_COURSES,
-      payload: filtered,
-    });
+    return filtered;
   }, [
     state.courses,
-    state.searchTerm,
+    debouncedSearchTerm,
     state.selectedCategory,
     state.selectedPriceRange,
   ]);
+
+  // Cập nhật filteredCourses chỉ khi thực sự thay đổi
+  useEffect(() => {
+    dispatch({
+      type: actionTypes.SET_FILTERED_COURSES,
+      payload: filteredCoursesResult,
+    });
+  }, [filteredCoursesResult]);
 
   return (
     <AppContext.Provider value={state}>

@@ -626,7 +626,9 @@ export const adminAPI = {
       transactions.push({
         transactionId: id,
         studentName,
-        transactionDate: `${formatDateDDMMYYYY(dateOnly)} ${dateStr.split(" ")[1]}`,
+        transactionDate: `${formatDateDDMMYYYY(dateOnly)} ${
+          dateStr.split(" ")[1]
+        }`,
         totalAmount,
         courseList,
       });
@@ -636,8 +638,10 @@ export const adminAPI = {
     return transactions.sort((a, b) => {
       const [dateA, timeA] = a.transactionDate.split(" ");
       const [dateB, timeB] = b.transactionDate.split(" ");
-      const isoA = dateA.split("/").reverse().join("-") + "T" + (timeA || "00:00");
-      const isoB = dateB.split("/").reverse().join("-") + "T" + (timeB || "00:00");
+      const isoA =
+        dateA.split("/").reverse().join("-") + "T" + (timeA || "00:00");
+      const isoB =
+        dateB.split("/").reverse().join("-") + "T" + (timeB || "00:00");
       return new Date(isoB) - new Date(isoA);
     });
   },
@@ -661,3 +665,6 @@ export const adminAPI = {
     };
   },
 };
+
+// ✅ Export historyAPI
+export { historyAPI } from "./historyAPI";

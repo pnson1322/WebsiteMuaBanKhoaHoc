@@ -1,6 +1,6 @@
 .course-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 25px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
@@ -9,6 +9,12 @@
   display: flex;
   flex-direction: column;
   border: 1px solid #f0f0f0;
+  /* Tối ưu performance */
+  will-change: transform;
+  contain: layout style paint;
+  /* GPU acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .course-card:hover {

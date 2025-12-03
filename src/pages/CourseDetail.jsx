@@ -17,6 +17,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { courseAPI } from "../services/courseAPI";
 import { reviewAPI } from "../services/reviewAPI";
+import { historyAPI } from "../services/historyAPI";
+import logger from "../utils/logger";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -36,6 +38,23 @@ const CourseDetail = () => {
         setLoading(true);
         const data = await courseAPI.getCourseById(id);
         setCourse(data);
+
+        // ✅ Tự động thêm vào lịch sử xem khi user đã đăng nhập
+        if (isLoggedIn) {
+          try {
+            await historyAPI.addToHistory(id);
+            logger.info("COURSE_DETAIL", "Course added to history", {
+              courseId: id,
+            });
+          } catch (historyError) {
+            // Không hiển thị lỗi cho user vì đây là action phụ
+            logger.error(
+              "COURSE_DETAIL",
+              "Failed to add course to history",
+              historyError
+            );
+          }
+        }
       } catch (err) {
         setError("Không tìm thấy khóa học");
       } finally {
@@ -43,7 +62,7 @@ const CourseDetail = () => {
       }
     };
     fetchData();
-  }, [id]);
+  }, [id, isLoggedIn]);
 
   // Comment
   const [rating, setRating] = useState(0);

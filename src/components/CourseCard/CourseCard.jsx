@@ -9,7 +9,7 @@ import CourseContent from "./CourseContent";
 import CourseStats from "./CourseStats";
 import CourseFooter from "./CourseFooter";
 
-const CourseCard = ({ course, onViewDetails }) => {
+const CourseCard = React.memo(({ course, onViewDetails }) => {
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
   const { isLoggedIn } = useAuth();
@@ -95,6 +95,6 @@ const CourseCard = ({ course, onViewDetails }) => {
       </div>
     </div>
   );
-};
+});
 
 export default CourseCard;
