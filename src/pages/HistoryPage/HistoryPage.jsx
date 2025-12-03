@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Clock, Eye, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
-import { coursesAPI } from "../../services/api";
+import { historyAPI } from "../../services/historyAPI";
 import CourseCard from "../../components/CourseCard/CourseCard";
 import "./HistoryPage.css";
+import logger from "../../utils/logger";
 
 const HistoryPage = () => {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
 
@@ -15,32 +18,50 @@ const HistoryPage = () => {
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    totalCount: 0,
+    totalPages: 0,
+  });
 
-  // 🧠 Load toàn bộ lịch sử xem
+  // 🧠 Load toàn bộ lịch sử xem từ API
   useEffect(() => {
     const loadAllHistoryCourses = async () => {
-      if (state.viewHistory.length === 0) {
-        setAllHistoryCourses([]);
-        setFilteredCourses([]);
-        setLoading(false);
+      // ✅ Chỉ load khi user đã đăng nhập
+      if (!isLoggedIn) {
+        logger.warn("HISTORY_PAGE", "User not logged in, redirecting to home");
+        navigate("/");
         return;
       }
 
       try {
         setLoading(true);
+        logger.info("HISTORY_PAGE", "Loading history from API", {
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+        });
 
-        // ✅ Mới nhất nằm trước (vì reducer đã push ID mới lên đầu)
-        const courses = await Promise.all(
-          state.viewHistory.map((id) =>
-            coursesAPI.getCourseById(id).catch(() => null)
-          )
+        const response = await historyAPI.getHistory(
+          pagination.page,
+          pagination.pageSize
         );
 
-        const validCourses = courses.filter(Boolean);
-        setAllHistoryCourses(validCourses);
-        setFilteredCourses(validCourses);
+        setAllHistoryCourses(response.items || []);
+        setFilteredCourses(response.items || []);
+        setPagination({
+          page: response.page,
+          pageSize: response.pageSize,
+          totalCount: response.totalCount,
+          totalPages: response.totalPages,
+        });
+
+        logger.info("HISTORY_PAGE", "History loaded successfully", {
+          itemsCount: response.items?.length,
+          totalCount: response.totalCount,
+        });
       } catch (error) {
-        console.error("Error loading history:", error);
+        logger.error("HISTORY_PAGE", "Error loading history", error);
         setAllHistoryCourses([]);
         setFilteredCourses([]);
       } finally {
@@ -49,7 +70,7 @@ const HistoryPage = () => {
     };
 
     loadAllHistoryCourses();
-  }, [state.viewHistory]);
+  }, [pagination.page, isLoggedIn, navigate]);
 
   // 🔍 Bộ lọc tìm kiếm theo tên / giảng viên / danh mục
   useEffect(() => {
@@ -67,11 +88,22 @@ const HistoryPage = () => {
   }, [searchTerm, allHistoryCourses]);
 
   // 🗑 Xóa toàn bộ lịch sử
-  const clearHistory = () => {
+  const clearHistory = async () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử xem?")) {
-      localStorage.removeItem("viewHistory");
-      dispatch({ type: actionTypes.CLEAR_VIEW_HISTORY });
-      navigate("/");
+      try {
+        await historyAPI.clearHistory();
+        logger.info("HISTORY_PAGE", "History cleared successfully");
+
+        setAllHistoryCourses([]);
+        setFilteredCourses([]);
+        setPagination({ page: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
+
+        // Cập nhật context nếu cần
+        dispatch({ type: actionTypes.CLEAR_VIEW_HISTORY });
+      } catch (error) {
+        logger.error("HISTORY_PAGE", "Failed to clear history", error);
+        alert("Có lỗi xảy ra khi xóa lịch sử. Vui lòng thử lại!");
+      }
     }
   };
 
