@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Check, Pencil, X } from "lucide-react";
+import React from "react";
+import { Check, X } from "lucide-react";
 import "../CourseCard/CourseCard.css";
 import CourseStats from "../../components/CourseCard/CourseStats";
 import "./AdminCourseCard.css";
-const AdminCourseCard = ({ course, onToggleApproval, onClick }) => {
+
+const AdminCourseCard = React.memo(({ course, onToggleApproval, onClick }) => {
   const isApproved = course.isApproved ?? false;
   const isRestricted = course.isRestricted ?? false;
 
@@ -103,7 +104,7 @@ const AdminCourseCard = ({ course, onToggleApproval, onClick }) => {
                 >
                   {isApproved ? (
                     <>
-                      <Pencil className="action-icon" size={16} />
+                      <X className="action-icon" size={16} />
                       Hạn chế
                     </>
                   ) : (
@@ -120,6 +121,6 @@ const AdminCourseCard = ({ course, onToggleApproval, onClick }) => {
       </div>
     </div>
   );
-};
+});
 
 export default AdminCourseCard;
