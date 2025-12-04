@@ -83,6 +83,15 @@ export const chatAPI = {
     async getUnreadConversationOfCourse() {
         const res = await instance.get(`/chat/conversation/unread`);
         return res.data; // { count: 2 }
-    }
+    },
+
+    async getOrCreateConversation(sellerId, courseId) {
+        // Payload khớp với CreateConversationDto của BE
+        const res = await instance.post(`/chat/conversations`, {
+            sellerId: sellerId,
+            courseId: courseId
+        });
+        return res.data; // Trả về object Conversation
+    },
 
 };

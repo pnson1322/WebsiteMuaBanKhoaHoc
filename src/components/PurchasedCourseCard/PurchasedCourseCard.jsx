@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import { Eye } from "lucide-react";
 import "../CourseCard/CourseCard.css"; // Dùng lại style gốc
 import CourseStats from "../../components/CourseCard/CourseStats";
 
-const PurchasedCourseCard = ({ course, onViewDetails }) => {
+const PurchasedCourseCard = React.memo(({ course, onViewDetails }) => {
   return (
     <div className="course-card" onClick={() => onViewDetails(course)}>
       {/* Ảnh */}
@@ -48,6 +48,6 @@ const PurchasedCourseCard = ({ course, onViewDetails }) => {
       </div>
     </div>
   );
-};
+});
 
 export default PurchasedCourseCard;

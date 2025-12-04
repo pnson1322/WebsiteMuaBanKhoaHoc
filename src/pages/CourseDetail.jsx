@@ -17,8 +17,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { courseAPI } from "../services/courseAPI";
 import { reviewAPI } from "../services/reviewAPI";
+import ChatWidget from "../components/Chat/ChatWidge";
 import { historyAPI } from "../services/historyAPI";
 import logger from "../utils/logger";
+
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -478,9 +480,8 @@ const CourseDetail = () => {
                 return (
                   <span
                     key={starValue}
-                    className={`star ${
-                      starValue <= (hover || rating) ? "filled" : ""
-                    }`}
+                    className={`star ${starValue <= (hover || rating) ? "filled" : ""
+                      }`}
                     onClick={() => setRating(starValue)}
                     onMouseEnter={() => setHover(starValue)}
                     onMouseLeave={() => setHover(rating)}
@@ -570,9 +571,8 @@ const CourseDetail = () => {
                     return (
                       <span
                         key={starValue}
-                        className={`star star-comment ${
-                          starValue <= comment.rate ? "filled" : ""
-                        }`}
+                        className={`star star-comment ${starValue <= comment.rate ? "filled" : ""
+                          }`}
                       >
                         ★
                       </span>
@@ -597,11 +597,10 @@ const CourseDetail = () => {
                           return (
                             <span
                               key={starValue}
-                              className={`star ${
-                                starValue <= (hoverEdit || ratingEdit)
-                                  ? "filled"
-                                  : ""
-                              }`}
+                              className={`star ${starValue <= (hoverEdit || ratingEdit)
+                                ? "filled"
+                                : ""
+                                }`}
                               onClick={() => setRatingEdit(starValue)}
                               onMouseEnter={() => setHoverEdit(starValue)}
                               onMouseLeave={() => setHoverEdit(ratingEdit)}
@@ -653,6 +652,13 @@ const CourseDetail = () => {
           )}
         </div>
       </div>
+      {/* Chat Widget */}
+      {course && (
+        <ChatWidget
+          teacherId={course.sellerId}
+          teacherName={course.teacherName}
+          courseId={course.id}
+        />)}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, ArrowLeft, Trash2 } from "lucide-react";
 import { favoriteAPI } from "../services/favoriteAPI";
@@ -92,19 +92,22 @@ const Favorites = () => {
     };
 
     loadFavorites();
-  }, [navigate]);
+  }, [navigate, dispatch, actionTypes]);
 
   // ===========================
   //   VIEW COURSE DETAILS
   // ===========================
-  const handleViewDetails = (course) => {
-    navigate(`/course/${course.id}`);
-  };
+  const handleViewDetails = useCallback(
+    (course) => {
+      navigate(`/course/${course.id}`);
+    },
+    [navigate]
+  );
 
   // ===========================
   //   CLEAR ALL FAVORITES
   // ===========================
-  const clearAllFavorites = async () => {
+  const clearAllFavorites = useCallback(async () => {
     if (
       !window.confirm("Bạn có chắc muốn xóa tất cả khóa học yêu thích không?")
     )
@@ -119,22 +122,28 @@ const Favorites = () => {
       console.error("❌ Lỗi:", err);
       alert("Không thể xóa danh sách yêu thích.");
     }
-  };
+  }, [dispatch, actionTypes]);
 
   // ===========================
   //   REMOVE ONE COURSE
   // ===========================
-  const handleRemoveFavorite = async (courseId) => {
-    try {
-      await favoriteAPI.removeFavorite(courseId);
-      setFavoriteCourses((prev) => prev.filter((c) => c.id !== courseId));
-      // ⭐ Cập nhật AppContext
-      dispatch({ type: actionTypes.REMOVE_FROM_FAVORITES, payload: courseId });
-    } catch (err) {
-      console.error("❌ Lỗi khi xóa khóa học:", err);
-      alert("Không thể xóa khóa học khỏi yêu thích.");
-    }
-  };
+  const handleRemoveFavorite = useCallback(
+    async (courseId) => {
+      try {
+        await favoriteAPI.removeFavorite(courseId);
+        setFavoriteCourses((prev) => prev.filter((c) => c.id !== courseId));
+        // ⭐ Cập nhật AppContext
+        dispatch({
+          type: actionTypes.REMOVE_FROM_FAVORITES,
+          payload: courseId,
+        });
+      } catch (err) {
+        console.error("❌ Lỗi khi xóa khóa học:", err);
+        alert("Không thể xóa khóa học khỏi yêu thích.");
+      }
+    },
+    [dispatch, actionTypes]
+  );
 
   // ===========================
   //   LOADING UI

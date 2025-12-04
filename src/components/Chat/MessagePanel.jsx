@@ -12,39 +12,86 @@ const MessagePanel = () => {
         messages,
         sendMessage,
         loading,
-        isConnected
+        isConnected,
+        // ✅ 1. Lấy thêm props từ Context
+        typingUsers,
+        onlineUsers,
+        sendTyping
     } = useChat();
 
     const [inputMessage, setInputMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [attachments, setAttachments] = useState([]);
+
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
-    const inputRef = useRef(null); // ✅ Thêm ref cho input
+    const inputRef = useRef(null);
 
-    // Auto scroll xuống cuối khi có tin nhắn mới
+    // ✅ Ref dùng để debounce việc gửi status typing
+    const typingTimeoutRef = useRef(null);
+
+    // Auto scroll xuống cuối khi có tin nhắn mới HOẶC khi đối phương đang gõ
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages, typingUsers]);
 
-    // ✅ Auto focus input khi mở conversation
     useEffect(() => {
         if (activeConversation) {
             inputRef.current?.focus();
         }
     }, [activeConversation]);
 
+    // ✅ Hàm xử lý khi user gõ phím
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+        setInputMessage(value);
+
+        if (!activeConversation) return;
+
+        // Nếu có text -> Gửi signal typing = true
+        if (value.trim().length > 0) {
+            // Xóa timeout cũ (nếu user vẫn đang gõ liên tục)
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+
+            // Gửi signal "Đang gõ" (có thể optimize bằng cách check flag để không gửi liên tục mỗi ký tự)
+            // Tuy nhiên SignalR handle việc này khá nhẹ, gửi mỗi lần gõ cũng ok để duy trì session
+            sendTyping(activeConversation.id, true);
+
+            // Set timeout: Sau 2 giây không gõ gì thêm -> Gửi signal "Ngừng gõ"
+            typingTimeoutRef.current = setTimeout(() => {
+                sendTyping(activeConversation.id, false);
+            }, 1000);
+        } else {
+            // Nếu xóa hết text -> Gửi signal ngừng gõ ngay
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            sendTyping(activeConversation.id, false);
+        }
+    };
+
+    // ✅ Hàm xử lý khi user blur khỏi input (click ra ngoài)
+    const handleInputBlur = () => {
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        if (activeConversation) {
+            sendTyping(activeConversation.id, false);
+        }
+    };
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!inputMessage.trim() && attachments.length === 0) return;
 
+        // Xóa timeout typing khi gửi
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
         try {
             setSending(true);
             await sendMessage(activeConversation.id, inputMessage, attachments);
+
             setInputMessage('');
             setAttachments([]);
 
-            // ✅ Focus lại input sau khi gửi thành công
             setTimeout(() => {
                 inputRef.current?.focus();
             }, 0);
@@ -64,8 +111,6 @@ const MessagePanel = () => {
             const uploadPromises = files.map(file => chatAPI.uploadFile(file));
             const uploadedFiles = await Promise.all(uploadPromises);
             setAttachments(prev => [...prev, ...uploadedFiles]);
-
-            // ✅ Focus lại input sau khi upload file
             inputRef.current?.focus();
         } catch (error) {
             console.error('Error uploading files:', error);
@@ -75,7 +120,6 @@ const MessagePanel = () => {
 
     const removeAttachment = (index) => {
         setAttachments(prev => prev.filter((_, i) => i !== index));
-        // ✅ Focus lại input sau khi xóa attachment
         inputRef.current?.focus();
     };
 
@@ -100,41 +144,48 @@ const MessagePanel = () => {
     }
 
     const studentName = activeConversation.buyerName || 'Người dùng';
-    const studentAvatar =
-        activeConversation.buyerAvatar ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConversation.buyerName)}&background=random&color=fff`;
-
+    const studentAvatar = activeConversation.buyerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=random&color=fff`;
     const courseName = activeConversation.courseTitle || '';
     const sellerId = activeConversation.sellerId;
 
+    // ✅ Xác định ID của người đối diện (để check xem họ có đang gõ không)
+    // Giả sử context này dùng cho Seller, thì người đối diện là BuyerId
+    // Nếu activeConversation có trường buyerId, dùng nó:
+    const partnerId = activeConversation.buyerId;
+
+    // Kiểm tra xem người đối diện có đang gõ không
+    const isPartnerTyping = typingUsers && typingUsers[partnerId];
+    const isOnline = onlineUsers[partnerId];
+
     return (
         <div className="message-panel-content">
-            {/* Header */}
+            {/*Header */}
             <div className="message-panel-header">
                 <div className="chat-user-info">
-                    <img
-                        src={studentAvatar}
-                        alt={studentName}
-                        className="chat-avatar"
-                        onError={(e) => {
-                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConversation.buyerName)}&background=random&color=fff`;
-                        }}
-                    />
+                    {/* ✅ Bọc Avatar trong div relative để đặt chấm xanh */}
+                    <div className="avatar-wrapper" style={{ position: 'relative', display: 'inline-block' }}>
+                        <img src={studentAvatar} alt={studentName} className="chat-avatar" />
+
+                        {/* Chấm xanh trạng thái */}
+                        {isOnline && (
+                            <span
+                                className="online-dot"
+                                style={{
+                                    position: 'absolute',
+                                    bottom: '0',
+                                    right: '0',
+                                    width: '12px',
+                                    height: '12px',
+                                    backgroundColor: '#22c55e', // Màu xanh lá
+                                    borderRadius: '50%',
+                                    border: '2px solid white'
+                                }}
+                            />
+                        )}
+                    </div>
+
                     <div className="chat-user-details">
                         <h3>{studentName}</h3>
-                        <span className="user-status">
-                            {activeConversation.isOnline ? (
-                                <>
-                                    <span className="status-dot online"></span>
-                                    Đang hoạt động
-                                </>
-                            ) : (
-                                <>
-                                    <span className="status-dot offline"></span>
-                                    Không hoạt động
-                                </>
-                            )}
-                        </span>
                     </div>
                 </div>
 
@@ -161,53 +212,53 @@ const MessagePanel = () => {
                     <div className="messages-list">
                         {messages.map((message, index) => {
                             const isSeller = message.senderId === sellerId;
-                            const showAvatar = index === 0 ||
-                                messages[index - 1].senderId !== message.senderId;
+                            const showAvatar = index === 0 || messages[index - 1].senderId !== message.senderId;
 
                             return (
-                                <div
-                                    key={message.id}
-                                    className={`message-item ${isSeller ? 'sent' : 'received'}`}
-                                >
-                                    {!isSeller && showAvatar && (
-                                        <img
-                                            src={studentAvatar}
-                                            alt=""
-                                            className="message-avatar"
-                                            onError={(e) => {
-                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConversation.buyerName)}&background=random&color=fff`;
-                                            }}
-                                        />
+                                <div key={message.id} className={`message-item ${isSeller ? 'sent' : 'received'}`}>
+                                    {!isSeller && (
+                                        showAvatar ?
+                                            <img src={studentAvatar} alt="" className="message-avatar" /> :
+                                            <div className="message-avatar placeholder"></div>
                                     )}
-
                                     <div className="message-bubble">
-                                        <div className="message-content">
-                                            {message.content}
-                                        </div>
-
-                                        {message.attachments && message.attachments.length > 0 && (
+                                        <div className="message-content">{message.content}</div>
+                                        {message.attachments?.length > 0 && (
                                             <div className="message-attachments">
                                                 {message.attachments.map((att, idx) => (
                                                     <div key={idx} className="attachment-item">
-                                                        {att.type === 'image' ? (
-                                                            <img src={att.url} alt="" />
-                                                        ) : (
-                                                            <a href={att.url} target="_blank" rel="noopener noreferrer">
-                                                                📎 {att.name}
-                                                            </a>
-                                                        )}
+                                                        <a href={att.url} target="_blank" rel="noreferrer">📎 {att.name}</a>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
+                                        <div className="message-time">{formatMessageTime(message.createdAt)}</div>
 
-                                        <div className="message-time">
-                                            {formatMessageTime(message.createdAt)}
-                                        </div>
+                                        {/* Status: Đã xem / Đã gửi */}
+                                        {isSeller && (
+                                            <div className={`message-status ${message.isRead ? 'read' : ''}`}>
+                                                {message.isRead ? 'Đã xem' : 'Đã gửi'}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );
                         })}
+
+                        {/* Bong bóng typing indicator */}
+                        {isPartnerTyping && (
+                            <div className="message-item received typing-indicator-container">
+                                <img src={studentAvatar} alt="" className="message-avatar" />
+                                <div className="message-bubble typing-bubble">
+                                    <div className="typing-dots">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div ref={messagesEndRef} />
                     </div>
                 )}
@@ -215,69 +266,44 @@ const MessagePanel = () => {
 
             {/* Input */}
             <div className="message-input-container">
-                {!isConnected && (
-                    <div className="connection-warning">
-                        ⚠️ Mất kết nối. Đang thử kết nối lại...
-                    </div>
-                )}
+                {!isConnected && <div className="connection-warning">⚠️ Mất kết nối...</div>}
 
                 {attachments.length > 0 && (
                     <div className="attachments-preview">
                         {attachments.map((att, index) => (
                             <div key={index} className="attachment-preview">
                                 <span>{att.name}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => removeAttachment(index)}
-                                    className="remove-attachment"
-                                >
-                                    ×
-                                </button>
+                                <button type="button" onClick={() => removeAttachment(index)}>×</button>
                             </div>
                         ))}
                     </div>
                 )}
 
                 <form onSubmit={handleSendMessage} className="message-input-form">
-                    <button
-                        type="button"
-                        className="attach-button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={sending || !isConnected}
-                    >
+                    <input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple onChange={handleFileSelect} />
+
+                    <button type="button" className="attach-button" onClick={() => fileInputRef.current?.click()}>
                         📎
                     </button>
 
                     <input
-                        type="file"
-                        ref={fileInputRef}
-                        style={{ display: 'none' }}
-                        multiple
-                        onChange={handleFileSelect}
-                        accept="image/*,.pdf,.doc,.docx"
-                    />
-
-                    <input
-                        ref={inputRef} // ✅ Gắn ref vào input
+                        ref={inputRef}
                         type="text"
                         value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
+                        onChange={handleInputChange}
+                        onBlur={handleInputBlur}
                         placeholder="Nhập tin nhắn..."
                         disabled={sending || !isConnected}
                         className="message-input"
                     />
 
-                    <button
-                        type="submit"
-                        className="send-button"
-                        disabled={sending || !isConnected || (!inputMessage.trim() && attachments.length === 0)}
-                    >
+                    <button type="submit" className="send-button" disabled={sending || !isConnected || (!inputMessage.trim() && attachments.length === 0)}>
                         {sending ? '⏳' : '📤'}
                     </button>
                 </form>
             </div>
         </div>
     );
-};
+}
 
 export default MessagePanel;
