@@ -15,37 +15,33 @@ const Filter = () => {
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
 
-  // 🔥 Lấy categories động từ courses thực tế
+  // 🔥 Lấy categories từ API (đã được load trong AppContext)
   const categories = useMemo(() => {
-    if (!state.courses || state.courses.length === 0) {
-      console.log("⚠️ No courses available for filter");
-      return ["Tất cả"];
+    // Nếu có categories từ API, sử dụng chúng
+    if (state.categories && state.categories.length > 0) {
+      const categoryNames = state.categories.map((cat) => cat.name);
+      const categoriesArray = ["Tất cả", ...categoryNames.sort()];
+      console.log("📚 Categories from API:", categoriesArray);
+      return categoriesArray;
     }
 
-    // Debug: Log một vài course samples để kiểm tra structure
-    if (state.courses.length > 0) {
-      console.log("📝 Sample course structure:", {
-        first: state.courses[0],
-        totalCourses: state.courses.length,
+    // Fallback: Extract từ courses nếu chưa có categories từ API
+    if (state.courses && state.courses.length > 0) {
+      console.log("⚠️ Using fallback - extracting categories from courses");
+      const categorySet = new Set();
+      state.courses.forEach((course) => {
+        if (course.categoryName) {
+          categorySet.add(course.categoryName);
+        }
       });
+      const categoriesArray = ["Tất cả", ...Array.from(categorySet).sort()];
+      return categoriesArray;
     }
 
-    // Lấy tất cả categoryName từ courses
-    const categorySet = new Set();
-    state.courses.forEach((course) => {
-      if (course.categoryName) {
-        categorySet.add(course.categoryName);
-      } else {
-        console.warn("⚠️ Course without categoryName:", course);
-      }
-    });
-
-    // Convert Set sang Array và sort, thêm "Tất cả" ở đầu
-    const categoriesArray = ["Tất cả", ...Array.from(categorySet).sort()];
-
-    console.log("📚 Available categories:", categoriesArray);
-    return categoriesArray;
-  }, [state.courses]);
+    // Không có dữ liệu
+    console.log("⚠️ No categories available");
+    return ["Tất cả"];
+  }, [state.categories, state.courses]);
 
   return (
     <div className="filter-container">
