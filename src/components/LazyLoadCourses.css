@@ -1,6 +1,9 @@
 /* Lazy Load Courses Component */
 .lazy-load-courses {
   width: 100%;
+  /* Tối ưu performance khi scroll */
+  will-change: auto;
+  contain: layout style paint;
 }
 
 /* Loading Skeleton Container */
@@ -162,6 +165,12 @@
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  /* Tối ưu rendering performance */
+  will-change: auto;
+  contain: layout;
+  /* Hardware acceleration cho smooth scrolling */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 /* Error State */
@@ -179,7 +188,7 @@
   border: 2px solid #feb2b2;
 }
 
-.error-icon {
+.error-iconn {
   width: 100px;
   height: 100px;
   margin-bottom: 2rem;

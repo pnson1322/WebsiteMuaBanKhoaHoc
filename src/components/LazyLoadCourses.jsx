@@ -51,7 +51,7 @@ const LazyLoadCourses = ({ onViewDetails, CardComponent = CourseCard }) => {
     return (
       <div className="lazy-load-courses">
         <div className="error-state">
-          <div className="error-icon">
+          <div className="error-iconn">
             <svg
               width="80"
               height="80"
@@ -111,9 +111,9 @@ const LazyLoadCourses = ({ onViewDetails, CardComponent = CourseCard }) => {
               <strong>Gợi ý:</strong>
             </p>
             <ul>
-              <li>✓ Kiểm tra kết nối internet của bạn</li>
-              <li>✓ Thử tải lại trang</li>
-              <li>✓ Xóa cache trình duyệt</li>
+              <li>Kiểm tra kết nối internet của bạn</li>
+              <li>Thử tải lại trang</li>
+              <li>Xóa cache trình duyệt</li>
             </ul>
           </div>
         </div>

@@ -11,11 +11,12 @@ import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
 import SellerStatsSummary from "../../components/Seller/SellerStatsSummary";
 import { dashboardAPI } from "../../services/dashboardAPI";
 import { courseAPI } from "../../services/courseAPI";
-
+import styled from "styled-components";
 const SellerCoursesPage = () => {
   const navigate = useNavigate();
   const state = useAppState();
   const { user } = useAuth();
+  const [isHover, setIsHover] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
@@ -32,6 +33,17 @@ const SellerCoursesPage = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Memoize callbacks để tránh re-render không cần thiết
+  const handleViewDetails = React.useCallback((course) => {
+    setSelectedCourse(course);
+    setShowPopup(true);
+  }, []);
+
+  const handleClosePopup = React.useCallback(() => {
+    setShowPopup(false);
+    setSelectedCourse(null);
+  }, []);
 
   // Fetch thống kê seller
   useEffect(() => {
@@ -85,17 +97,16 @@ const SellerCoursesPage = () => {
     fetchSellerCourses();
   }, [user?.id]);
 
-  const [filtered, setFiltered] = useState([]);
-
-  // Lọc và sắp xếp khóa học
-  useEffect(() => {
+  // Lọc và sắp xếp khóa học với useMemo để tối ưu performance
+  const filtered = useMemo(() => {
     let result = [...courses];
 
     if (searchTerm.trim()) {
+      const search = searchTerm.toLowerCase();
       result = result.filter(
         (c) =>
-          (c.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (c.teacherName || "").toLowerCase().includes(searchTerm.toLowerCase())
+          (c.title || "").toLowerCase().includes(search) ||
+          (c.teacherName || "").toLowerCase().includes(search)
       );
     }
 
@@ -132,7 +143,7 @@ const SellerCoursesPage = () => {
         break;
     }
 
-    setFiltered(result);
+    return result;
   }, [
     courses,
     searchTerm,
@@ -140,16 +151,6 @@ const SellerCoursesPage = () => {
     state.selectedCategory,
     state.selectedPriceRange,
   ]);
-
-  const handleViewDetails = (course) => {
-    setSelectedCourse(course);
-    setShowPopup(true);
-  };
-
-  const handleClosePopup = () => {
-    setShowPopup(false);
-    setSelectedCourse(null);
-  };
 
   return (
     <div className="purchased-page">
@@ -207,17 +208,26 @@ const SellerCoursesPage = () => {
             {/* Thêm khóa học */}
             <button
               onClick={() => navigate("/add-new-course")}
+              onMouseEnter={() => setIsHover(true)}
+              onMouseLeave={() => setIsHover(false)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 8,
-                background: "linear-gradient(270deg, #667DE9 0%, #7258B5 100%)",
+                background: isHover
+                  ? "linear-gradient(270deg, #5b76f0 0%, #6f4cb6 100%)" // màu hover
+                  : "linear-gradient(270deg, #667DE9 0%, #7258B5 100%)",
                 color: "#fff",
                 border: 0,
                 borderRadius: 8,
                 padding: "10px 14px",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                transition: "all 0.25s ease",
+                transform: isHover ? "translateY(-2px)" : "translateY(0)",
+                boxShadow: isHover
+                  ? "0 6px 20px rgba(0,0,0,0.15)"
+                  : "0 0 0 rgba(0,0,0,0)",
               }}
             >
               <Plus size={18} /> Thêm khóa học
