@@ -32,10 +32,9 @@ const ConversationList = () => {
         raw: conv
     }));
 
-    // Search
+    // Search: Chỉ giữ lại điều kiện tìm theo studentName
     const filteredConversations = mappedConversations.filter(conv =>
-        conv.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+        conv.studentName.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     // Format thời gian
@@ -65,7 +64,7 @@ const ConversationList = () => {
             <div className="search-box">
                 <input
                     type="text"
-                    placeholder="🔍 Tìm kiếm tin nhắn..."
+                    placeholder="🔍 Tìm kiếm theo tên học viên..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -86,9 +85,22 @@ const ConversationList = () => {
                     filteredConversations.map((conversation) => (
                         <div
                             key={conversation.id}
-                            className={`conversation-item ${activeConversation?.id === conversation.id ? 'active' : ''
+                            className={`conversation-item ${
+                                // ✅ Thêm toString() để đảm bảo so sánh đúng kể cả khi id là số hay chuỗi
+                                activeConversation?.id?.toString() === conversation.id?.toString()
+                                    ? 'active'
+                                    : ''
                                 } ${conversation.unreadCount > 0 ? 'unread' : ''}`}
-                            onClick={() => selectConversation(conversation.raw)}
+
+                            // ✅ Sửa lại onClick để log ra lỗi và xử lý an toàn hơn
+                            onClick={() => {
+                                console.log("Đang chọn conversation:", conversation.raw); // Xem log này in ra gì
+                                if (conversation.raw) {
+                                    selectConversation(conversation.raw);
+                                } else {
+                                    console.error("Lỗi: Dữ liệu cuộc trò chuyện (raw) bị thiếu!");
+                                }
+                            }}
                         >
                             <div className="conversation-avatar">
                                 <img
