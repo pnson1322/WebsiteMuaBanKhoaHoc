@@ -122,19 +122,6 @@ const MessagePanel = () => {
                     />
                     <div className="chat-user-details">
                         <h3>{studentName}</h3>
-                        <span className="user-status">
-                            {activeConversation.isOnline ? (
-                                <>
-                                    <span className="status-dot online"></span>
-                                    Đang hoạt động
-                                </>
-                            ) : (
-                                <>
-                                    <span className="status-dot offline"></span>
-                                    Không hoạt động
-                                </>
-                            )}
-                        </span>
                     </div>
                 </div>
 
@@ -169,15 +156,21 @@ const MessagePanel = () => {
                                     key={message.id}
                                     className={`message-item ${isSeller ? 'sent' : 'received'}`}
                                 >
-                                    {!isSeller && showAvatar && (
-                                        <img
-                                            src={studentAvatar}
-                                            alt=""
-                                            className="message-avatar"
-                                            onError={(e) => {
-                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConversation.buyerName)}&background=random&color=fff`;
-                                            }}
-                                        />
+                                    {/* SỬA LẠI LOGIC HIỂN THỊ AVATAR */}
+                                    {!isSeller && (
+                                        showAvatar ? (
+                                            <img
+                                                src={studentAvatar}
+                                                alt=""
+                                                className="message-avatar"
+                                                onError={(e) => {
+                                                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConversation.buyerName)}&background=random&color=fff`;
+                                                }}
+                                            />
+                                        ) : (
+                                            // Render một div rỗng có class giống hệt để giữ chỗ
+                                            <div className="message-avatar placeholder"></div>
+                                        )
                                     )}
 
                                     <div className="message-bubble">
@@ -239,14 +232,6 @@ const MessagePanel = () => {
                 )}
 
                 <form onSubmit={handleSendMessage} className="message-input-form">
-                    <button
-                        type="button"
-                        className="attach-button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={sending || !isConnected}
-                    >
-                        📎
-                    </button>
 
                     <input
                         type="file"
