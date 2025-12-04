@@ -13,6 +13,8 @@ const Favorites = () => {
   const [favoriteCourses, setFavoriteCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
 
   // ===========================
   //   LOAD FAVORITES FROM API
@@ -237,16 +239,64 @@ const Favorites = () => {
             </button>
           </div>
         ) : (
-          <div className="favorites-grid">
-            {favoriteCourses.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={{ ...course, courseId: course.id }} // ⭐ thống nhất với CourseCard
-                onViewDetails={() => handleViewDetails(course)}
-                onRemoveFavorite={() => handleRemoveFavorite(course.id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="favorites-grid">
+              {favoriteCourses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={{ ...course, courseId: course.id }}
+                  onViewDetails={() => handleViewDetails(course)}
+                  onRemoveFavorite={() => handleRemoveFavorite(course.id)}
+                />
+              ))}
+            </div>
+            {favoriteCourses.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  margin: "30px 0",
+                  padding: "20px",
+                  color: "#28a745",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "50px",
+                      height: "50px",
+                      borderRadius: "50%",
+                      backgroundColor: "#d4edda",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "24px",
+                    }}
+                  >
+                    ✓
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      color: "#155724",
+                    }}
+                  >
+                    Đã hiển thị tất cả {favoriteCourses.length} khóa học yêu
+                    thích
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

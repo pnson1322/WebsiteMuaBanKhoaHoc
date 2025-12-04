@@ -6,7 +6,7 @@
 .hero-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 4rem 0;
+  padding: 1.5rem 0;
   margin-bottom: 3rem;
   margin-top: 2rem;
   border-radius: 0 0 50px 50px;
@@ -221,7 +221,3 @@
     font-size: 1.5rem;
   }
 }
-
-
-
-

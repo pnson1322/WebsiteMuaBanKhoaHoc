@@ -309,7 +309,7 @@ export const courseAPI = {
     formData.append("DurationHours", data.durationHours);
     formData.append("CategoryId", data.categoryId);
 
-    if (imageFile) {
+    if (data.imageFile) {
       formData.append("Image", data.imageFile);
     }
 

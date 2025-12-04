@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useAppState, useAppDispatch } from "../contexts/AppContext";
 import { courseAPI } from "../services/courseAPI";
 import CourseCard from "./CourseCard/CourseCard";
@@ -17,22 +17,50 @@ const LazyLoadCourses = ({ onViewDetails, CardComponent = CourseCard }) => {
 
   const { dispatch, actionTypes } = useAppDispatch();
 
-  // 🔥 Gọi API thật để lấy danh sách khóa học
-  useEffect(() => {
-    const loadCourses = async () => {
+  // Local states cho infinite scroll
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const pageSize = 9;
+  const observerTarget = useRef(null);
+  const isLoadingRef = useRef(false);
+
+  // 🔥 Gọi API thật để lấy danh sách khóa học với infinite scroll
+  const loadCourses = useCallback(
+    async (page, isLoadMore = false) => {
       try {
-        dispatch({ type: actionTypes.SET_LOADING_SUGGESTIONS, payload: true });
+        if (isLoadMore) {
+          setLoadingMore(true);
+        } else {
+          dispatch({
+            type: actionTypes.SET_LOADING_SUGGESTIONS,
+            payload: true,
+          });
+        }
 
         const data = await courseAPI.getCourses({
-          page: 1,
-          pageSize: 50,
+          page: page,
+          pageSize: pageSize,
         });
 
-        // 🟢 Lưu vào AppContext
-        dispatch({
-          type: actionTypes.SET_COURSES,
-          payload: data.items.map((c) => ({ ...c, courseId: c.id })),
-        });
+        const normalized = data.items.map((c) => ({ ...c, courseId: c.id }));
+
+        // 🟢 Lưu vào AppContext với functional update
+        if (isLoadMore) {
+          // Append courses - cần implement APPEND_COURSES action
+          dispatch({
+            type: actionTypes.APPEND_COURSES,
+            payload: normalized,
+          });
+        } else {
+          // Replace courses
+          dispatch({
+            type: actionTypes.SET_COURSES,
+            payload: normalized,
+          });
+        }
+
+        setHasMore(page < (data.totalPages || 1));
       } catch (err) {
         dispatch({
           type: actionTypes.SET_ERROR,
@@ -40,11 +68,81 @@ const LazyLoadCourses = ({ onViewDetails, CardComponent = CourseCard }) => {
         });
       } finally {
         dispatch({ type: actionTypes.SET_LOADING_SUGGESTIONS, payload: false });
+        setLoadingMore(false);
+      }
+    },
+    [dispatch, actionTypes, pageSize]
+  );
+
+  // Load lần đầu - chỉ chạy một lần khi component mount
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+    loadCourses(1, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency để chỉ chạy một lần
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
+      const scrolledToBottom = scrollTop + clientHeight >= scrollHeight - 300;
+
+      if (
+        scrolledToBottom &&
+        hasMore &&
+        !isLoadingSuggestions &&
+        !loadingMore &&
+        !isLoadingRef.current
+      ) {
+        isLoadingRef.current = true;
+        const nextPage = currentPage + 1;
+        setCurrentPage(nextPage);
+        loadCourses(nextPage, true).finally(() => {
+          isLoadingRef.current = false;
+        });
       }
     };
 
-    loadCourses();
-  }, [dispatch, actionTypes]);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [hasMore, isLoadingSuggestions, loadingMore, currentPage, loadCourses]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !isLoadingSuggestions &&
+          !loadingMore &&
+          !isLoadingRef.current
+        ) {
+          isLoadingRef.current = true;
+          const nextPage = currentPage + 1;
+          setCurrentPage(nextPage);
+          loadCourses(nextPage, true).finally(() => {
+            isLoadingRef.current = false;
+          });
+        }
+      },
+      { threshold: 0, rootMargin: "100px" }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isLoadingSuggestions, loadingMore, currentPage, loadCourses]);
 
   // LOADING
   if (error) {
@@ -175,15 +273,153 @@ const LazyLoadCourses = ({ onViewDetails, CardComponent = CourseCard }) => {
       )}
 
       {filteredCourses && filteredCourses.length > 0 ? (
-        <div className="courses-grid">
-          {filteredCourses.map((course) => (
-            <CardComponent
-              key={course.id}
-              course={course}
-              onViewDetails={onViewDetails}
-            />
-          ))}
-        </div>
+        <>
+          <div className="courses-grid">
+            {filteredCourses.map((course) => (
+              <CardComponent
+                key={course.id}
+                course={course}
+                onViewDetails={onViewDetails}
+              />
+            ))}
+          </div>
+
+          {/* Infinite scroll trigger */}
+          <div
+            ref={observerTarget}
+            style={{
+              minHeight: "120px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "30px auto",
+              gap: "12px",
+              border: hasMore ? "2px dashed #e0e0e0" : "none",
+              borderRadius: "12px",
+              padding: "25px",
+              backgroundColor: hasMore ? "#fafafa" : "transparent",
+              maxWidth: "500px",
+              transition: "all 0.3s ease",
+            }}
+          >
+            {loadingMore && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  color: "#007bff",
+                  fontSize: "15px",
+                  fontWeight: "500",
+                }}
+              >
+                <div
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    border: "3px solid #f3f3f3",
+                    borderTop: "3px solid #007bff",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                ></div>
+                Đang tải thêm khóa học...
+              </div>
+            )}
+            {!hasMore && filteredCourses.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "10px",
+                  color: "#28a745",
+                }}
+              >
+                <div
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    borderRadius: "50%",
+                    backgroundColor: "#d4edda",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "24px",
+                  }}
+                >
+                  ✓
+                </div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    color: "#155724",
+                  }}
+                >
+                  Đã hiển thị tất cả {filteredCourses.length} khóa học
+                </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "14px",
+                    color: "#6c757d",
+                  }}
+                >
+                  Bạn đã xem hết danh sách khóa học
+                </p>
+              </div>
+            )}
+            {hasMore && !loadingMore && (
+              <>
+                <p
+                  style={{
+                    color: "#6c757d",
+                    fontSize: "14px",
+                    margin: "0 0 10px 0",
+                    fontStyle: "italic",
+                  }}
+                >
+                  Scroll xuống để tải thêm hoặc
+                </p>
+                <button
+                  onClick={() => {
+                    const nextPage = currentPage + 1;
+                    setCurrentPage(nextPage);
+                    loadCourses(nextPage, true);
+                  }}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    transition: "all 0.3s ease",
+                    boxShadow: "0 2px 4px rgba(0,123,255,0.2)",
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.backgroundColor = "#0056b3";
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow = "0 4px 8px rgba(0,123,255,0.3)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.backgroundColor = "#007bff";
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 2px 4px rgba(0,123,255,0.2)";
+                  }}
+                >
+                  📚 Tải thêm khóa học
+                </button>
+              </>
+            )}
+          </div>
+        </>
       ) : (
         <div className="no-results-state">
           <div className="no-results-icon">
@@ -242,16 +478,6 @@ const LazyLoadCourses = ({ onViewDetails, CardComponent = CourseCard }) => {
             </svg>
             Xóa tất cả bộ lọc
           </button>
-        </div>
-      )}
-
-      {displayedCourses > 0 && (
-        <div className="end-of-results">
-          <p>
-            {hasActiveFilters && displayedCourses !== totalCourses
-              ? "Bạn đã xem hết tất cả khóa học phù hợp với bộ lọc hiện tại!"
-              : "Bạn đã xem hết tất cả khóa học!"}
-          </p>
         </div>
       )}
     </div>

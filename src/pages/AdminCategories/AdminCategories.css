@@ -17,6 +17,7 @@
   background: linear-gradient(95deg, #667eea 0%, #764ba2 100%);
   border-radius: 0px 0px 26px 26px;
   box-shadow: 0 20px 45px rgba(102, 126, 234, 0.3);
+  margin-top: 0rem !important;
 }
 
 .cat-wrapper .hero-content {

@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { courseAPI } from "../../services/courseAPI";
 import { useToast } from "../../contexts/ToastContext";
 
-export default function CourseDetailPopup({ onClose, course }) {
+export default function CourseDetailPopup({ onClose, course, onUpdate }) {
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
 
@@ -86,6 +86,11 @@ export default function CourseDetailPopup({ onClose, course }) {
       await courseAPI.updateCourse(course.id, formData);
 
       showSuccess("Cập nhật thành công!");
+
+      // Gọi callback để parent refresh data
+      if (onUpdate) {
+        onUpdate(course.id);
+      }
     } catch (err) {
       const message =
         err.response?.data?.message || err.message || "Có lỗi xảy ra";

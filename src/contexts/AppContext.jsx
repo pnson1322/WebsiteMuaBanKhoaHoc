@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { courseAPI } from "../services/courseAPI"; // ⭐ Dùng API thật
+import { categoryAPI } from "../services/categoryAPI"; // ⭐ API danh mục
 import { setAppDispatchContext } from "./AuthContext";
 import { cartAPI } from "../services/cartAPI";
 import { favoriteAPI } from "../services/favoriteAPI";
@@ -16,6 +17,7 @@ import { useDebounce } from "../hooks/useDebounce";
 // Initial state
 const initialState = {
   courses: [],
+  categories: [], // ⭐ Danh sách danh mục từ API
   filteredCourses: [],
   favorites: JSON.parse(localStorage.getItem("favorites")) || [],
   viewHistory: JSON.parse(localStorage.getItem("viewHistory")) || [],
@@ -31,6 +33,8 @@ const initialState = {
 // Action types
 const actionTypes = {
   SET_COURSES: "SET_COURSES",
+  SET_CATEGORIES: "SET_CATEGORIES", // ⭐ Action để set danh mục
+  APPEND_COURSES: "APPEND_COURSES",
   SET_FILTERED_COURSES: "SET_FILTERED_COURSES",
   SET_SEARCH_TERM: "SET_SEARCH_TERM",
   SET_CATEGORY: "SET_CATEGORY",
@@ -54,6 +58,12 @@ const appReducer = (state, action) => {
   switch (action.type) {
     case actionTypes.SET_COURSES:
       return { ...state, courses: action.payload };
+
+    case actionTypes.SET_CATEGORIES:
+      return { ...state, categories: action.payload };
+
+    case actionTypes.APPEND_COURSES:
+      return { ...state, courses: [...state.courses, ...action.payload] };
 
     case actionTypes.SET_FILTERED_COURSES:
       return { ...state, filteredCourses: action.payload };
@@ -351,6 +361,23 @@ export const AppProvider = ({ children }) => {
     };
 
     loadCourses();
+  }, []);
+
+  // ⭐ Load categories từ API
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        console.log("📚 Loading categories from API...");
+        const categories = await categoryAPI.getAll();
+        console.log("✅ Categories loaded:", categories);
+        dispatch({ type: actionTypes.SET_CATEGORIES, payload: categories });
+      } catch (err) {
+        console.error("❌ Lỗi load categories:", err);
+        // Nếu lỗi, vẫn để categories = [] (đã có trong initialState)
+      }
+    };
+
+    loadCategories();
   }, []);
 
   // ⭐ Auto filter với useMemo và debounced search để tránh re-render không cần thiết

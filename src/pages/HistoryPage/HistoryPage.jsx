@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Clock, Eye, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -17,45 +17,45 @@ const HistoryPage = () => {
   const [allHistoryCourses, setAllHistoryCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: 10,
-    totalCount: 0,
-    totalPages: 0,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 9;
+  const observerTarget = useRef(null);
+  const isLoadingRef = useRef(false);
 
-  // 🧠 Load toàn bộ lịch sử xem từ API
-  useEffect(() => {
-    const loadAllHistoryCourses = async () => {
-      // ✅ Chỉ load khi user đã đăng nhập
+  // 🧠 Load lịch sử xem từ API với infinite scroll
+  const loadAllHistoryCourses = useCallback(
+    async (page, isLoadMore = false) => {
       if (!isLoggedIn) {
         logger.warn("HISTORY_PAGE", "User not logged in, redirecting to home");
         navigate("/");
         return;
       }
 
-      try {
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
         setLoading(true);
+      }
+
+      try {
         logger.info("HISTORY_PAGE", "Loading history from API", {
-          page: pagination.page,
-          pageSize: pagination.pageSize,
+          page,
+          pageSize,
         });
+        const response = await historyAPI.getHistory(page, pageSize);
 
-        const response = await historyAPI.getHistory(
-          pagination.page,
-          pagination.pageSize
-        );
+        if (isLoadMore) {
+          setAllHistoryCourses((prev) => [...prev, ...(response.items || [])]);
+          setFilteredCourses((prev) => [...prev, ...(response.items || [])]);
+        } else {
+          setAllHistoryCourses(response.items || []);
+          setFilteredCourses(response.items || []);
+        }
 
-        setAllHistoryCourses(response.items || []);
-        setFilteredCourses(response.items || []);
-        setPagination({
-          page: response.page,
-          pageSize: response.pageSize,
-          totalCount: response.totalCount,
-          totalPages: response.totalPages,
-        });
-
+        setHasMore(page < (response.totalPages || 1));
         logger.info("HISTORY_PAGE", "History loaded successfully", {
           itemsCount: response.items?.length,
           totalCount: response.totalCount,
@@ -66,11 +66,79 @@ const HistoryPage = () => {
         setFilteredCourses([]);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [isLoggedIn, navigate, pageSize]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+    loadAllHistoryCourses(1, false);
+  }, [loadAllHistoryCourses]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
+      const scrolledToBottom = scrollTop + clientHeight >= scrollHeight - 300;
+
+      if (
+        scrolledToBottom &&
+        hasMore &&
+        !loading &&
+        !loadingMore &&
+        !isLoadingRef.current
+      ) {
+        isLoadingRef.current = true;
+        const nextPage = currentPage + 1;
+        setCurrentPage(nextPage);
+        loadAllHistoryCourses(nextPage, true).finally(() => {
+          isLoadingRef.current = false;
+        });
       }
     };
 
-    loadAllHistoryCourses();
-  }, [pagination.page, isLoggedIn, navigate]);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [hasMore, loading, loadingMore, currentPage, loadAllHistoryCourses]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !loading &&
+          !loadingMore &&
+          !isLoadingRef.current
+        ) {
+          isLoadingRef.current = true;
+          const nextPage = currentPage + 1;
+          setCurrentPage(nextPage);
+          loadAllHistoryCourses(nextPage, true).finally(() => {
+            isLoadingRef.current = false;
+          });
+        }
+      },
+      { threshold: 0, rootMargin: "100px" }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loading, loadingMore, currentPage, loadAllHistoryCourses]);
 
   // 🔍 Bộ lọc tìm kiếm theo tên / giảng viên / danh mục
   useEffect(() => {
@@ -96,7 +164,8 @@ const HistoryPage = () => {
 
         setAllHistoryCourses([]);
         setFilteredCourses([]);
-        setPagination({ page: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
+        setCurrentPage(1);
+        setHasMore(false);
 
         // Cập nhật context nếu cần
         dispatch({ type: actionTypes.CLEAR_VIEW_HISTORY });
@@ -221,6 +290,106 @@ const HistoryPage = () => {
                   onViewDetails={() => handleViewDetails(course)}
                 />
               ))}
+            </div>
+
+            {/* Infinite scroll trigger */}
+            <div
+              ref={observerTarget}
+              style={{
+                minHeight: "120px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "30px auto",
+                gap: "12px",
+                border: hasMore ? "2px dashed #e0e0e0" : "none",
+                borderRadius: "12px",
+                padding: "25px",
+                backgroundColor: hasMore ? "#fafafa" : "transparent",
+                maxWidth: "500px",
+              }}
+            >
+              {loadingMore && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    color: "#007bff",
+                    fontSize: "15px",
+                    fontWeight: "500",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "20px",
+                      height: "20px",
+                      border: "3px solid #f3f3f3",
+                      borderTop: "3px solid #007bff",
+                      borderRadius: "50%",
+                      animation: "spin 1s linear infinite",
+                    }}
+                  ></div>
+                  Đang tải thêm...
+                </div>
+              )}
+              {!hasMore && filteredCourses.length > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "50px",
+                      height: "50px",
+                      borderRadius: "50%",
+                      backgroundColor: "#d4edda",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "24px",
+                    }}
+                  >
+                    ✓
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      color: "#155724",
+                    }}
+                  >
+                    Đã hiển thị tất cả {filteredCourses.length} khóa học
+                  </p>
+                </div>
+              )}
+              {hasMore && !loadingMore && (
+                <button
+                  onClick={() => {
+                    const nextPage = currentPage + 1;
+                    setCurrentPage(nextPage);
+                    loadAllHistoryCourses(nextPage, true);
+                  }}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  📚 Tải thêm
+                </button>
+              )}
             </div>
           </div>
         )}
