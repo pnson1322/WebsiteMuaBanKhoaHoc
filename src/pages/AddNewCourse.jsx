@@ -1,4 +1,4 @@
-import { Image } from "lucide-react";
+import { Image, Loader2 } from "lucide-react";
 import "./AddNewCourse.css";
 import { useEffect, useState } from "react";
 import { useAppDispatch } from "../contexts/AppContext";
@@ -23,6 +23,8 @@ const AddNewCourse = () => {
   const [targetLearners, setTargetLearners] = useState([]);
   const [courseSkills, setCourseSkills] = useState([]);
   const [cate, setCate] = useState([]);
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -138,6 +140,8 @@ const AddNewCourse = () => {
         return;
       }
 
+      setLoading(true);
+
       const payload = {
         title,
         description,
@@ -165,6 +169,8 @@ const AddNewCourse = () => {
         `❌ Lỗi khi tạo khóa học: ${error.message || "Đã có lỗi xảy ra"}`
       );
       console.error("Error creating course:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -468,12 +474,30 @@ const AddNewCourse = () => {
                   type="button"
                   className="btn btn-cancel"
                   onClick={() => clearForm()}
+                  disabled={loading}
                 >
                   Hủy
                 </button>
 
-                <button type="submit" className="btn btn-primary">
-                  Tạo khóa học
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    opacity: loading ? 0.7 : 1,
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      Đang tạo...
+                    </>
+                  ) : (
+                    "Tạo khóa học"
+                  )}
                 </button>
               </div>
             </form>

@@ -33,6 +33,7 @@ const UserInfo = () => {
   const [role, setRole] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
+  const [deleteImage, setDeleteImage] = useState(false);
 
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -58,8 +59,8 @@ const UserInfo = () => {
           data.role === "Admin"
             ? "Quản lý"
             : data.role === "Buyer"
-              ? "Học viên"
-              : "Người bán"
+            ? "Học viên"
+            : "Người bán"
         );
 
         setAvatarPreview(data.avatarUrl || data.image || null);
@@ -87,6 +88,7 @@ const UserInfo = () => {
 
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
+    setDeleteImage(false);
   };
 
   const handleRemoveAvatar = () => {
@@ -94,6 +96,7 @@ const UserInfo = () => {
 
     setAvatarPreview(null);
     setAvatarFile(null);
+    setDeleteImage(true);
   };
 
   // Cleanup blob URLs when component unmounts
@@ -165,7 +168,7 @@ const UserInfo = () => {
     } catch (err) {
       showError(
         err.response?.data?.message ||
-        "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại"
+          "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại"
       );
     } finally {
       setIsChangingPassword(false);
@@ -381,7 +384,6 @@ const UserInfo = () => {
                 {showNewPassword ? <EyeOff /> : <Eye />}
               </button>
             </div>
-
 
             <PasswordStrengthBar password={newPassword} />
 

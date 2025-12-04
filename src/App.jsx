@@ -28,6 +28,7 @@ import AdminCategories from "./pages/AdminCategories/AdminCategories";
 import AdminUsersPage from "./pages/AdminUsersPage/AdminUsersPage";
 import SellerChat from "./pages/Chat/SellerChat";
 import PaymentResult from "./pages/PaymentResult";
+import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
       <AppProvider>
         <ToastProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Layout />}>
                 {/* Trang chủ */}

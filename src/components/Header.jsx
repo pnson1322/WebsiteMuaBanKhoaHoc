@@ -17,6 +17,7 @@ import {
   Server,
   Users,
   BellRing,
+  MessageCircle,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import NotificationPopup from "./NotificationPopup";
@@ -125,6 +126,10 @@ const Header = ({ onOpenLoginPopup }) => {
     navigate("/register");
   }
 
+  function handleChatClick() {
+    navigate("/seller-chat");
+  }
+
   // ============ NOTIFICATION STATE ============
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -226,7 +231,6 @@ const Header = ({ onOpenLoginPopup }) => {
         if (!isMounted) return;
 
         setIsSignalRConnected(true);
-
       } catch (error) {
         console.error("❌ Error initializing SignalR:", error);
         setIsSignalRConnected(false);
@@ -249,7 +253,10 @@ const Header = ({ onOpenLoginPopup }) => {
         console.log("📊 Unread count:", unreadCountAPI);
 
         if (!Array.isArray(notificationList)) {
-          console.error("❌ Notification list is not an array:", notificationList);
+          console.error(
+            "❌ Notification list is not an array:",
+            notificationList
+          );
           setNotifications([]);
           setUnreadCount(0);
           return;
@@ -267,13 +274,15 @@ const Header = ({ onOpenLoginPopup }) => {
 
         setNotifications(formattedNotifications);
         setUnreadCount(unreadCountAPI || 0);
-
       } catch (err) {
         console.error("❌ Error fetching notifications:", err);
         console.error("Error details:", err.response?.data || err.message);
 
         if (isMounted) {
-          showError("Không thể tải thông báo: " + (err.response?.data?.message || err.message));
+          showError(
+            "Không thể tải thông báo: " +
+              (err.response?.data?.message || err.message)
+          );
         }
       }
     };
@@ -501,12 +510,12 @@ const Header = ({ onOpenLoginPopup }) => {
     };
   }, []);
 
-  const handleSuggestionClick = (suggestionTitle) => {
+  const handleSuggestionClick = (suggestionTitle, suggestionId) => {
     dispatch({ type: actionTypes.SET_SEARCH_TERM, payload: suggestionTitle });
 
     setIsDropdownVisible(false);
 
-    navigate(`/?search=${encodeURIComponent(suggestionTitle)}`);
+    navigate(`/course/${suggestionId}`);
   };
 
   return (
@@ -544,7 +553,9 @@ const Header = ({ onOpenLoginPopup }) => {
               {suggestions.map((suggestion) => (
                 <li
                   key={suggestion.id}
-                  onMouseDown={() => handleSuggestionClick(suggestion.title)}
+                  onMouseDown={() =>
+                    handleSuggestionClick(suggestion.title, suggestion.id)
+                  }
                   className="suggestion-item"
                 >
                   <span className="suggestion-name">{suggestion.title}</span>
@@ -618,6 +629,19 @@ const Header = ({ onOpenLoginPopup }) => {
               >
                 <List className="nav-icon" />
                 <span className="nav-label">Khóa học</span>
+              </button>
+
+              {/* Chat */}
+              <button
+                className="nav-button"
+                onClick={handleChatClick}
+                title="Tin nhắn"
+              >
+                <MessageCircle className="nav-icon" />
+                {state.favorites?.length > 0 && (
+                  <span className="badge">{state.favorites.length}</span>
+                )}
+                <span className="nav-label">Tin nhắn</span>
               </button>
 
               {/* Notification - ✅ CẢI THIỆN */}
