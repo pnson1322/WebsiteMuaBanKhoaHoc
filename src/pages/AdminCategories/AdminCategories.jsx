@@ -111,11 +111,6 @@ const AdminCategories = () => {
 
   return (
     <div className="cat-wrapper">
-      <SellerStatsHeader
-        title="📚 Quản lý danh mục"
-        subtitle="Thêm, chỉnh sửa và xóa các danh mục khóa học"
-      />
-
       <div className="cat-content">
         <CategoryForm
           newCategory={newCategory}

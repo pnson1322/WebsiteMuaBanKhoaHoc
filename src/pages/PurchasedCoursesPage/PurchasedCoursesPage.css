@@ -10,6 +10,7 @@
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 2rem;
+  padding-top: 2rem;
 }
 
 .purchased-header h1 {

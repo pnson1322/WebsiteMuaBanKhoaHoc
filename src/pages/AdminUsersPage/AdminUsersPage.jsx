@@ -611,11 +611,6 @@ const AdminUsersPage = () => {
 
   return (
     <div className="admin-users-wrapper">
-      <SellerStatsHeader
-        title="🛡️ Quản lý Người dùng"
-        subtitle="Quản lý tất cả người dùng trong hệ thống"
-      />
-
       <div className="admin-users-content">
         <UsersStats stats={stats} />
 

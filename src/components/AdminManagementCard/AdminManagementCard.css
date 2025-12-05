@@ -1,0 +1,135 @@
+.admin-management-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid transparent;
+  min-height: 140px;
+}
+
+.admin-management-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: rgba(114, 88, 181, 0.2);
+}
+
+.admin-card-content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.admin-card-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.admin-management-card:hover .admin-card-icon-wrapper {
+  transform: scale(1.1);
+}
+
+.admin-card-icon {
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-card-text {
+  flex: 1;
+}
+
+.admin-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.admin-card-description {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.admin-card-arrow {
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+  opacity: 0.6;
+}
+
+.admin-management-card:hover .admin-card-arrow {
+  transform: translateX(4px);
+  opacity: 1;
+}
+
+/* Grid layout for cards */
+.admin-management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .admin-management-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-management-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-management-card {
+    padding: 1.5rem;
+    min-height: 120px;
+  }
+
+  .admin-card-icon-wrapper {
+    width: 56px;
+    height: 56px;
+  }
+
+  .admin-card-title {
+    font-size: 1.1rem;
+  }
+
+  .admin-card-description {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-management-card {
+    padding: 1.25rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .admin-card-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .admin-card-arrow {
+    align-self: flex-end;
+  }
+}

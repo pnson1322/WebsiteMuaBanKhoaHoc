@@ -6,6 +6,10 @@ import {
   Clock,
   UserRound,
   UsersRound,
+  GraduationCap,
+  Receipt,
+  FolderTree,
+  Users,
 } from "lucide-react";
 import "./AdminHomePage.css";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +21,7 @@ import CoursesSection from "./CoursesSection";
 import Filter from "../../components/Filter/Filter";
 import PurchasedCourseCard from "../../components/PurchasedCourseCard/PurchasedCourseCard";
 import { useAppDispatch } from "../../contexts/AppContext";
+import AdminManagementCard from "../../components/AdminManagementCard/AdminManagementCard";
 
 function useElementWidth(initialWidth = 500) {
   const ref = useRef(null);
@@ -184,6 +189,38 @@ export default function AdminHomePage() {
     }).format(price);
   };
 
+  const managementCards = [
+    {
+      icon: <GraduationCap size={32} />,
+      title: "📚 Quản lý khóa học",
+      description: "Duyệt và quản lý tất cả khóa học trên nền tảng của bạn",
+      route: "/admin-courses",
+      color: { main: "#2563eb", light: "#dbeafe" },
+    },
+    {
+      icon: <Receipt size={32} />,
+      title: "📚 Quản lý giao dịch",
+      description:
+        "Theo dõi và xem chi tiết tất cả các giao dịch trên hệ thống",
+      route: "/transactions",
+      color: { main: "#16a34a", light: "#dcfce7" },
+    },
+    {
+      icon: <FolderTree size={32} />,
+      title: "📚 Quản lý danh mục",
+      description: "Thêm, chỉnh sửa và xóa các danh mục khóa học",
+      route: "/admin-categories",
+      color: { main: "#ca8a04", light: "#fef9c3" },
+    },
+    {
+      icon: <Users size={32} />,
+      title: "Quản lý Người dùng",
+      description: "Quản lý tất cả người dùng trong hệ thống",
+      route: "/admin-users",
+      color: { main: "#7258b5", light: "#ede9fe" },
+    },
+  ];
+
   return (
     <>
       <section className="hero-section">
@@ -195,6 +232,12 @@ export default function AdminHomePage() {
           </p>
         </div>
       </section>
+
+      <div className="admin-management-grid">
+        {managementCards.map((card, index) => (
+          <AdminManagementCard key={index} {...card} />
+        ))}
+      </div>
 
       <div className="text-chart admin-text-chart">
         <div className="text-chart-item">
