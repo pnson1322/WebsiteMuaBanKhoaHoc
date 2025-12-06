@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   // ✅ THÊM: State để lưu token, giúp React re-render khi token thay đổi
-  const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken"));
+  const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
       );
 
       try {
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
         const loggedIn = localStorage.getItem("isLoggedIn") === "true";
         const currentUser = localStorage.getItem("currentUser");
 
@@ -140,6 +140,7 @@ export const AuthProvider = ({ children }) => {
 
     if (tokens?.accessToken) {
       localStorage.setItem("accessToken", tokens.accessToken);
+      localStorage.setItem("token", tokens.accessToken); // Backward compatibility
       setAccessToken(tokens.accessToken); // ✅ Cập nhật state token
     }
     if (tokens?.refreshToken) {
@@ -222,7 +223,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("currentUser", JSON.stringify(userData));
 
       // Đảm bảo accessToken state đồng bộ với localStorage (phòng hờ)
-      const currentToken = localStorage.getItem("accessToken");
+      const currentToken = localStorage.getItem("accessToken") || localStorage.getItem("token");
       if (currentToken !== accessToken) {
         setAccessToken(currentToken);
       }

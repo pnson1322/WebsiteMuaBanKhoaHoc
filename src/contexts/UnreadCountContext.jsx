@@ -23,6 +23,7 @@ export const UnreadCountProvider = ({ children, userId, authToken }) => {
 
     // 2. Kết nối SignalR (Chỉ để nghe Notification)
     useEffect(() => {
+        console.log("useEffect UnreadCountContext:", { userId, authToken });
         if (!userId || !authToken) return;
 
         const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5230';
@@ -42,7 +43,7 @@ export const UnreadCountProvider = ({ children, userId, authToken }) => {
         const startConnection = async () => {
             try {
                 await connection.start();
-                // console.log("🟢 UnreadCount Socket Connected");
+                console.log("🟢 UnreadCount Socket Connected");
 
                 // Load lần đầu khi kết nối thành công
                 fetchUnreadCount();

@@ -1,57 +1,32 @@
-// src/components/chat/ConversationList.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { useChat } from '../../contexts/ChatContext';
-// 1. ✅ IMPORT CONTEXT ĐẾM SỐ
+// Import Context đếm số (Logic từ Code A)
 import { useUnreadCount } from '../../contexts/UnreadCountContext';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import ConversationItem from './ConversationItem'; // Component con (Logic từ Code B)
 import './ConversationList.css';
 
 const ConversationList = () => {
+    // 1. Lấy dữ liệu từ ChatContext (Bao gồm cả logic phân trang từ Code A)
     const {
         conversations,
         activeConversation,
         selectConversation,
         loading,
-        unreadConversationCount,
+        unreadConversationCount, // Lấy tên biến từ Code A cho chính xác
         loadMoreConversations,
         hasMore
     } = useChat();
 
-    // 2. ✅ LẤY HÀM REFRESH TỪ CONTEXT
+    // 2. Lấy hàm refresh header (Logic từ Code A)
     const { refreshUnreadCount } = useUnreadCount();
 
     const [searchQuery, setSearchQuery] = useState('');
-    const listRef = useRef(null);
+    const listRef = useRef(null); // Ref để xử lý scroll (Code A)
 
-    const safeConversations = Array.isArray(conversations) ? conversations : [];
-
-    const mappedConversations = safeConversations.map(conv => ({
-        id: conv.id,
-        studentName: conv.buyerName || 'Người dùng',
-        studentAvatar: conv.buyerAvatar || '',
-        courseName: conv.courseTitle || '',
-        lastMessage: conv.lastMessage?.content || 'Chưa có tin nhắn',
-        lastMessageTime: conv.lastMessage?.createdAt || conv.lastMessageAt,
-        unreadCount: conv.unreadCount || 0,
-        isOnline: false,
-        raw: conv
-    }));
-
-    const filteredConversations = mappedConversations.filter(conv =>
-        conv.studentName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const handleScroll = () => {
-        if (listRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-            if (scrollTop + clientHeight >= scrollHeight - 5 && !loading && hasMore) {
-                loadMoreConversations();
-            }
-        }
-    };
-
-    const formatTime = (dateString) => {
+    // 3. Format thời gian (Tối ưu bằng useCallback)
+    const formatTime = useCallback((dateString) => {
         if (!dateString) return '';
         try {
             return formatDistanceToNow(new Date(dateString), {
@@ -61,58 +36,85 @@ const ConversationList = () => {
         } catch {
             return '';
         }
+    }, []);
+
+    // 4. Map dữ liệu (Tối ưu bằng useMemo)
+    const mappedConversations = useMemo(() => {
+        const safeConversations = Array.isArray(conversations) ? conversations : [];
+
+        return safeConversations.map((conv) => ({
+            id: conv.id,
+            studentName: conv.buyerName || 'Người dùng',
+            studentAvatar: conv.buyerAvatar || '',
+            courseName: conv.courseTitle || '',
+            lastMessage: conv.lastMessage?.content || 'Chưa có tin nhắn',
+            lastMessageTime: conv.lastMessage?.createdAt || conv.lastMessageAt,
+            formattedTime: formatTime(conv.lastMessage?.createdAt || conv.lastMessageAt),
+            unreadCount: conv.unreadCount || 0,
+            isOnline: false,
+            raw: conv // Giữ lại object gốc để xử lý click
+        }));
+    }, [conversations, formatTime]);
+
+    // 5. Lọc tìm kiếm
+    const filteredConversations = useMemo(() => {
+        return mappedConversations.filter((conv) =>
+            conv.studentName.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [mappedConversations, searchQuery]);
+
+    // 6. Xử lý Scroll để phân trang (Logic quan trọng từ Code A)
+    const handleScroll = () => {
+        if (listRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+            // Nếu cuộn gần xuống đáy (còn 5px) và chưa loading + còn dữ liệu
+            if (scrollTop + clientHeight >= scrollHeight - 5 && !loading && hasMore) {
+                loadMoreConversations();
+            }
+        }
     };
 
-    // 3. ✅ HÀM XỬ LÝ KHI CLICK VÀO CUỘC TRÒ CHUYỆN
-    const handleConversationClick = (conversation) => {
-        console.log("Đang chọn conversation:", conversation.raw);
+    // 7. Xử lý chọn hội thoại (Logic update Header từ Code A + Logic select từ Code B)
+    const handleSelect = useCallback((rawConv) => {
+        if (rawConv) {
+            // A. Gọi hàm của ChatContext để load tin nhắn
+            selectConversation(rawConv);
 
-        if (conversation.raw) {
-            // A. Gọi hàm của ChatContext để load tin nhắn và join room
-            selectConversation(conversation.raw);
-
-            // B. Kích hoạt cập nhật lại số trên Header
-            // Tại sao cần setTimeout? 
-            // Vì selectConversation sẽ gọi API MarkAsRead. Chúng ta cần đợi API đó chạy xong
-            // ở Server thì mới gọi refreshUnreadCount để lấy số chính xác (số đã giảm).
-            // 500ms - 1000ms là khoảng thời gian an toàn.
+            // B. Hack setTimeout để cập nhật lại số trên Header sau khi API đánh dấu đã đọc chạy xong
             setTimeout(() => {
                 refreshUnreadCount();
                 console.log("🔄 Đã yêu cầu Header cập nhật lại số lượng!");
             }, 1000);
-        } else {
-            console.error("Lỗi: Dữ liệu cuộc trò chuyện (raw) bị thiếu!");
         }
-    };
+    }, [selectConversation, refreshUnreadCount]);
 
     return (
-        <div className="conversation-list">
-            <div className="conversation-list-header">
-                <h2>
+        <div className="chat-panel conversation-panel">
+            {/* Header: Class name theo Code B */}
+            <div className="panel-header">
+                <h2 className="header-title">
                     Tin nhắn
                     {unreadConversationCount > 0 && (
-                        <span className="unread-badge">{unreadConversationCount}</span>
+                        <span className="main-badge">{unreadConversationCount}</span>
                     )}
                 </h2>
+                <div className="search-wrapper">
+                    <span className="search-icon">🔍</span>
+                    <input
+                        type="text"
+                        placeholder="Tìm học viên..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
             </div>
 
-            <div className="search-box">
-                <input
-                    type="text"
-                    placeholder="🔍 Tìm kiếm theo tên học viên..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-            </div>
-
-            <div className="conversation-items"
+            {/* List Items: Class name Code B nhưng thêm ref và onScroll của Code A */}
+            <div
+                className="conversation-items scrollable-content"
                 ref={listRef}
                 onScroll={handleScroll}
-                style={{
-                    overflowY: 'auto',
-                    flex: 1,
-                    height: 'calc(100vh - 160px)'
-                }}>
+            >
                 {loading && mappedConversations.length === 0 ? (
                     <div className="loading-state">
                         <div className="spinner"></div>
@@ -120,68 +122,29 @@ const ConversationList = () => {
                     </div>
                 ) : filteredConversations.length === 0 ? (
                     <div className="empty-state">
-                        <div className="empty-icon">💬</div>
-                        <p>Chưa có tin nhắn nào</p>
+                        <div className="empty-img">📭</div>
+                        <h3>Chưa có tin nhắn</h3>
+                        <p>Hộp thư của bạn hiện đang trống hoặc không tìm thấy kết quả.</p>
                     </div>
                 ) : (
+                    // Render danh sách sử dụng ConversationItem
                     filteredConversations.map((conversation) => (
-                        <div
+                        <ConversationItem
                             key={conversation.id}
-                            className={`conversation-item ${activeConversation?.id?.toString() === conversation.id?.toString()
-                                    ? 'active'
-                                    : ''
-                                } ${conversation.unreadCount > 0 ? 'unread' : ''}`}
-
-                            // 4. ✅ GỌI HÀM XỬ LÝ MỚI
-                            onClick={() => handleConversationClick(conversation)}
-                        >
-                            <div className="conversation-avatar">
-                                <img
-                                    src={conversation.studentAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conversation.studentName)}&background=random&color=fff`}
-                                    alt={conversation.studentName}
-                                    onError={(e) => {
-                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(conversation.studentName)}&background=random&color=fff`;
-                                    }}
-                                />
-                                {conversation.isOnline && (
-                                    <span className="online-indicator"></span>
-                                )}
-                            </div>
-
-                            <div className="conversation-content">
-                                <div className="conversation-header">
-                                    <h3 className="conversation-name">
-                                        {conversation.studentName}
-                                    </h3>
-                                    <span className="conversation-time">
-                                        {formatTime(conversation.lastMessageTime)}
-                                    </span>
-                                </div>
-
-                                <div className="conversation-footer">
-                                    <p className="conversation-last-message">
-                                        {conversation.lastMessage}
-                                    </p>
-                                    {conversation.unreadCount > 0 && (
-                                        <span className="message-badge">
-                                            {conversation.unreadCount}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {conversation.courseName && (
-                                    <div className="conversation-course">
-                                        <span className="course-tag">
-                                            📚 {conversation.courseName}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                            conversation={conversation}
+                            isActive={
+                                activeConversation?.id?.toString() === conversation.id?.toString()
+                            }
+                            onSelect={handleSelect} // Truyền hàm handleSelect đã gộp logic
+                        />
                     ))
                 )}
+
+                {/* Phần hiển thị loading khi cuộn xuống dưới (Logic Code A) */}
                 {loading && conversations.length > 0 && (
-                    <div className="loading-more">Đang tải thêm...</div>
+                    <div className="loading-more">
+                        <div className="spinner-small"></div>
+                    </div>
                 )}
             </div>
         </div>

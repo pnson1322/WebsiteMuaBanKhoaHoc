@@ -1,309 +1,298 @@
-// src/components/chat/MessagePanel.jsx
-import React, { useState, useRef, useEffect } from 'react';
-import { useChat } from '../../contexts/ChatContext';
-import { chatAPI } from '../../services/chatAPI';
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import './MessagePanel.css';
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useChat } from "../../contexts/ChatContext";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import "./MessagePanel.css";
 
 const MessagePanel = () => {
-    const {
-        activeConversation,
-        messages,
-        sendMessage,
-        loading,
-        isConnected,
-        // ✅ 1. Lấy thêm props từ Context
-        typingUsers,
-        onlineUsers,
-        sendTyping
-    } = useChat();
+  const {
+    activeConversation,
+    messages,
+    sendMessage,
+    loading, // Loading ban đầu (toàn màn hình)
+    isConnected,
+    typingUsers,
+    onlineUsers,
+    sendTyping,
 
-    const [inputMessage, setInputMessage] = useState('');
-    const [sending, setSending] = useState(false);
-    const [attachments, setAttachments] = useState([]);
+    // ✅ 1. IMPORT CÁC HÀM PHÂN TRANG
+    loadOldMessages,
+    hasMoreMessages,
+    isMessageLoading, // Loading khi tải tin cũ
+  } = useChat();
 
-    const messagesEndRef = useRef(null);
-    const fileInputRef = useRef(null);
-    const inputRef = useRef(null);
+  const [inputMessage, setInputMessage] = useState("");
+  const [sending, setSending] = useState(false);
 
-    // ✅ Ref dùng để debounce việc gửi status typing
-    const typingTimeoutRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
-    // Auto scroll xuống cuối khi có tin nhắn mới HOẶC khi đối phương đang gõ
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, typingUsers]);
+  // ✅ 2. THÊM REF ĐỂ TÍNH TOÁN CUỘN
+  const listContainerRef = useRef(null);
+  const prevScrollHeightRef = useRef(null);
 
-    useEffect(() => {
-        if (activeConversation) {
-            inputRef.current?.focus();
-        }
-    }, [activeConversation]);
+  // --- LOGIC CUỘN XUỐNG ĐÁY (SCROLL TO BOTTOM) ---
+  const scrollToBottom = (smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  };
 
-    // ✅ Hàm xử lý khi user gõ phím
-    const handleInputChange = (e) => {
-        const value = e.target.value;
-        setInputMessage(value);
+  // Chỉ cuộn xuống đáy khi: Mới vào chat HOẶC Có người gõ HOẶC Gửi tin mới
+  // ⚠️ QUAN TRỌNG: Không cuộn khi đang load tin cũ (isMessageLoading)
+  useEffect(() => {
+    if (!isMessageLoading) {
+      scrollToBottom();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConversation, typingUsers]); // Bỏ 'messages' ra khỏi đây để tránh xung đột
 
-        if (!activeConversation) return;
+  // ✅ ĐOẠN CODE MỚI: CHỈ CUỘN KHI TIN CUỐI CÙNG THAY ĐỔI
+  const lastMessageIdRef = useRef(null); // Thêm ref này để lưu ID tin cuối cùng
 
-        // Nếu có text -> Gửi signal typing = true
-        if (value.trim().length > 0) {
-            // Xóa timeout cũ (nếu user vẫn đang gõ liên tục)
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
+  useEffect(() => {
+    if (messages.length === 0) return;
 
-            // Gửi signal "Đang gõ" (có thể optimize bằng cách check flag để không gửi liên tục mỗi ký tự)
-            // Tuy nhiên SignalR handle việc này khá nhẹ, gửi mỗi lần gõ cũng ok để duy trì session
-            sendTyping(activeConversation.id, true);
+    // Lấy tin nhắn cuối cùng hiện tại
+    const lastMessage = messages[messages.length - 1];
+    const prevLastMessageId = lastMessageIdRef.current;
 
-            // Set timeout: Sau 2 giây không gõ gì thêm -> Gửi signal "Ngừng gõ"
-            typingTimeoutRef.current = setTimeout(() => {
-                sendTyping(activeConversation.id, false);
-            }, 1000);
-        } else {
-            // Nếu xóa hết text -> Gửi signal ngừng gõ ngay
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-            sendTyping(activeConversation.id, false);
-        }
-    };
+    // Cập nhật ref để dùng cho lần sau
+    lastMessageIdRef.current = lastMessage.id;
 
-    // ✅ Hàm xử lý khi user blur khỏi input (click ra ngoài)
-    const handleInputBlur = () => {
-        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-        if (activeConversation) {
-            sendTyping(activeConversation.id, false);
-        }
-    };
-
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!inputMessage.trim() && attachments.length === 0) return;
-
-        // Xóa timeout typing khi gửi
-        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-        try {
-            setSending(true);
-            await sendMessage(activeConversation.id, inputMessage, attachments);
-
-            setInputMessage('');
-            setAttachments([]);
-
-            setTimeout(() => {
-                inputRef.current?.focus();
-            }, 0);
-        } catch (error) {
-            console.error('Error sending message:', error);
-            alert('Không thể gửi tin nhắn. Vui lòng thử lại!');
-        } finally {
-            setSending(false);
-        }
-    };
-
-    const handleFileSelect = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
-
-        try {
-            const uploadPromises = files.map(file => chatAPI.uploadFile(file));
-            const uploadedFiles = await Promise.all(uploadPromises);
-            setAttachments(prev => [...prev, ...uploadedFiles]);
-            inputRef.current?.focus();
-        } catch (error) {
-            console.error('Error uploading files:', error);
-            alert('Không thể tải file lên. Vui lòng thử lại!');
-        }
-    };
-
-    const removeAttachment = (index) => {
-        setAttachments(prev => prev.filter((_, i) => i !== index));
-        inputRef.current?.focus();
-    };
-
-    const formatMessageTime = (dateString) => {
-        try {
-            return format(new Date(dateString), 'HH:mm, dd/MM/yyyy', { locale: vi });
-        } catch {
-            return '';
-        }
-    };
-
-    if (!activeConversation) {
-        return (
-            <div className="message-panel-empty">
-                <div className="empty-state-large">
-                    <div className="empty-icon">💬</div>
-                    <h2>Chọn một cuộc trò chuyện</h2>
-                    <p>Chọn một tin nhắn từ danh sách bên trái để bắt đầu trò chuyện</p>
-                </div>
-            </div>
-        );
+    // LOGIC QUYẾT ĐỊNH CUỘN:
+    // 1. Nếu chưa có prevId (lần đầu load) -> Cuộn.
+    // 2. Nếu ID tin cuối khác ID tin cuối trước đó -> Có tin mới ở đáy -> Cuộn.
+    // 3. (Trường hợp load tin cũ: ID tin cuối KHÔNG đổi -> Không làm gì cả).
+    if (!prevLastMessageId || lastMessage.id !== prevLastMessageId) {
+      scrollToBottom();
     }
 
-    const studentName = activeConversation.buyerName || 'Người dùng';
-    const studentAvatar = activeConversation.buyerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=random&color=fff`;
-    const courseName = activeConversation.courseTitle || '';
-    const sellerId = activeConversation.sellerId;
+  }, [messages]); // Dependency là messages
 
-    // ✅ Xác định ID của người đối diện (để check xem họ có đang gõ không)
-    // Giả sử context này dùng cho Seller, thì người đối diện là BuyerId
-    // Nếu activeConversation có trường buyerId, dùng nó:
-    const partnerId = activeConversation.buyerId;
 
-    // Kiểm tra xem người đối diện có đang gõ không
-    const isPartnerTyping = typingUsers && typingUsers[partnerId];
-    const isOnline = onlineUsers[partnerId];
+  // --- LOGIC LOAD TIN CŨ & GIỮ VỊ TRÍ (SCROLL RESTORATION) ---
 
+  // Sự kiện cuộn
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight } = e.target;
+
+    // Nếu cuộn lên đỉnh (0px) và còn tin cũ và không đang load
+    if (scrollTop === 0 && hasMoreMessages && !isMessageLoading) {
+      // Lưu chiều cao hiện tại trước khi load thêm
+      prevScrollHeightRef.current = scrollHeight;
+      // Gọi API tải thêm
+      loadOldMessages();
+    }
+  };
+
+  // Dùng useLayoutEffect để chỉnh lại thanh cuộn NGAY SAU khi DOM cập nhật
+  useLayoutEffect(() => {
+    // Nếu vừa load xong tin cũ (isMessageLoading chuyển từ true -> false)
+    // Và có lưu chiều cao cũ
+    if (!isMessageLoading && prevScrollHeightRef.current && listContainerRef.current) {
+      const newScrollHeight = listContainerRef.current.scrollHeight;
+      const heightDifference = newScrollHeight - prevScrollHeightRef.current;
+
+      // Đẩy thanh cuộn xuống một đoạn đúng bằng chiều cao đống tin nhắn mới thêm vào
+      listContainerRef.current.scrollTop = heightDifference;
+
+      // Reset
+      prevScrollHeightRef.current = null;
+    }
+  }, [messages, isMessageLoading]);
+
+
+  // --- LOGIC INPUT & GUI TIN (GIỮ NGUYÊN) ---
+  useEffect(() => {
+    if (activeConversation) {
+      inputRef.current?.focus();
+    }
+  }, [activeConversation]);
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInputMessage(value);
+    if (!activeConversation) return;
+
+    if (value.trim().length > 0) {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      sendTyping(activeConversation.id, true);
+      typingTimeoutRef.current = setTimeout(() => sendTyping(activeConversation.id, false), 1500);
+    } else {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      sendTyping(activeConversation.id, false);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!inputMessage.trim()) return;
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+    try {
+      setSending(true);
+      await sendMessage(activeConversation.id, inputMessage, []);
+      setInputMessage("");
+      setTimeout(() => inputRef.current?.focus(), 0);
+      setTimeout(() => scrollToBottom(), 100);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const formatMessageTime = (dateString) => {
+    try {
+      return format(new Date(dateString), "HH:mm", { locale: vi });
+    } catch { return ""; }
+  };
+
+  if (!activeConversation) {
     return (
-        <div className="message-panel-content">
-            {/*Header */}
-            <div className="message-panel-header">
-                <div className="chat-user-info">
-                    {/* ✅ Bọc Avatar trong div relative để đặt chấm xanh */}
-                    <div className="avatar-wrapper" style={{ position: 'relative', display: 'inline-block' }}>
-                        <img src={studentAvatar} alt={studentName} className="chat-avatar" />
-
-                        {/* Chấm xanh trạng thái */}
-                        {isOnline && (
-                            <span
-                                className="online-dot"
-                                style={{
-                                    position: 'absolute',
-                                    bottom: '0',
-                                    right: '0',
-                                    width: '12px',
-                                    height: '12px',
-                                    backgroundColor: '#22c55e', // Màu xanh lá
-                                    borderRadius: '50%',
-                                    border: '2px solid white'
-                                }}
-                            />
-                        )}
-                    </div>
-
-                    <div className="chat-user-details">
-                        <h3>{studentName}</h3>
-                    </div>
-                </div>
-
-                {courseName && (
-                    <div className="active-course-info">
-                        <span className="course-label">Khóa học:</span>
-                        <span className="course-name">{courseName}</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Messages */}
-            <div className="messages-container">
-                {loading && messages.length === 0 ? (
-                    <div className="messages-loading">
-                        <div className="spinner"></div>
-                        <p>Đang tải tin nhắn...</p>
-                    </div>
-                ) : messages.length === 0 ? (
-                    <div className="messages-empty">
-                        <p>Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</p>
-                    </div>
-                ) : (
-                    <div className="messages-list">
-                        {messages.map((message, index) => {
-                            const isSeller = message.senderId === sellerId;
-                            const showAvatar = index === 0 || messages[index - 1].senderId !== message.senderId;
-
-                            return (
-                                <div key={message.id} className={`message-item ${isSeller ? 'sent' : 'received'}`}>
-                                    {!isSeller && (
-                                        showAvatar ?
-                                            <img src={studentAvatar} alt="" className="message-avatar" /> :
-                                            <div className="message-avatar placeholder"></div>
-                                    )}
-                                    <div className="message-bubble">
-                                        <div className="message-content">{message.content}</div>
-                                        {message.attachments?.length > 0 && (
-                                            <div className="message-attachments">
-                                                {message.attachments.map((att, idx) => (
-                                                    <div key={idx} className="attachment-item">
-                                                        <a href={att.url} target="_blank" rel="noreferrer">📎 {att.name}</a>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                        <div className="message-time">{formatMessageTime(message.createdAt)}</div>
-
-                                        {/* Status: Đã xem / Đã gửi */}
-                                        {isSeller && (
-                                            <div className={`message-status ${message.isRead ? 'read' : ''}`}>
-                                                {message.isRead ? 'Đã xem' : 'Đã gửi'}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {/* Bong bóng typing indicator */}
-                        {isPartnerTyping && (
-                            <div className="message-item received typing-indicator-container">
-                                <img src={studentAvatar} alt="" className="message-avatar" />
-                                <div className="message-bubble typing-bubble">
-                                    <div className="typing-dots">
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <div ref={messagesEndRef} />
-                    </div>
-                )}
-            </div>
-
-            {/* Input */}
-            <div className="message-input-container">
-                {!isConnected && <div className="connection-warning">⚠️ Mất kết nối...</div>}
-
-                {attachments.length > 0 && (
-                    <div className="attachments-preview">
-                        {attachments.map((att, index) => (
-                            <div key={index} className="attachment-preview">
-                                <span>{att.name}</span>
-                                <button type="button" onClick={() => removeAttachment(index)}>×</button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                <form onSubmit={handleSendMessage} className="message-input-form">
-                    <input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple onChange={handleFileSelect} />
-
-                    <button type="button" className="attach-button" onClick={() => fileInputRef.current?.click()}>
-                        📎
-                    </button>
-
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={inputMessage}
-                        onChange={handleInputChange}
-                        onBlur={handleInputBlur}
-                        placeholder="Nhập tin nhắn..."
-                        disabled={sending || !isConnected}
-                        className="message-input"
-                    />
-
-                    <button type="submit" className="send-button" disabled={sending || !isConnected || (!inputMessage.trim() && attachments.length === 0)}>
-                        {sending ? '⏳' : '📤'}
-                    </button>
-                </form>
-            </div>
+      <div className="msg-panel-empty">
+        <div className="msg-empty-content">
+          <div className="msg-empty-icon" style={{ opacity: "1" }}>📭</div>
+          <h2>Chào mừng trở lại!</h2>
+          <p>Chọn một cuộc trò chuyện để bắt đầu nhắn tin.</p>
         </div>
+      </div>
     );
-}
+  }
+
+  const studentName = activeConversation.buyerName || "Người dùng";
+  const studentAvatar = activeConversation.buyerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=random&color=fff`;
+  const courseName = activeConversation.courseTitle || "";
+  const sellerId = activeConversation.sellerId;
+  const partnerId = activeConversation.buyerId;
+  const isPartnerTyping = typingUsers && typingUsers[partnerId];
+  const isOnline = onlineUsers[partnerId];
+
+  return (
+    <div className="msg-panel-container">
+      {/* --- HEADER --- */}
+      <div className="msg-panel-header">
+        <div className="msg-header-left">
+          <div className="msg-avatar-group">
+            <img src={studentAvatar} alt={studentName} className="msg-header-avatar" />
+            {isOnline && <span className="msg-status-dot online" />}
+          </div>
+          <div className="msg-user-info">
+            <h3 className="msg-user-name">{studentName}</h3>
+            <span className={`msg-user-status ${isOnline ? "online" : ""}`}>
+              {isOnline ? "Đang hoạt động" : "Ngoại tuyến"}
+            </span>
+          </div>
+        </div>
+        {courseName && (
+          <div className="msg-header-right">
+            <div className="msg-course-badge" title={courseName}>
+              <span className="msg-course-icon">🎓</span>
+              <span className="msg-course-title">{courseName}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* --- MESSAGES LIST --- */}
+      {/* ✅ 3. GẮN REF CONTAINER VÀ SỰ KIỆN SCROLL */}
+      <div
+        className="msg-list-container scrollable-content"
+        ref={listContainerRef}
+        onScroll={handleScroll}
+      >
+        {/* ✅ 4. HIỂN THỊ LOADING NHỎ KHI KÉO LÊN TRÊN */}
+        {isMessageLoading && (
+          <div style={{ textAlign: 'center', padding: '10px', color: '#888', fontSize: '12px' }}>
+            ⏳ Đang tải tin nhắn cũ...
+          </div>
+        )}
+
+        {loading && messages.length === 0 ? (
+          <div className="msg-loading">
+            <div className="spinner"></div>
+          </div>
+        ) : (
+          <div className="msg-list-wrapper">
+            {messages.map((message, index) => {
+              const isSeller = message.senderId === sellerId;
+              const isLastInGroup = index === messages.length - 1 || messages[index + 1].senderId !== message.senderId;
+              const showAvatar = !isSeller && isLastInGroup;
+
+              return (
+                <div key={message.id} className={`msg-row ${isSeller ? "msg-sent" : "msg-received"}`}>
+                  <div className="msg-row-avatar-col">
+                    {!isSeller && showAvatar && (
+                      <img src={studentAvatar} alt="" className="msg-chat-avatar" />
+                    )}
+                  </div>
+                  <div className="msg-content-col">
+                    <div className="msg-bubble">
+                      {message.content && <div className="msg-text">{message.content}</div>}
+                      {message.attachments?.length > 0 && (
+                        <div className="msg-attachments-grid">
+                          {message.attachments.map((att, idx) => (
+                            <a key={idx} href={att.url} target="_blank" rel="noreferrer" className="msg-att-chip">
+                              📎 {att.name}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {isLastInGroup && (
+                      <div className="msg-meta">
+                        <span className="msg-time">{formatMessageTime(message.createdAt)}</span>
+                        {isSeller && message.isRead && <span className="msg-read-status"> • Đã xem</span>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Typing Indicator */}
+            {isPartnerTyping && (
+              <div className="msg-row msg-received">
+                <div className="msg-row-avatar-col">
+                  <img src={studentAvatar} alt="" className="msg-chat-avatar" />
+                </div>
+                <div className="msg-content-col">
+                  <div className="msg-bubble msg-typing-bubble">
+                    <div className="msg-typing-dots">
+                      <span></span><span></span><span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Scroll Anchor */}
+            <div ref={messagesEndRef} className="msg-scroll-anchor" />
+          </div>
+        )}
+      </div>
+
+      {/* --- FOOTER (INPUT) --- */}
+      <div className="msg-footer-area">
+        {!isConnected && <div className="msg-offline-alert">⚠️ Mất kết nối máy chủ</div>}
+        <form onSubmit={handleSendMessage} className="msg-input-form">
+          <div className="msg-input-wrapper">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputMessage}
+              onChange={handleInputChange}
+              placeholder="Nhập tin nhắn..."
+              disabled={sending}
+              className="msg-main-input"
+            />
+          </div>
+          <button type="submit" className="msg-action-btn msg-send-btn" disabled={!inputMessage.trim()}>
+            {sending ? "..." : "➤"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default MessagePanel;

@@ -11,8 +11,8 @@ export const chatAPI = {
     },
 
     // Lấy messages của một conversation
-    async getMessages(conversationId, page = 1, pageSize = 50) {
-        const res = await instance.get(`/chat/conversations/${conversationId}/messages?page=${page}&pageSize=${pageSize}`, {
+    async getMessages(conversationId, page = 1, pageSize = 10) {
+        const res = await instance.get(`/chat/conversations/${conversationId}/messages`, {
             params: { page, pageSize },
         });
         return res.data;

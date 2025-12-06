@@ -294,10 +294,6 @@ const AdminCoursesPage = () => {
   return (
     <div className="purchased-page">
       <div className="container">
-        <SellerStatsHeader
-          title="📚 Quản lý khóa học"
-          subtitle="Duyệt và quản lý tất cả khóa học trên nền tảng của bạn"
-        />
         {/* 🏷️ Tiêu đề */}
         <div className="purchased-header">
           <h1>🔧 Quản lý khóa học (Admin)</h1>

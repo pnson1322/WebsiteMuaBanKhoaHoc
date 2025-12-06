@@ -1,186 +1,198 @@
+// src/components/chat/CourseList.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useChat } from '../../contexts/ChatContext';
 import { chatAPI } from '../../services/chatAPI';
 import './CourseList.css';
 
 const CourseList = ({ sellerId }) => {
-    // ✅ Lấy activeCourseFilter từ Context để đồng bộ UI
-    const { filterByCourse, activeCourseFilter } = useChat();
+  // 1. ✅ LOGIC CỦA BẠN: Lấy Context và State phân trang
+  const { filterByCourse, activeCourseFilter } = useChat();
 
-    const [courses, setCourses] = useState([]);
-    const [loading, setLoading] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-    // State phân trang
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
+  // Ref cho thanh cuộn (Logic của bạn)
+  const listRef = useRef(null);
 
-    // Ref cho thanh cuộn
-    const listRef = useRef(null);
+  // 2. ✅ LOGIC CỦA BẠN: Hàm gọi API có phân trang
+  const fetchCourses = useCallback(async (pageNum) => {
+    if (!sellerId) return;
 
-    // ✅ Hàm gọi API
-    const fetchCourses = useCallback(async (pageNum) => {
-        if (!sellerId) return;
+    try {
+      setLoading(true);
+      const pageSize = 10;
 
-        try {
-            setLoading(true);
-            const pageSize = 10; // Số lượng load mỗi lần
+      const response = await chatAPI.getSellerCourses(sellerId, pageNum, pageSize);
+      const newItems = response.items || [];
+      const totalCount = response.totalCount || 0;
 
-            const response = await chatAPI.getSellerCourses(sellerId, pageNum, pageSize);
-            const newItems = response.items || [];
-            const totalCount = response.totalCount || 0;
-
-            setCourses(prev => {
-                if (pageNum === 1) {
-                    return newItems; // Trang 1: Thay thế hoàn toàn
-                } else {
-                    // Trang > 1: Nối thêm và lọc trùng
-                    const existingIds = new Set(prev.map(c => c.id));
-                    const uniqueItems = newItems.filter(c => !existingIds.has(c.id));
-                    return [...prev, ...uniqueItems];
-                }
-            });
-
-            setPage(pageNum);
-            // Nếu số lượng item trả về < pageSize hoặc tổng số item hiện tại >= totalCount -> Hết dữ liệu
-            setHasMore(newItems.length === pageSize && (pageNum * pageSize) < totalCount);
-
-        } catch (error) {
-            console.error('Error loading courses:', error);
-            if (pageNum === 1) setCourses([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [sellerId]);
-
-    // Load trang 1 khi component mount hoặc sellerId thay đổi
-    useEffect(() => {
-        fetchCourses(1);
-    }, [fetchCourses]);
-
-    // ✅ Xử lý cuộn để load more
-    const handleScroll = () => {
-        if (listRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-
-            // Nếu cuộn gần đáy (cách 10px), không đang loading và còn dữ liệu
-            if (scrollTop + clientHeight >= scrollHeight - 10 && !loading && hasMore) {
-                console.log("📥 Loading more courses...");
-                fetchCourses(page + 1);
-            }
-        }
-    };
-
-    // ✅ Xử lý chọn khóa học
-    const handleCourseSelect = async (course) => {
-        // So sánh an toàn (chuyển về string)
-        const isSelected = activeCourseFilter?.toString() === course.id.toString();
-
-        if (isSelected) {
-            await filterByCourse(null); // Bỏ chọn
+      setCourses(prev => {
+        if (pageNum === 1) {
+          return newItems;
         } else {
-            await filterByCourse(course.id); // Chọn
+          const existingIds = new Set(prev.map(c => c.id));
+          const uniqueItems = newItems.filter(c => !existingIds.has(c.id));
+          return [...prev, ...uniqueItems];
         }
-    };
+      });
 
-    const handleShowAll = async () => {
-        await filterByCourse(null);
-    };
+      setPage(pageNum);
+      setHasMore(newItems.length === pageSize && (pageNum * pageSize) < totalCount);
 
-    return (
-        <div className="course-list">
-            <div className="course-list-header">
-                <h2>📚 Khóa học</h2>
-                {activeCourseFilter && (
-                    <button className="show-all-btn" onClick={handleShowAll}>
-                        Hiện tất cả
-                    </button>
-                )}
-            </div>
+    } catch (error) {
+      console.error('Error loading courses:', error);
+      if (pageNum === 1) setCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [sellerId]);
 
-            {/* ✅ Container cuộn riêng biệt */}
-            <div
-                className="course-items-container"
-                ref={listRef}
-                onScroll={handleScroll}
-            >
-                {loading && courses.length === 0 ? (
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Đang tải khóa học...</p>
-                    </div>
-                ) : courses.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-icon">📖</div>
-                        <p>Chưa có khóa học nào</p>
-                    </div>
-                ) : (
-                    <div className="course-items">
-                        {courses.map((course) => {
-                            // Kiểm tra active dựa trên Context
-                            const isActive = activeCourseFilter?.toString() === course.id.toString();
+  // Load trang 1 khi mount
+  useEffect(() => {
+    fetchCourses(1);
+  }, [fetchCourses]);
 
-                            return (
-                                <div
-                                    key={course.id}
-                                    className={`course-item ${isActive ? 'selected' : ''}`}
-                                    onClick={() => handleCourseSelect(course)}
-                                >
-                                    <div className="course-thumbnail">
-                                        <img
-                                            src={course.imageUrl || '/default-course.png'}
-                                            alt={course.title}
-                                            onError={(e) => { e.target.src = '/default-course.png'; }}
-                                        />
-                                    </div>
+  // 3. ✅ LOGIC CỦA BẠN: Xử lý cuộn load more
+  const handleScroll = () => {
+    if (listRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+      if (scrollTop + clientHeight >= scrollHeight - 10 && !loading && hasMore) {
+        console.log("📥 Loading more courses...");
+        fetchCourses(page + 1);
+      }
+    }
+  };
 
-                                    <div className="course-info">
-                                        <h3 className="course-title" title={course.title}>
-                                            {course.title}
-                                        </h3>
+  // 4. ✅ LOGIC CỦA BẠN: Xử lý chọn khóa học
+  const handleCourseSelect = async (course) => {
+    const isSelected = activeCourseFilter?.toString() === course.id.toString();
+    if (isSelected) {
+      await filterByCourse(null);
+    } else {
+      await filterByCourse(course.id);
+    }
+  };
 
-                                        <div className="course-stats">
-                                            <span className="stat-item">
-                                                👥 {course.totalPurchased || 0}
-                                            </span>
-                                            {course.messageCount > 0 && (
-                                                <span className="stat-item">
-                                                    💬 {course.messageCount}
-                                                </span>
-                                            )}
-                                        </div>
+  const handleShowAll = async () => {
+    await filterByCourse(null);
+  };
 
-                                        {course.unreadMessageCount > 0 && (
-                                            <div className="course-unread">
-                                                <span className="unread-badge">{course.unreadMessageCount} tin mới</span>
-                                            </div>
-                                        )}
-                                    </div>
+  // Tính tổng học viên (để hiển thị ở Footer giống layout bạn bè)
+  const totalStudents = courses.reduce(
+    (sum, c) => sum + (c.totalPurchased || 0),
+    0
+  );
 
-                                    {isActive && (
-                                        <div className="selected-indicator">✓</div>
-                                    )}
-                                </div>
-                            );
-                        })}
+  return (
+    // ✅ UI WRAPPER CỦA BẠN BÈ: chat-panel course-panel
+    <div className="chat-panel course-panel">
 
-                        {/* Spinner load more */}
-                        {loading && courses.length > 0 && (
-                            <div className="loading-more">
-                                <div className="spinner-small"></div> Đang tải thêm...
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
+      {/* --- HEADER --- */}
+      <div className="panel-header">
+        <h2 className="header-title">
+          Khóa học
+          <span className="count-badge">{courses.length}</span>
+        </h2>
+        {activeCourseFilter && (
+          <button
+            className="reset-filter-btn"
+            onClick={handleShowAll}
+            title="Hiện tất cả"
+          >
+            ✕ Hiện tất cả
+          </button>
+        )}
+      </div>
 
-            {/* Footer thống kê */}
-            {courses.length > 0 && (
-                <div className="course-summary">
-                    <small>Đã tải {courses.length} khóa học</small>
+      {/* --- BODY DANH SÁCH --- */}
+      {/* ✅ Dùng class của bạn bè nhưng gắn REF và ON_SCROLL của bạn */}
+      <div
+        className="course-items scrollable-content"
+        ref={listRef}
+        onScroll={handleScroll}
+      >
+        {loading && courses.length === 0 ? (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Đang tải dữ liệu...</p>
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="empty-state">
+            <p>Bạn chưa đăng khóa học nào</p>
+          </div>
+        ) : (
+          courses.map((course) => {
+            // Logic kiểm tra active của bạn
+            const isSelected = activeCourseFilter?.toString() === course.id.toString();
+            // Logic hiển thị trạng thái (nếu có trường này từ API)
+            const isActiveStatus = course.isApproved !== false && course.isRestricted !== true;
+
+            return (
+              <div
+                key={course.id}
+                className={`course-card-small ${isSelected ? "selected" : ""}`}
+                onClick={() => handleCourseSelect(course)}
+              >
+                <div className="course-thumb-wrapper">
+                  <img
+                    src={course.imageUrl || "/default-course.png"}
+                    alt={course.title}
+                    onError={(e) => {
+                      e.target.src = "https://placehold.co/60x60?text=Course";
+                    }}
+                  />
+                  {/* Overlay nếu bị dừng (Feature UI của bạn bè) */}
+                  {!isActiveStatus && <div className="status-overlay">Dừng</div>}
                 </div>
-            )}
+
+                <div className="course-details">
+                  <h4 className="course-name" title={course.title}>
+                    {course.title}
+                  </h4>
+
+                  <div className="course-metrics">
+                    <span className="metric-item">
+                      👥 <b>{course.totalPurchased || 0}</b>
+                    </span>
+                    {course.unreadMessageCount > 0 && (
+                      <span className="metric-item highlight">
+                        📩 <b>{course.unreadMessageCount}</b>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {isSelected && <div className="selected-check">✔</div>}
+              </div>
+            );
+          })
+        )}
+
+        {/* ✅ Logic Load more Spinner của bạn đặt ở cuối list */}
+        {loading && courses.length > 0 && (
+          <div className="loading-more" style={{ textAlign: 'center', padding: '10px' }}>
+            <div className="spinner-small" style={{ display: 'inline-block' }}></div>
+          </div>
+        )}
+      </div>
+
+      {/* --- FOOTER --- */}
+      <div className="panel-footer course-footer">
+        <div className="stat-row">
+          <span>Tổng học viên (đã tải):</span>
+          <strong>{totalStudents.toLocaleString()}</strong>
         </div>
-    );
+        <div className="stat-row">
+          <span>Trạng thái:</span>
+          <span className="status-text">
+            {activeCourseFilter ? "Đang lọc theo khóa học" : "Hiển thị tất cả"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default CourseList;

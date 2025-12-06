@@ -41,6 +41,7 @@ const AppContent = () => {
   // Ưu tiên lấy accessToken, nếu không có thì lấy token
   const finalToken = accessToken || token;
   const userId = user?.id || user?.Id; // Lấy ID an toàn
+  console.log("AppContent Render:", { user, finalToken });
 
   return (
     // ✅ Bọc UnreadCountProvider ở đây để truyền userId và token vào
