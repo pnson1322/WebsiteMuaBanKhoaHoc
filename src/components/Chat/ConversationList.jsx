@@ -1,155 +1,114 @@
-// src/components/chat/ConversationList.jsx
-import React, { useState } from 'react';
-import { useChat } from '../../contexts/ChatContext';
-import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import './ConversationList.css';
+import React, { useState, useMemo, useCallback } from "react";
+import { useChat } from "../../contexts/ChatContext";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import "./ConversationList.css";
+import ConversationItem from "./ConversationItem";
 
 const ConversationList = () => {
-    const {
-        conversations,
-        activeConversation,
-        selectConversation,
-        loading,
-        unreadCount
-    } = useChat();
+  const {
+    conversations,
+    activeConversation,
+    selectConversation,
+    loading,
+    unreadCount,
+  } = useChat();
 
-    const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-    // ✅ Thêm check an toàn
+  const formatTime = useCallback((dateString) => {
+    if (!dateString) return "";
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: true,
+        locale: vi,
+      });
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const mappedConversations = useMemo(() => {
     const safeConversations = Array.isArray(conversations) ? conversations : [];
 
-    // Map lại dữ liệu API để phù hợp UI
-    const mappedConversations = safeConversations.map(conv => ({
-        id: conv.id,
-        studentName: conv.buyerName || 'Người dùng',
-        studentAvatar: conv.buyerAvatar || '',
-        courseName: conv.courseTitle || '',
-        lastMessage: conv.lastMessage?.content || 'Chưa có tin nhắn',
-        lastMessageTime: conv.lastMessage?.createdAt || conv.lastMessageAt,
-        unreadCount: conv.unreadCount || 0,
-        isOnline: false,
-        raw: conv
+    return safeConversations.map((conv) => ({
+      id: conv.id,
+      studentName: conv.buyerName || "Người dùng",
+      studentAvatar: conv.buyerAvatar || "",
+      courseName: conv.courseTitle || "",
+      lastMessage: conv.lastMessage?.content || "Chưa có tin nhắn",
+      lastMessageTime: conv.lastMessage?.createdAt || conv.lastMessageAt,
+      formattedTime: formatTime(
+        conv.lastMessage?.createdAt || conv.lastMessageAt
+      ),
+      unreadCount: conv.unreadCount || 0,
+      isOnline: false,
+      raw: conv,
     }));
+  }, [conversations, formatTime]);
 
-    // Search: Chỉ giữ lại điều kiện tìm theo studentName
-    const filteredConversations = mappedConversations.filter(conv =>
-        conv.studentName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConversations = useMemo(() => {
+    return mappedConversations.filter((conv) =>
+      conv.studentName.toLowerCase().includes(searchQuery.toLowerCase())
     );
+  }, [mappedConversations, searchQuery]);
 
-    // Format thời gian
-    const formatTime = (dateString) => {
-        if (!dateString) return '';
-        try {
-            return formatDistanceToNow(new Date(dateString), {
-                addSuffix: true,
-                locale: vi
-            });
-        } catch {
-            return '';
-        }
-    };
+  const handleSelect = useCallback(
+    (rawConv) => {
+      selectConversation(rawConv);
+    },
+    [selectConversation]
+  );
 
-    return (
-        <div className="conversation-list">
-            <div className="conversation-list-header">
-                <h2>
-                    Tin nhắn
-                    {unreadCount > 0 && (
-                        <span className="unread-badge">{unreadCount}</span>
-                    )}
-                </h2>
-            </div>
-
-            <div className="search-box">
-                <input
-                    type="text"
-                    placeholder="🔍 Tìm kiếm theo tên học viên..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-            </div>
-
-            <div className="conversation-items">
-                {loading && mappedConversations.length === 0 ? (
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Đang tải tin nhắn...</p>
-                    </div>
-                ) : filteredConversations.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-icon">💬</div>
-                        <p>Chưa có tin nhắn nào</p>
-                    </div>
-                ) : (
-                    filteredConversations.map((conversation) => (
-                        <div
-                            key={conversation.id}
-                            className={`conversation-item ${
-                                // ✅ Thêm toString() để đảm bảo so sánh đúng kể cả khi id là số hay chuỗi
-                                activeConversation?.id?.toString() === conversation.id?.toString()
-                                    ? 'active'
-                                    : ''
-                                } ${conversation.unreadCount > 0 ? 'unread' : ''}`}
-
-                            // ✅ Sửa lại onClick để log ra lỗi và xử lý an toàn hơn
-                            onClick={() => {
-                                console.log("Đang chọn conversation:", conversation.raw); // Xem log này in ra gì
-                                if (conversation.raw) {
-                                    selectConversation(conversation.raw);
-                                } else {
-                                    console.error("Lỗi: Dữ liệu cuộc trò chuyện (raw) bị thiếu!");
-                                }
-                            }}
-                        >
-                            <div className="conversation-avatar">
-                                <img
-                                    src={conversation.studentAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conversation.studentName)}&background=random&color=fff`}
-                                    alt={conversation.studentName}
-                                    onError={(e) => {
-                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(conversation.studentName)}&background=random&color=fff`;
-                                    }}
-                                />
-                                {conversation.isOnline && (
-                                    <span className="online-indicator"></span>
-                                )}
-                            </div>
-
-                            <div className="conversation-content">
-                                <div className="conversation-header">
-                                    <h3 className="conversation-name">
-                                        {conversation.studentName}
-                                    </h3>
-                                    <span className="conversation-time">
-                                        {formatTime(conversation.lastMessageTime)}
-                                    </span>
-                                </div>
-
-                                <div className="conversation-footer">
-                                    <p className="conversation-last-message">
-                                        {conversation.lastMessage}
-                                    </p>
-                                    {conversation.unreadCount > 0 && (
-                                        <span className="message-badge">
-                                            {conversation.unreadCount}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {conversation.courseName && (
-                                    <div className="conversation-course">
-                                        <span className="course-tag">
-                                            📚 {conversation.courseName}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
+  return (
+    <div className="chat-panel conversation-panel">
+      <div className="panel-header">
+        <h2 className="header-title">
+          Tin nhắn
+          {unreadCount > 0 && <span className="main-badge">{unreadCount}</span>}
+        </h2>
+        <div className="search-wrapper">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            placeholder="Tìm học viên..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-    );
+      </div>
+
+      <div className="conversation-items scrollable-content">
+        {loading && mappedConversations.length === 0 ? (
+          <div className="loading-state">
+            <div className="spinner"></div>
+          </div>
+        ) : mappedConversations.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-img">📭</div>
+            <h3>Chưa có tin nhắn</h3>
+            <p>Hộp thư của bạn hiện đang trống.</p>
+          </div>
+        ) : filteredConversations.length === 0 ? (
+          <div className="empty-state">
+            <p>Không tìm thấy kết quả</p>
+          </div>
+        ) : (
+          filteredConversations.map((conversation) => (
+            <ConversationItem
+              key={conversation.id}
+              conversation={conversation}
+              isActive={
+                activeConversation?.id?.toString() ===
+                conversation.id?.toString()
+              }
+              onSelect={handleSelect}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ConversationList;
