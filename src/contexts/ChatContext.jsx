@@ -3,6 +3,9 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import * as signalR from '@microsoft/signalr';
 import { chatAPI } from '../services/chatAPI';
 
+// 1. ✅ IMPORT HOOK CỦA CONTEXT ĐẾM SỐ
+import { useUnreadCount } from './UnreadCountContext';
+
 const ChatContext = createContext();
 
 export const ChatProvider = ({ children, sellerId, authToken }) => {
@@ -11,11 +14,17 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
     const [conversations, setConversations] = useState([]);
     const [activeConversation, setActiveConversation] = useState(null);
     const [messages, setMessages] = useState([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [unreadConversationCount, setUnreadConversationCount] = useState(0);
+
+    // 2. ✅ LẤY DATA VÀ HÀM TỪ UNREAD CONTEXT
+    // Bỏ state unreadConversationCount cục bộ đi
+    const { unreadCount, refreshUnreadCount } = useUnreadCount();
+
     const [loading, setLoading] = useState(false);
-    const [typingUsers, setTypingUsers] = useState({}); // ✅ {userId: true/false}
+    const [typingUsers, setTypingUsers] = useState({});
     const [onlineUsers, setOnlineUsers] = useState({});
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [activeCourseFilter, setActiveCourseFilter] = useState(null);
 
     const activeConversationRef = useRef(activeConversation);
     const connectionRef = useRef(connection);
@@ -27,6 +36,8 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
     useEffect(() => {
         connectionRef.current = connection;
     }, [connection]);
+
+    // (Đã xóa hàm fetchUnreadTotal vì dùng refreshUnreadCount của context kia)
 
     // Kết nối ChatHub
     useEffect(() => {
@@ -53,76 +64,90 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
         };
     }, [sellerId, authToken]);
 
-    // ✅ Hàm đếm lại unread count
-    const recalculateUnreadCounts = useCallback((conversationsArray) => {
-        const totalUnread = conversationsArray.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
-        const unreadConvCount = conversationsArray.filter(conv => (conv.unreadCount || 0) > 0).length;
-
-        setUnreadCount(totalUnread);
-        setUnreadConversationCount(unreadConvCount);
-
-        console.log('📊 Unread stats - Total:', totalUnread, 'Conversations:', unreadConvCount);
-    }, []);
-
-    // ✅ Hàm đánh dấu đã đọc qua SignalR
+    // ✅ ĐÃ SỬA: Dùng refreshUnreadCount thay vì fetchUnreadTotal
     const markConversationAsRead = useCallback(async (conversationId) => {
         if (!conversationId) return;
 
-        // 1. Cập nhật UI ngay lập tức
+        // 1. Cập nhật UI List ngay lập tức
         setConversations(prev => {
-            const updatedConvs = prev.map(conv =>
+            return prev.map(conv =>
                 conv.id === conversationId
                     ? { ...conv, unreadCount: 0 }
                     : conv
             );
-            recalculateUnreadCounts(updatedConvs);
-            return updatedConvs;
         });
 
-        // 2. Gọi SignalR
+        // 2. Gọi SignalR & Refresh Context kia
         if (connectionRef.current?.state === signalR.HubConnectionState.Connected) {
             try {
                 await connectionRef.current.invoke('MarkAsRead', conversationId);
-                console.log(`✅ Marked conversation ${conversationId} as read`);
+
+                // ✅ Gọi context ngoài để cập nhật số tổng
+                refreshUnreadCount();
             } catch (err) {
                 console.error('❌ Error invoking MarkAsRead:', err);
             }
         }
-    }, [recalculateUnreadCounts]);
+    }, [refreshUnreadCount]); // Dependency là hàm từ context ngoài
 
-    // ✅ Hàm gửi typing status
+    // Hàm gửi typing status
     const sendTyping = useCallback(async (conversationId, isTyping) => {
-        if (!connectionRef.current || connectionRef.current.state !== signalR.HubConnectionState.Connected) {
-            return;
-        }
-
+        if (!connectionRef.current || connectionRef.current.state !== signalR.HubConnectionState.Connected) return;
         try {
             await connectionRef.current.invoke('UserTyping', conversationId, isTyping);
-            console.log(`⌨️ Sent typing status: ${isTyping}`);
         } catch (err) {
             console.error('Error sending typing status:', err);
         }
     }, []);
 
     // Load conversations
-    const loadConversations = useCallback(async () => {
+    const fetchConversationsList = useCallback(async (pageNum, courseIdOverride = undefined) => {
+        setLoading(true);
         try {
-            setLoading(true);
-            const response = await chatAPI.getConversations(sellerId);
-            const conversationsArray = response.items || [];
-            console.log('📦 Conversations loaded:', conversationsArray.length);
+            const pageSize = 10;
+            const currentCourseId = courseIdOverride !== undefined ? courseIdOverride : activeCourseFilter;
 
-            setConversations(conversationsArray);
-            recalculateUnreadCounts(conversationsArray);
+            let response;
+            if (currentCourseId) {
+                response = await chatAPI.getConversationsByCourse(currentCourseId, pageNum, pageSize);
+            } else {
+                response = await chatAPI.getConversations(sellerId, pageNum, pageSize);
+            }
+
+            const newItems = response.items || [];
+            const totalCount = response.totalCount || 0;
+
+            setConversations(prev => {
+                if (pageNum === 1) return newItems;
+                const existingIds = new Set(prev.map(c => c.id));
+                const uniqueNewItems = newItems.filter(c => !existingIds.has(c.id));
+                return [...prev, ...uniqueNewItems];
+            });
+
+            setPage(pageNum);
+            setHasMore(newItems.length === pageSize && (pageNum * pageSize) < totalCount);
+
         } catch (error) {
-            console.error('Error loading conversations:', error);
-            setConversations([]);
+            console.error('Error fetching conversations:', error);
+            if (pageNum === 1) setConversations([]);
         } finally {
             setLoading(false);
         }
-    }, [sellerId, recalculateUnreadCounts]);
+    }, [sellerId, activeCourseFilter]);
 
-    // ✅ Load messages - SỬA LẠI ĐỂ TRÁNH CIRCULAR DEPENDENCY
+    // ✅ ĐÃ SỬA: Load conversations -> Refresh Context kia
+    const loadConversations = useCallback(() => {
+        refreshUnreadCount(); // Đồng bộ số liệu ngay khi load
+        return fetchConversationsList(1);
+    }, [fetchConversationsList, refreshUnreadCount]);
+
+    const loadMoreConversations = useCallback(() => {
+        if (!loading && hasMore) {
+            fetchConversationsList(page + 1);
+        }
+    }, [loading, hasMore, page, fetchConversationsList]);
+
+    // ✅ ĐÃ SỬA: Load messages -> Refresh Context kia
     const loadMessages = useCallback(async (conversationId) => {
         try {
             setLoading(true);
@@ -137,22 +162,20 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
                 await connectionRef.current.invoke('JoinConversation', conversationId);
             }
 
-            // 3. ✅ Đánh dấu đã đọc TRỰC TIẾP (không gọi hàm markConversationAsRead)
-            // Cập nhật UI
+            // 3. Update UI Local
             setConversations(prev => {
-                const updatedConvs = prev.map(conv =>
+                return prev.map(conv =>
                     conv.id === conversationId
                         ? { ...conv, unreadCount: 0 }
                         : conv
                 );
-                recalculateUnreadCounts(updatedConvs);
-                return updatedConvs;
             });
 
-            // Gọi SignalR
+            // 4. SignalR & Refresh Global Count
             if (connectionRef.current?.state === signalR.HubConnectionState.Connected) {
                 try {
                     await connectionRef.current.invoke('MarkAsRead', conversationId);
+                    refreshUnreadCount(); // ✅ Cập nhật số tổng
                 } catch (err) {
                     console.error('Error marking as read:', err);
                 }
@@ -164,84 +187,87 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
         } finally {
             setLoading(false);
         }
-    }, [recalculateUnreadCounts]); // ✅ Chỉ depend vào recalculateUnreadCounts
+    }, [refreshUnreadCount]);
 
-    // ✅ Hàm cập nhật conversation khi có tin nhắn mới
-    const updateConversationWithNewMessage = useCallback((message) => {
+    const updateConversationWithNewMessage = useCallback((message, newConversationData = null) => {
         setConversations(prev => {
-            const updatedConvs = prev.map(conv =>
-                conv.id === message.conversationId
-                    ? {
-                        ...conv,
+            const existingConvIndex = prev.findIndex(c => c.id === message.conversationId);
+
+            if (existingConvIndex !== -1) {
+                const updatedList = [...prev];
+                const existingConv = updatedList[existingConvIndex];
+
+                const isCurrentChat = activeConversationRef.current?.id === message.conversationId;
+                const newUnreadCount = isCurrentChat ? 0 : (existingConv.unreadCount || 0) + 1;
+
+                updatedList[existingConvIndex] = {
+                    ...existingConv,
+                    lastMessage: message,
+                    lastMessageAt: message.createdAt,
+                    unreadCount: newUnreadCount
+                };
+
+                const target = updatedList[existingConvIndex];
+                updatedList.splice(existingConvIndex, 1);
+                updatedList.unshift(target);
+
+                return updatedList;
+            } else {
+                if (newConversationData) {
+                    const newConvFormatted = {
+                        ...newConversationData,
+                        id: newConversationData.id || newConversationData.Id,
                         lastMessage: message,
                         lastMessageAt: message.createdAt,
-                        unreadCount: activeConversationRef.current?.id === message.conversationId
-                            ? conv.unreadCount
-                            : (conv.unreadCount || 0) + 1
-                    }
-                    : conv
-            );
-
-            const targetConv = updatedConvs.find(c => c.id === message.conversationId);
-            if (!targetConv) return updatedConvs;
-
-            const others = updatedConvs.filter(c => c.id !== message.conversationId);
-            const reordered = [targetConv, ...others];
-
-            recalculateUnreadCounts(reordered);
-            return reordered;
+                        unreadCount: 1,
+                        buyerName: newConversationData.buyerName || newConversationData.BuyerName,
+                        buyerAvatar: newConversationData.buyerAvatar || newConversationData.BuyerAvatar,
+                        courseTitle: newConversationData.courseTitle || newConversationData.CourseTitle
+                    };
+                    return [newConvFormatted, ...prev];
+                }
+                return prev;
+            }
         });
-    }, [recalculateUnreadCounts]);
+    }, []);
 
-    // ✅ Xử lý message mới
+    // ✅ ĐÃ SỬA: Handle New Message -> Refresh Context kia
     const handleNewMessage = useCallback((message) => {
-        console.log('📩 New message received:', message);
-
         const isChatOpen = activeConversationRef.current?.id === message.conversationId;
 
         if (isChatOpen) {
-            // Thêm tin nhắn
             setMessages(prev => {
                 if (prev.some(m => m.id === message.id)) return prev;
                 return [...prev, message];
             });
-
-            // ✅ Đánh dấu đã đọc ngay
             markConversationAsRead(message.conversationId);
+        } else {
+            // Không mở chat -> Có tin mới -> Gọi hàm refresh để tăng số
+            refreshUnreadCount();
         }
 
-        // Cập nhật conversation list
-        updateConversationWithNewMessage(message);
-    }, [updateConversationWithNewMessage, markConversationAsRead]);
+        updateConversationWithNewMessage(message, null);
+    }, [updateConversationWithNewMessage, markConversationAsRead, refreshUnreadCount]);
 
-    // ✅ Xử lý notification
     const handleNewMessageNotification = useCallback((data) => {
-        console.log('🔔 New message notification:', data);
-
         const message = data.message || data.Message;
+        const conversation = data.conversation || data.Conversation;
 
-        if (!message) {
-            console.error('❌ Message is undefined in notification data:', data);
-            return;
-        }
+        if (!message) return;
+        if (activeConversationRef.current?.id === message.conversationId) return;
 
-        if (activeConversationRef.current?.id === message.conversationId) {
-            console.log('ℹ️ Already in this conversation, skipping notification');
-            return;
-        }
+        updateConversationWithNewMessage(message, conversation);
 
-        updateConversationWithNewMessage(message);
-    }, [updateConversationWithNewMessage]);
+        // Có noti -> Chắc chắn là tin chưa đọc -> Gọi refresh
+        refreshUnreadCount();
+    }, [updateConversationWithNewMessage, refreshUnreadCount]);
 
-    // Gửi message
     const sendMessage = useCallback(async (conversationId, content, attachments = []) => {
         if (!conversationId || !content.trim()) return;
-
         try {
             if (!connectionRef.current || connectionRef.current.state !== signalR.HubConnectionState.Connected) {
                 throw new Error('SignalR not connected');
             }
-
             const dto = {
                 ConversationId: conversationId,
                 Content: content,
@@ -251,24 +277,19 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
                     FileType: att.type
                 }))
             };
-
-            console.log('📤 Sending message via SignalR:', dto);
             await connectionRef.current.invoke('SendMessage', dto);
-            console.log('✅ Message sent successfully');
         } catch (error) {
             console.error('Error sending message:', error);
             throw error;
         }
     }, []);
 
-    // Connection events
     useEffect(() => {
         if (!connection) return;
 
         const startConnection = async () => {
             try {
                 await connection.start();
-                console.log('✅ ChatHub Connected');
                 setIsConnected(true);
                 await loadConversations();
             } catch (error) {
@@ -277,87 +298,54 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
             }
         };
 
-        // Đăng ký events
         connection.on('ReceiveMessage', handleNewMessage);
         connection.on('NewMessageNotification', handleNewMessageNotification);
 
-        connection.on('UserJoined', (userId, connectionId) => {
-            console.log(`👤 User ${userId} joined`);
-            setOnlineUsers(prev => ({ ...prev, [userId]: true }));
-        });
+        connection.on('UserJoined', (userId) => setOnlineUsers(prev => ({ ...prev, [userId]: true })));
+        connection.on('UserLeft', (userId) => setOnlineUsers(prev => {
+            const newState = { ...prev };
+            delete newState[userId];
+            return newState;
+        }));
 
-        connection.on('UserLeft', (userId, connectionId) => {
-            console.log(`👋 User ${userId} left`);
-            setOnlineUsers(prev => {
-                const newState = { ...prev };
-                delete newState[userId];
-                return newState;
-            });
-        });
-
-        // ✅ Xử lý typing status
         connection.on('UserTypingStatus', (userId, isTyping) => {
-            console.log(`⌨️ User ${userId} typing: ${isTyping}`);
-
             if (activeConversationRef.current) {
                 setTypingUsers(prev => {
-                    if (isTyping) {
-                        return { ...prev, [userId]: true };
-                    } else {
-                        const newState = { ...prev };
-                        delete newState[userId];
-                        return newState;
-                    }
+                    if (isTyping) return { ...prev, [userId]: true };
+                    const newState = { ...prev };
+                    delete newState[userId];
+                    return newState;
                 });
-
-                // ✅ Auto clear sau 3s nếu không có update
-                setTimeout(() => {
-                    setTypingUsers(prev => {
-                        const newState = { ...prev };
-                        delete newState[userId];
-                        return newState;
-                    });
-                }, 3000);
+                if (isTyping) {
+                    setTimeout(() => {
+                        setTypingUsers(prev => {
+                            const newState = { ...prev };
+                            delete newState[userId];
+                            return newState;
+                        });
+                    }, 3000);
+                }
             }
         });
 
-        // ✅ Xử lý đã đọc
         connection.on('MessagesMarkedAsRead', (userId, conversationId) => {
-            console.log(`👁️ User ${userId} read conversation ${conversationId}`);
-
             if (activeConversationRef.current?.id === conversationId) {
-                setMessages(prev => prev.map(msg => ({
-                    ...msg,
-                    isRead: true
-                })));
+                setMessages(prev => prev.map(msg => ({ ...msg, isRead: true })));
             }
         });
 
-        connection.onreconnecting(() => {
-            console.log('🔄 ChatHub reconnecting...');
-            setIsConnected(false);
-        });
-
+        connection.onreconnecting(() => setIsConnected(false));
         connection.onreconnected(async () => {
-            console.log('✅ ChatHub reconnected');
             setIsConnected(true);
-
             if (activeConversationRef.current) {
                 try {
                     await connection.invoke('JoinConversation', activeConversationRef.current.id);
-                    console.log(`✅ Rejoined conversation: ${activeConversationRef.current.id}`);
-                } catch (err) {
-                    console.error('Error rejoining conversation:', err);
-                }
+                } catch (err) { console.error(err); }
             }
-
             await loadConversations();
         });
 
-        connection.onclose(() => {
-            console.log('❌ ChatHub connection closed');
-            setIsConnected(false);
-        });
+        connection.onclose(() => setIsConnected(false));
 
         startConnection();
 
@@ -371,65 +359,45 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
         };
     }, [connection, handleNewMessage, handleNewMessageNotification, loadConversations]);
 
-    // Leave conversation khi unmount
     useEffect(() => {
         return () => {
             if (activeConversation && connectionRef.current?.state === signalR.HubConnectionState.Connected) {
-                connectionRef.current.invoke('LeaveConversation', activeConversation.id)
-                    .catch(err => console.error('Error leaving conversation:', err));
+                connectionRef.current.invoke('LeaveConversation', activeConversation.id).catch(console.error);
             }
         };
     }, [activeConversation]);
 
-    // ✅ Select conversation
     const selectConversation = useCallback(async (conversation) => {
-        // Leave conversation cũ
         if (activeConversationRef.current && connectionRef.current?.state === signalR.HubConnectionState.Connected) {
             try {
                 await connectionRef.current.invoke('LeaveConversation', activeConversationRef.current.id);
-                console.log(`👋 Left conversation: ${activeConversationRef.current.id}`);
-            } catch (err) {
-                console.error('Error leaving conversation:', err);
-            }
+            } catch (err) { console.error(err); }
         }
-
-        // Reset typing users
         setTypingUsers({});
-
-        // Set active và load messages
         setActiveConversation(conversation);
         await loadMessages(conversation.id);
     }, [loadMessages]);
 
-    // Filter by course
-    const filterByCourse = useCallback(async (courseId) => {
-        try {
-            setLoading(true);
-            if (courseId) {
-                const response = await chatAPI.getConversationsByCourse(courseId);
-                const conversationsArray = response.items || [];
-                setConversations(conversationsArray);
-                recalculateUnreadCounts(conversationsArray);
-            } else {
-                await loadConversations();
-            }
-        } catch (error) {
-            console.error('Error filtering conversations:', error);
-            setConversations([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [loadConversations, recalculateUnreadCounts]);
+    const filterByCourse = useCallback((courseId) => {
+        const newFilter = courseId || null;
+        setActiveCourseFilter(newFilter);
+        fetchConversationsList(1, newFilter);
+    }, [fetchConversationsList]);
 
     const value = {
         isConnected,
         conversations,
         activeConversation,
         messages,
-        unreadCount,
-        unreadConversationCount,
+
+        // 3. ✅ TRẢ VỀ GIÁ TRỊ TỪ UNREAD CONTEXT (Đổi tên cho khớp với code cũ)
+        unreadConversationCount: unreadCount,
+
         loading,
         onlineUsers,
+        activeCourseFilter,
+        loadMoreConversations,
+        hasMore,
         loadConversations,
         selectConversation,
         sendMessage,

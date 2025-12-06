@@ -44,6 +44,15 @@ const LoginPopup = ({ onClose }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
 
+  const handleLoginSuccess = () => {
+    // 1. Đóng popup trước
+    onClose();
+
+    // 2. Chuyển hướng về trang chủ (dấu "/" đại diện cho localhost:5173)
+    navigate("/");
+  };
+
+
   // ✅ Sử dụng hook useAuthForm
   const {
     mode,
@@ -58,7 +67,7 @@ const LoginPopup = ({ onClose }) => {
     verifyEmail,
     handleResendOTP,
     handleCloseVerifyModal,
-  } = useAuthForm("login", onClose);
+  } = useAuthForm("login", handleLoginSuccess);
   const isRegister = mode === "register";
   // ✅ Mở trang đầy đủ
   const handleFullPage = () => {

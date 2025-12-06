@@ -48,7 +48,7 @@ const SellerStatsSummary = ({
       <div className="text-chart-item">
         <div className="text-chart-stats">
           <div className="text-chart-text">Đánh giá trung bình</div>
-          <div className="text-chart-number">{Number(averageRating).toFixed(1)}</div>
+          <div className="text-chart-number">{Number(averageRating) > 0 ? Number(averageRating).toFixed(1) : "--"}</div>
         </div>
 
         <div className="text-chart-icon-wrapper" style={{ background: "#f3e8ff" }}>

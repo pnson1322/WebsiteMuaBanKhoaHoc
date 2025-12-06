@@ -4,7 +4,7 @@ import instance from "./axiosInstance";
 export const chatAPI = {
     // Lấy danh sách conversations của seller
     async getConversations(sellerId, page = 1, pageSize = 20) {
-        const res = await instance.get(`/chat/conversations`, {
+        const res = await instance.get(`/chat/conversations?page=${page}&pageSize=${pageSize}`, {
             params: { page, pageSize },
         });
         return res.data;
@@ -12,7 +12,7 @@ export const chatAPI = {
 
     // Lấy messages của một conversation
     async getMessages(conversationId, page = 1, pageSize = 50) {
-        const res = await instance.get(`/chat/conversations/${conversationId}/messages`, {
+        const res = await instance.get(`/chat/conversations/${conversationId}/messages?page=${page}&pageSize=${pageSize}`, {
             params: { page, pageSize },
         });
         return res.data;
@@ -50,7 +50,7 @@ export const chatAPI = {
 
     // Lấy conversations theo khóa học
     async getConversationsByCourse(courseId, page = 1, pageSize = 20) {
-        const res = await instance.get(`/chat/conversations/course/${courseId}/`, {
+        const res = await instance.get(`/chat/conversations/course/${courseId}`, {
             params: { page, pageSize },
         });
         return res.data;

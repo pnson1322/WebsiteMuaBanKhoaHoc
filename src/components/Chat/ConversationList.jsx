@@ -1,6 +1,8 @@
 // src/components/chat/ConversationList.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../contexts/ChatContext';
+// 1. ✅ IMPORT CONTEXT ĐẾM SỐ
+import { useUnreadCount } from '../../contexts/UnreadCountContext';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import './ConversationList.css';
@@ -11,15 +13,19 @@ const ConversationList = () => {
         activeConversation,
         selectConversation,
         loading,
-        unreadCount
+        unreadConversationCount,
+        loadMoreConversations,
+        hasMore
     } = useChat();
 
-    const [searchQuery, setSearchQuery] = useState('');
+    // 2. ✅ LẤY HÀM REFRESH TỪ CONTEXT
+    const { refreshUnreadCount } = useUnreadCount();
 
-    // ✅ Thêm check an toàn
+    const [searchQuery, setSearchQuery] = useState('');
+    const listRef = useRef(null);
+
     const safeConversations = Array.isArray(conversations) ? conversations : [];
 
-    // Map lại dữ liệu API để phù hợp UI
     const mappedConversations = safeConversations.map(conv => ({
         id: conv.id,
         studentName: conv.buyerName || 'Người dùng',
@@ -32,12 +38,19 @@ const ConversationList = () => {
         raw: conv
     }));
 
-    // Search: Chỉ giữ lại điều kiện tìm theo studentName
     const filteredConversations = mappedConversations.filter(conv =>
         conv.studentName.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Format thời gian
+    const handleScroll = () => {
+        if (listRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+            if (scrollTop + clientHeight >= scrollHeight - 5 && !loading && hasMore) {
+                loadMoreConversations();
+            }
+        }
+    };
+
     const formatTime = (dateString) => {
         if (!dateString) return '';
         try {
@@ -50,13 +63,35 @@ const ConversationList = () => {
         }
     };
 
+    // 3. ✅ HÀM XỬ LÝ KHI CLICK VÀO CUỘC TRÒ CHUYỆN
+    const handleConversationClick = (conversation) => {
+        console.log("Đang chọn conversation:", conversation.raw);
+
+        if (conversation.raw) {
+            // A. Gọi hàm của ChatContext để load tin nhắn và join room
+            selectConversation(conversation.raw);
+
+            // B. Kích hoạt cập nhật lại số trên Header
+            // Tại sao cần setTimeout? 
+            // Vì selectConversation sẽ gọi API MarkAsRead. Chúng ta cần đợi API đó chạy xong
+            // ở Server thì mới gọi refreshUnreadCount để lấy số chính xác (số đã giảm).
+            // 500ms - 1000ms là khoảng thời gian an toàn.
+            setTimeout(() => {
+                refreshUnreadCount();
+                console.log("🔄 Đã yêu cầu Header cập nhật lại số lượng!");
+            }, 1000);
+        } else {
+            console.error("Lỗi: Dữ liệu cuộc trò chuyện (raw) bị thiếu!");
+        }
+    };
+
     return (
         <div className="conversation-list">
             <div className="conversation-list-header">
                 <h2>
                     Tin nhắn
-                    {unreadCount > 0 && (
-                        <span className="unread-badge">{unreadCount}</span>
+                    {unreadConversationCount > 0 && (
+                        <span className="unread-badge">{unreadConversationCount}</span>
                     )}
                 </h2>
             </div>
@@ -70,7 +105,14 @@ const ConversationList = () => {
                 />
             </div>
 
-            <div className="conversation-items">
+            <div className="conversation-items"
+                ref={listRef}
+                onScroll={handleScroll}
+                style={{
+                    overflowY: 'auto',
+                    flex: 1,
+                    height: 'calc(100vh - 160px)'
+                }}>
                 {loading && mappedConversations.length === 0 ? (
                     <div className="loading-state">
                         <div className="spinner"></div>
@@ -85,22 +127,13 @@ const ConversationList = () => {
                     filteredConversations.map((conversation) => (
                         <div
                             key={conversation.id}
-                            className={`conversation-item ${
-                                // ✅ Thêm toString() để đảm bảo so sánh đúng kể cả khi id là số hay chuỗi
-                                activeConversation?.id?.toString() === conversation.id?.toString()
+                            className={`conversation-item ${activeConversation?.id?.toString() === conversation.id?.toString()
                                     ? 'active'
                                     : ''
                                 } ${conversation.unreadCount > 0 ? 'unread' : ''}`}
 
-                            // ✅ Sửa lại onClick để log ra lỗi và xử lý an toàn hơn
-                            onClick={() => {
-                                console.log("Đang chọn conversation:", conversation.raw); // Xem log này in ra gì
-                                if (conversation.raw) {
-                                    selectConversation(conversation.raw);
-                                } else {
-                                    console.error("Lỗi: Dữ liệu cuộc trò chuyện (raw) bị thiếu!");
-                                }
-                            }}
+                            // 4. ✅ GỌI HÀM XỬ LÝ MỚI
+                            onClick={() => handleConversationClick(conversation)}
                         >
                             <div className="conversation-avatar">
                                 <img
@@ -146,6 +179,9 @@ const ConversationList = () => {
                             </div>
                         </div>
                     ))
+                )}
+                {loading && conversations.length > 0 && (
+                    <div className="loading-more">Đang tải thêm...</div>
                 )}
             </div>
         </div>

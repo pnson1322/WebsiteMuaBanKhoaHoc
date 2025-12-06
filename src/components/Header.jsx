@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppState } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
+import { useUnreadCount } from '../contexts/UnreadCountContext';
 import "./Header.css";
 import {
   Search,
@@ -43,8 +44,9 @@ const Header = ({ onOpenLoginPopup }) => {
   const { dispatch, actionTypes } = useAppDispatch();
   const { isLoggedIn, user, logout } = useAuth();
   const { showSuccess, showError } = useToast();
+  const { unreadCount: chatUnreadCount } = useUnreadCount();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  //console.log("🔥 Chat Unread Count in Header:", chatUnreadCount);
   function handleLogoClick() {
     navigate("/");
   }
@@ -281,7 +283,7 @@ const Header = ({ onOpenLoginPopup }) => {
         if (isMounted) {
           showError(
             "Không thể tải thông báo: " +
-              (err.response?.data?.message || err.message)
+            (err.response?.data?.message || err.message)
           );
         }
       }
@@ -638,9 +640,14 @@ const Header = ({ onOpenLoginPopup }) => {
                 title="Tin nhắn"
               >
                 <MessageCircle className="nav-icon" />
-                {state.favorites?.length > 0 && (
-                  <span className="badge">{state.favorites.length}</span>
+
+                {/* 3. Thay thế logic cũ bằng unreadCount */}
+                {chatUnreadCount > 0 && (
+                  <span className="badge">
+                    {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+                  </span>
                 )}
+
                 <span className="nav-label">Tin nhắn</span>
               </button>
 
