@@ -8,34 +8,39 @@ import {
   Phone,
 } from "lucide-react";
 import "./Footer.css";
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAppState, useAppDispatch } from "../contexts/AppContext";
 
 const Footer = () => {
-  const [categories, setCategories] = useState([
-    "Lập Trình Web",
-    "Data Science",
-    "Thiết Kế UI/UX",
-    "Tài Chính",
-    "Mobile App",
-    "Digital Marketing",
-    "Kinh Doanh",
-    "Ngoại Ngữ",
-  ]);
+  const navigate = useNavigate();
+  const state = useAppState();
+  const { dispatch, actionTypes } = useAppDispatch();
 
-  //   useEffect(() => {
-  //     axios
-  //       .get("...")
-  //       .then((data) => {
-  //         const limitedData = data.slice(0, 8);
-  //         setCategories(limitedData);
-  //       })
-  //       .catch((err) => console.error("Lỗi khi lấy categories:", err));
-  //   }, []);
+  // Lấy categories từ AppContext (đã được load sẵn)
+  const categories = useMemo(() => {
+    if (state.categories && state.categories.length > 0) {
+      // Giới hạn 8 danh mục đầu tiên
+      return state.categories.slice(0, 8);
+    }
+    return [];
+  }, [state.categories]);
 
   const mid = Math.ceil(categories.length / 2);
   const col1 = categories.slice(0, mid);
   const col2 = categories.slice(mid);
+
+  const handleCategoryClick = (categoryName) => {
+    dispatch({ type: actionTypes.SET_CATEGORY, payload: categoryName });
+    navigate("/");
+    // Scroll to courses section
+    setTimeout(() => {
+      const coursesSection = document.getElementById("all-courses");
+      if (coursesSection) {
+        coursesSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  };
 
   return (
     <footer className="footer">
@@ -74,16 +79,26 @@ const Footer = () => {
           <div className="category-columns">
             <div className="category-column">
               {col1.map((item, index) => (
-                <div key={index} className="category-item">
-                  {item}
+                <div
+                  key={item.id || index}
+                  className="category-item"
+                  onClick={() => handleCategoryClick(item.name)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {item.name}
                 </div>
               ))}
             </div>
 
             <div className="category-column">
               {col2.map((item, index) => (
-                <div key={index} className="category-item">
-                  {item}
+                <div
+                  key={item.id || index}
+                  className="category-item"
+                  onClick={() => handleCategoryClick(item.name)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {item.name}
                 </div>
               ))}
             </div>

@@ -2,7 +2,7 @@ import React from "react";
 import { Heart } from "lucide-react";
 
 const CourseImageSection = React.memo(
-  ({ course, isFavorite, onToggleFavorite }) => {
+  ({ course, isFavorite, onToggleFavorite, showFavoriteButton = true }) => {
     return (
       <div className="course-image-container">
         <img
@@ -16,12 +16,14 @@ const CourseImageSection = React.memo(
 
         <div className="course-category">{course.categoryName}</div>
 
-        <button
-          className={`favorite-button ${isFavorite ? "favorite" : ""}`}
-          onClick={onToggleFavorite}
-        >
-          <Heart className="heart-icon" />
-        </button>
+        {showFavoriteButton && (
+          <button
+            className={`favorite-button ${isFavorite ? "favorite" : ""}`}
+            onClick={onToggleFavorite}
+          >
+            <Heart className="heart-icon" />
+          </button>
+        )}
       </div>
     );
   }

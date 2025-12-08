@@ -1,8 +1,9 @@
 import React from "react";
 import { ShoppingCart, Eye } from "lucide-react";
+import { getLevelInVietnamese } from "../../utils/courseUtils";
 
 const CourseFooter = React.memo(
-  ({ course, isInCart, onAddToCart, onViewDetails }) => {
+  ({ course, isInCart, onAddToCart, onViewDetails, showCartButton = true }) => {
     return (
       <div className="course-footer">
         {/* 👨‍🏫 Instructor info */}
@@ -19,20 +20,24 @@ const CourseFooter = React.memo(
           </p>
 
           <div className="course-meta">
-            <span className="level-badge">{course.level}</span>
+            <span className="level-badge">
+              {getLevelInVietnamese(course.level)}
+            </span>
           </div>
         </div>
 
         {/* 🎯 Actions */}
         <div className="course-actions">
-          <button
-            className={`add-to-cart-btn ${isInCart ? "in-cart" : ""}`}
-            onClick={onAddToCart}
-            disabled={isInCart}
-          >
-            <ShoppingCart className="action-icon" />
-            {isInCart ? "Đã thêm" : "Thêm vào giỏ"}
-          </button>
+          {showCartButton && (
+            <button
+              className={`add-to-cart-btn ${isInCart ? "in-cart" : ""}`}
+              onClick={onAddToCart}
+              disabled={isInCart}
+            >
+              <ShoppingCart className="action-icon" />
+              {isInCart ? "Đã thêm" : "Thêm vào giỏ"}
+            </button>
+          )}
 
           <button className="view-details-btn" onClick={onViewDetails}>
             <Eye className="action-icon" />

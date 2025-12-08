@@ -12,6 +12,7 @@ import {
 import { CourseCardSkeleton } from "../components/LoadingSkeleton";
 import PaymentPopup from "../components/PaymentPopup";
 import { cartAPI } from "../services/cartAPI";
+import { getLevelInVietnamese } from "../utils/courseUtils";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -226,7 +227,9 @@ const Cart = () => {
                       <span className="cart-item-category">
                         {course.categoryName}
                       </span>
-                      <span className="cart-item-level">{course.level}</span>
+                      <span className="cart-item-level">
+                        {getLevelInVietnamese(course.level)}
+                      </span>
                     </div>
                   </div>
 
