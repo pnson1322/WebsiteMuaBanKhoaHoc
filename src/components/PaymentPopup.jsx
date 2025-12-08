@@ -27,6 +27,8 @@ const PaymentPopup = ({ onClose, course }) => {
       const courseIds = course.map((item) => item.id);
       const amount = totalPrice;
 
+      sessionStorage.setItem("paying_course_ids", JSON.stringify(courseIds));
+
       const data = await momoAPI.createMomoPayment({ courseIds, amount });
 
       if (data && data.payUrl) {

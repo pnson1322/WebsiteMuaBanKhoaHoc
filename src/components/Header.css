@@ -158,6 +158,11 @@
   transform: translateY(-2px);
 }
 
+.nav-button.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
 .nav-icon {
   width: 24px;
   height: 24px;
@@ -368,7 +373,25 @@
 
 .notification-wrapper {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
+
+.connection-indicator {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+}
+
+/* .connection-indicator.connected {
+  background-color: #22c55e;
+} */
 
 /* Responsive Design */
 .desktop-only {

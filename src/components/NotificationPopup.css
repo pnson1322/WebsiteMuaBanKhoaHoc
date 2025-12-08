@@ -122,8 +122,15 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: normal;
+  white-space: break-word;
 }
+
+.notif-text.expanded {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  display: block;
+}
+
 .notif-time {
   font-size: 0.85rem; /* 13px */
   color: #6b7280;

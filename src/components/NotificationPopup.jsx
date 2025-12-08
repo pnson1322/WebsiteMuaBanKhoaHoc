@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import "./NotificationPopup.css";
-import { X, Trash2 } from "lucide-react";
+import { X } from "lucide-react";
 
 const NotificationIcon = () => (
   <div className="notif-icon-wrapper">
@@ -31,12 +31,21 @@ export default function NotificationPopup({
   onDeleteOne,
   onDeleteAll,
 }) {
+  const [expandedIds, setExpandedIds] = useState([]);
+
   const handleItemClick = (id, isRead) => {
     if (!isRead) {
       console.log(`Clicked notification ${id}`);
       onMarkOneAsRead(id);
-
     }
+
+    setExpandedIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((itemId) => itemId !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
   };
 
   return (
@@ -66,33 +75,39 @@ export default function NotificationPopup({
         {notifications.length === 0 ? (
           <div className="notif-empty">Bạn không có thông báo nào.</div>
         ) : (
-          notifications.map((notif) => (
-            <div
-              key={notif.id}
-              className={`notif-item ${!notif.isRead ? "unread" : ""}`}
-              onClick={() => handleItemClick(notif.id, notif.isRead)}
-            >
-              <NotificationIcon />
+          notifications.map((notif) => {
+            const isExpanded = expandedIds.includes(notif.id);
 
-              <div className="notif-content">
-                <p className="notif-text">{notif.text}</p>
-                <span className="notif-time">{notif.date}</span>
-              </div>
-
-              {!notif.isRead && <div className="notif-unread-dot" />}
-
-              <button
-                className="notif-delete-item-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteOne(notif.id);
-                }}
-                title="Xóa thông báo này"
+            return (
+              <div
+                key={notif.id}
+                className={`notif-item ${!notif.isRead ? "unread" : ""}`}
+                onClick={() => handleItemClick(notif.id, notif.isRead)}
               >
-                <X size={14} />
-              </button>
-            </div>
-          ))
+                <NotificationIcon />
+
+                <div className="notif-content">
+                  <p className={`notif-text ${isExpanded ? "expanded" : ""}`}>
+                    {notif.text}
+                  </p>
+                  <span className="notif-time">{notif.date}</span>
+                </div>
+
+                {!notif.isRead && <div className="notif-unread-dot" />}
+
+                <button
+                  className="notif-delete-item-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteOne(notif.id);
+                  }}
+                  title="Xóa thông báo này"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            );
+          })
         )}
       </SimpleBar>
     </div>

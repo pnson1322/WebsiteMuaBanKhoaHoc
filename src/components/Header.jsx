@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppState } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
@@ -23,30 +23,21 @@ import {
 import { useState, useEffect, useRef } from "react";
 import NotificationPopup from "./NotificationPopup";
 import { notificationAPI } from "../services/notificationAPI";
-import signalRService from "../services/signalRService"; // ✅ Import SignalR
-
-import test from "../assets/test.jpg";
-import momo from "../assets/momo.png";
-import test2 from "../assets/test2.jpg";
-
-const ALL_COURSES = [
-  { id: 1, name: "Lập trình React cơ bản", imageUrl: test },
-  { id: 2, name: "Lập trình Javascript nâng cao", imageUrl: test2 },
-  { id: 3, name: "Giáo trình SQL cho người mới", imageUrl: momo },
-  { id: 4, name: "Node.js và Express", imageUrl: test },
-  { id: 5, name: "Giáo trình Python từ A-Z", imageUrl: test2 },
-];
+import signalRService from "../services/signalRService";
 import { courseAPI } from "../services/courseAPI";
 
 const Header = ({ onOpenLoginPopup }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const state = useAppState();
   const { dispatch, actionTypes } = useAppDispatch();
   const { isLoggedIn, user, logout } = useAuth();
   const { showSuccess, showError } = useToast();
   const { unreadCount: chatUnreadCount } = useUnreadCount();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  //console.log("🔥 Chat Unread Count in Header:", chatUnreadCount);
+
+  const isActive = (path) => location.pathname === path;
+  
   function handleLogoClick() {
     navigate("/");
   }
@@ -580,7 +571,9 @@ const Header = ({ onOpenLoginPopup }) => {
             <>
               {/* Courses */}
               <button
-                className="nav-button"
+                className={`nav-button ${
+                  isActive("/admin-courses") ? "active" : ""
+                }`}
                 onClick={handleAdminCoursesClick}
                 title="Khóa học"
               >
@@ -590,7 +583,9 @@ const Header = ({ onOpenLoginPopup }) => {
 
               {/* Transactions */}
               <button
-                className="nav-button"
+                className={`nav-button ${
+                  isActive("/transactions") ? "active" : ""
+                }`}
                 onClick={handleTransactionsClick}
                 title="Quản lý giao dịch"
               >
@@ -600,7 +595,9 @@ const Header = ({ onOpenLoginPopup }) => {
 
               {/* Categories */}
               <button
-                className="nav-button"
+                className={`nav-button ${
+                  isActive("/admin-categories") ? "active" : ""
+                }`}
                 onClick={handleCategoriesClick}
                 title="Quản lý danh mục"
               >
@@ -610,7 +607,9 @@ const Header = ({ onOpenLoginPopup }) => {
 
               {/* Users */}
               <button
-                className="nav-button"
+                className={`nav-button ${
+                  isActive("/admin-users") ? "active" : ""
+                }`}
                 onClick={handleUsersClick}
                 title="Quản lý người dùng"
               >
@@ -625,7 +624,9 @@ const Header = ({ onOpenLoginPopup }) => {
             <>
               {/* Courses */}
               <button
-                className="nav-button"
+                className={`nav-button ${
+                  isActive("/seller-courses") ? "active" : ""
+                }`}
                 onClick={handleSellerCoursesClick}
                 title="Khóa học"
               >
@@ -635,7 +636,9 @@ const Header = ({ onOpenLoginPopup }) => {
 
               {/* Chat */}
               <button
-                className="nav-button"
+                className={`nav-button ${
+                  isActive("/seller-chat") ? "active" : ""
+                }`}
                 onClick={handleChatClick}
                 title="Tin nhắn"
               >
@@ -651,10 +654,10 @@ const Header = ({ onOpenLoginPopup }) => {
                 <span className="nav-label">Tin nhắn</span>
               </button>
 
-              {/* Notification - ✅ CẢI THIỆN */}
+              {/* Notification */}
               <div className="notification-wrapper" ref={notificationRef}>
                 <button
-                  className="nav-button notification-btn"
+                  className="nav-button"
                   onClick={handleNoficationClick}
                   title="Thông báo"
                 >
@@ -686,7 +689,9 @@ const Header = ({ onOpenLoginPopup }) => {
             <>
               {/* Courses */}
               <button
-                className="nav-button"
+                className={`nav-button ${
+                  isActive("/purchased") ? "active" : ""
+                }`}
                 onClick={handleLearnerCoursesClick}
                 title="Khóa học"
               >
@@ -699,7 +704,9 @@ const Header = ({ onOpenLoginPopup }) => {
 
               {/* Favorites */}
               <button
-                className="nav-button"
+                className={`nav-button ${
+                  isActive("/favorites") ? "active" : ""
+                }`}
                 onClick={handleFavoritesClick}
                 title="Yêu thích"
               >
@@ -712,7 +719,7 @@ const Header = ({ onOpenLoginPopup }) => {
 
               {/* Cart */}
               <button
-                className="nav-button"
+                className={`nav-button ${isActive("/cart") ? "active" : ""}`}
                 onClick={handleCartClick}
                 title="Giỏ hàng"
               >
@@ -728,7 +735,12 @@ const Header = ({ onOpenLoginPopup }) => {
           {/* User */}
           {isLoggedIn ? (
             <div className="user-menu destop-only">
-              <button className="nav-button user-button" title={user?.fullName}>
+              <button
+                className={`nav-button user-button ${
+                  isActive("/user-info") ? "active" : ""
+                }`}
+                title={user?.fullName}
+              >
                 {user?.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
@@ -762,7 +774,9 @@ const Header = ({ onOpenLoginPopup }) => {
             </div>
           ) : (
             <button
-              className="nav-button login-button desktop-only"
+              className={`nav-button login-button desktop-only ${
+                isActive("/login") ? "active" : ""
+              }`}
               onClick={onOpenLoginPopup}
               title="Đăng nhập"
             >
