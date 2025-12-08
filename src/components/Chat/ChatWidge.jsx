@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { MessageCircle, X, Send, Loader } from 'lucide-react';
 import * as signalR from '@microsoft/signalr';
-import { chatAPI } from '../../services/chatAPI';
+import { chatAPI } from '../../services/chatAPI'; // Đảm bảo API này hỗ trợ page, pageSize
 import { useAuth } from '../../contexts/AuthContext';
 import './ChatWidge.css';
 
@@ -10,16 +10,21 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
 
     // UI States
     const [isOpen, setIsOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // Loading lần đầu
+    const [isLoadingOld, setIsLoadingOld] = useState(false); // Loading khi kéo lên
 
     // Data States
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const [conversationId, setConversationId] = useState(null);
 
-    // ✅ State mới: Typing & Status
+    // Pagination States
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+
+    // Status States
     const [isTeacherTyping, setIsTeacherTyping] = useState(false);
-    const [isTeacherActive, setIsTeacherActive] = useState(false); // Theo dõi thầy có trong phòng không
+    const [isTeacherActive, setIsTeacherActive] = useState(false);
 
     // SignalR States
     const [connection, setConnection] = useState(null);
@@ -29,7 +34,12 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
     const messagesEndRef = useRef(null);
     const connectionRef = useRef(null);
     const conversationIdRef = useRef(null);
-    const typingTimeoutRef = useRef(null); // ✅ Ref để debounce typing
+    const typingTimeoutRef = useRef(null);
+
+    // ✅ Refs cho Scroll & Pagination
+    const chatContainerRef = useRef(null);
+    const prevScrollHeightRef = useRef(null);
+    const lastMessageIdRef = useRef(null);
 
     // --- 1. SYNC REFS ---
     useEffect(() => {
@@ -40,14 +50,33 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
         conversationIdRef.current = conversationId;
     }, [conversationId]);
 
-    // --- 2. AUTO SCROLL ---
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // --- 2. LOGIC SCROLL THÔNG MINH ---
+    const scrollToBottom = (smooth = true) => {
+        messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
     };
 
+    // Chỉ cuộn xuống đáy khi tin nhắn MỚI NHẤT thay đổi (nhận tin mới/gửi tin)
+    // Không cuộn khi load tin cũ
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, isOpen, isTeacherTyping]); // Scroll khi có tin nhắn hoặc typing mới
+        if (messages.length === 0) return;
+
+        const lastMessage = messages[messages.length - 1];
+
+        // Nếu ID tin cuối khác lần trước -> Có tin mới ở đáy -> Cuộn
+        if (lastMessageIdRef.current !== lastMessage.id) {
+            // Nếu đang mở widget thì mới cuộn
+            if (isOpen) scrollToBottom();
+        }
+
+        lastMessageIdRef.current = lastMessage.id;
+    }, [messages, isOpen]);
+
+    // Cuộn xuống khi thầy đang gõ (chỉ nếu đang ở gần đáy - optional)
+    useEffect(() => {
+        if (isTeacherTyping && isOpen) {
+            scrollToBottom();
+        }
+    }, [isTeacherTyping, isOpen]);
 
     // --- 3. INIT LOGIC ---
     const initializeChat = useCallback(async () => {
@@ -60,7 +89,10 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
             if (conv && conv.id) {
                 console.log('✅ Conversation initialized:', conv.id);
                 setConversationId(conv.id);
-                await loadMessages(conv.id);
+                // Reset page về 1 khi init
+                setPage(1);
+                setHasMore(true);
+                await loadMessages(conv.id, 1);
             }
         } catch (error) {
             console.error('❌ Error initializing chat:', error);
@@ -69,10 +101,15 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
         }
     }, [user, teacherId, courseId]);
 
-    const loadMessages = async (convId) => {
+    // ✅ Hàm Load Message hỗ trợ Page
+    const loadMessages = async (convId, pageNum) => {
         try {
-            const response = await chatAPI.getMessages(convId);
-            const messagesArray = Array.isArray(response) ? response : (response.items || []);
+            const pageSize = 20;
+            const response = await chatAPI.getMessages(convId, pageNum, pageSize);
+
+            // Xử lý response (theo cấu trúc chuẩn { items, totalCount })
+            const messagesArray = response.items || (Array.isArray(response) ? response : []);
+            const totalCount = response.totalCount || 0;
 
             const mappedMessages = messagesArray.map(msg => ({
                 id: msg.id,
@@ -80,27 +117,89 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
                 senderId: msg.senderId,
                 senderName: msg.senderName || (msg.senderId === user?.id ? 'Bạn' : teacherName),
                 createdAt: msg.createdAt,
-                isRead: msg.isRead
+                isRead: msg.isRead,
+                isSystem: false
             }));
 
-            if (mappedMessages.length === 0) {
-                setMessages([{
-                    id: 'welcome',
-                    content: `Xin chào! Tôi là ${teacherName}. Tôi có thể giúp gì cho bạn về khóa học này?`,
-                    senderId: teacherId,
-                    senderName: teacherName,
-                    createdAt: new Date().toISOString(),
-                    isSystem: true
-                }]);
-            } else {
-                setMessages(mappedMessages);
+            // Nếu là trang 1 (Load lần đầu)
+            if (pageNum === 1) {
+                if (mappedMessages.length === 0) {
+                    setMessages([{
+                        id: 'welcome',
+                        content: `Xin chào! Tôi là ${teacherName}. Tôi có thể giúp gì cho bạn về khóa học này?`,
+                        senderId: teacherId,
+                        senderName: teacherName,
+                        createdAt: new Date().toISOString(),
+                        isSystem: true
+                    }]);
+                    setHasMore(false);
+                } else {
+                    setMessages(mappedMessages);
+                    // Check hasMore
+                    setHasMore(mappedMessages.length === pageSize && mappedMessages.length < totalCount);
+                }
+
+                // Cuộn xuống đáy ngay lập tức sau khi load trang 1
+                setTimeout(() => scrollToBottom(false), 100);
+            }
+            // Nếu là các trang sau (Load tin cũ)
+            else {
+                if (mappedMessages.length > 0) {
+                    setMessages(prev => {
+                        const existingIds = new Set(prev.map(m => m.id));
+                        const uniqueNew = mappedMessages.filter(m => !existingIds.has(m.id));
+                        return [...uniqueNew, ...prev]; // Nối vào đầu
+                    });
+
+                    const estimatedLoaded = pageNum * pageSize;
+                    setHasMore(mappedMessages.length === pageSize && estimatedLoaded < totalCount);
+                } else {
+                    setHasMore(false);
+                }
             }
 
-            await chatAPI.markAsRead(convId);
+            // Mark read chỉ gọi khi load trang 1
+            if (pageNum === 1) {
+                await chatAPI.markAsRead(convId);
+            }
+
         } catch (error) {
             console.error('❌ Error loading messages:', error);
+            if (pageNum === 1) setMessages([]);
         }
     };
+
+    // ✅ Handle Scroll (Kéo lên đỉnh)
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight } = e.target;
+
+        if (scrollTop === 0 && hasMore && !loading && !isLoadingOld) {
+            // Lưu chiều cao trước khi load
+            prevScrollHeightRef.current = scrollHeight;
+            loadOldMessages();
+        }
+    };
+
+    const loadOldMessages = async () => {
+        if (!conversationId) return;
+        setIsLoadingOld(true);
+        const nextPage = page + 1;
+        await loadMessages(conversationId, nextPage);
+        setPage(nextPage);
+        setIsLoadingOld(false);
+    };
+
+    // ✅ Giữ vị trí cuộn (Scroll Restoration)
+    useLayoutEffect(() => {
+        if (!isLoadingOld && prevScrollHeightRef.current && chatContainerRef.current) {
+            const newScrollHeight = chatContainerRef.current.scrollHeight;
+            const heightDiff = newScrollHeight - prevScrollHeightRef.current;
+
+            chatContainerRef.current.scrollTop = heightDiff;
+            prevScrollHeightRef.current = null;
+        }
+    }, [messages, isLoadingOld]);
+
 
     useEffect(() => {
         if (isOpen && user && !conversationId) {
@@ -108,12 +207,12 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
         }
     }, [isOpen, user, conversationId, initializeChat]);
 
-    // --- 4. SIGNALR SETUP & HANDLERS ---
+    // --- 4. SIGNALR SETUP & HANDLERS (Giữ nguyên phần lớn) ---
     useEffect(() => {
         if (!user || !isOpen) return;
 
         const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5230';
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token'); // Hoặc lấy từ useAuth nếu có
 
         const newConnection = new signalR.HubConnectionBuilder()
             .withUrl(`${baseUrl}/chatHub`, {
@@ -149,10 +248,8 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
         };
 
         // --- HANDLERS ---
-
         const handleNewMessage = (message) => {
             if (conversationIdRef.current === message.conversationId) {
-                // Khi có tin nhắn mới, tắt typing ngay lập tức
                 if (message.senderId !== user.id) {
                     setIsTeacherTyping(false);
                 }
@@ -170,47 +267,33 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
                     }];
                 });
 
-                // Mark as read immediately if window is open
                 if (isOpen) {
                     connection.invoke('MarkAsRead', message.conversationId).catch(() => { });
                 }
             }
         };
 
-        // ✅ Xử lý Trạng thái Typing
         const handleUserTypingStatus = (userId, isTyping) => {
-            // Nếu người đang gõ là thầy (không phải mình)
             if (userId === teacherId) {
                 setIsTeacherTyping(isTyping);
-                if (isTyping) scrollToBottom();
             }
         };
 
-        // ✅ Xử lý Trạng thái Online/Active (Tham gia phòng)
         const handleUserJoined = (joinedUserId) => {
-            if (joinedUserId === teacherId) {
-                console.log('Teacher joined the room');
-                setIsTeacherActive(true);
-            }
+            if (joinedUserId === teacherId) setIsTeacherActive(true);
         };
 
-        // ✅ Xử lý Trạng thái Offline/Inactive (Rời phòng)
         const handleUserLeft = (leftUserId) => {
             if (leftUserId === teacherId) {
-                console.log('Teacher left the room');
                 setIsTeacherActive(false);
-                setIsTeacherTyping(false); // Reset typing nếu họ thoát
+                setIsTeacherTyping(false);
             }
         };
 
-        // Đăng ký sự kiện
         connection.on('ReceiveMessage', handleNewMessage);
-
-        // ✅ Đăng ký events mới
         connection.on('UserTypingStatus', handleUserTypingStatus);
         connection.on('UserJoined', handleUserJoined);
         connection.on('UserLeft', handleUserLeft);
-
         connection.on('NewMessageNotification', (data) => {
             const message = data.message || data.Message;
             if (message) handleNewMessage(message);
@@ -227,61 +310,37 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
         };
     }, [connection, user, teacherId, teacherName, isOpen]);
 
-    // Join Room
     useEffect(() => {
         if (conversationId && connection?.state === signalR.HubConnectionState.Connected) {
-            connection.invoke('JoinConversation', conversationId)
-                .catch(err => console.error('Join room failed:', err));
-
+            connection.invoke('JoinConversation', conversationId).catch(console.error);
             return () => {
-                connection.invoke('LeaveConversation', conversationId)
-                    .catch(() => { });
+                connection.invoke('LeaveConversation', conversationId).catch(() => { });
             };
         }
     }, [conversationId, isConnected, connection]);
 
 
-    // --- 5. INPUT & SEND LOGIC ---
-
-    // ✅ Xử lý Input change & gửi sự kiện Typing
+    // --- 5. INPUT & SEND LOGIC (Giữ nguyên) ---
     const handleInputChange = (e) => {
         const value = e.target.value;
         setInputMessage(value);
-
-        // Kiểm tra kết nối và conversation
         if (!conversationId || connectionRef.current?.state !== signalR.HubConnectionState.Connected) return;
 
-        // --- LOGIC MỚI GIỐNG ĐOẠN CODE BẠN GỬI ---
-
-        // Nếu có text -> Gửi signal typing = true
         if (value.trim().length > 0) {
-            // Xóa timeout cũ (nếu user vẫn đang gõ liên tục)
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
-
-            // Gửi "Đang gõ" ngay lập tức
-            connectionRef.current.invoke('UserTyping', conversationId, true)
-                .catch(err => console.error(err));
-
-            // Set timeout: Sau 2 giây không gõ gì thêm -> Gửi "Ngừng gõ"
-            typingTimeoutRef.current = setTimeout(() => {
-                connectionRef.current.invoke('UserTyping', conversationId, false)
-                    .catch(err => console.error(err));
-            }, 1000); // Bạn có thể để 1000ms hoặc 2000ms tùy thích
-        } else {
-            // Nếu xóa hết text -> Gửi signal ngừng gõ NGAY LẬP TỨC
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-            connectionRef.current.invoke('UserTyping', conversationId, false)
-                .catch(err => console.error(err));
+            connectionRef.current.invoke('UserTyping', conversationId, true).catch(console.error);
+            typingTimeoutRef.current = setTimeout(() => {
+                connectionRef.current.invoke('UserTyping', conversationId, false).catch(console.error);
+            }, 1000);
+        } else {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            connectionRef.current.invoke('UserTyping', conversationId, false).catch(console.error);
         }
     };
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim() || !user || !conversationId) return;
 
-        // Xóa timeout typing pending và gửi lệnh ngừng gõ ngay
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         if (connectionRef.current?.state === signalR.HubConnectionState.Connected) {
             connectionRef.current.invoke('UserTyping', conversationId, false).catch(() => { });
@@ -289,7 +348,6 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
 
         const messageContent = inputMessage;
         const tempId = `temp-${Date.now()}`;
-
         const tempMessage = {
             id: tempId,
             content: messageContent,
@@ -313,8 +371,9 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
             } else {
                 console.warn('⚠️ Using HTTP Fallback');
                 await chatAPI.sendMessage(conversationId, messageContent);
-                await loadMessages(conversationId);
-                setMessages(prev => prev.filter(m => m.id !== tempId));
+                // Sau khi gửi bằng HTTP, load lại trang 1 để đảm bảo đồng bộ
+                setPage(1);
+                await loadMessages(conversationId, 1);
             }
         } catch (error) {
             console.error('❌ Send failed:', error);
@@ -335,27 +394,17 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
 
     return (
         <>
-            {/* Toggle Button */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="chat-bubble-btn"
-                aria-label="Chat với giảng viên"
-            >
+            <button onClick={() => setIsOpen(!isOpen)} className="chat-bubble-btn">
                 {isOpen ? <X size={28} /> : <MessageCircle size={28} />}
             </button>
 
-            {/* Chat Window */}
             {isOpen && (
                 <div className="chat-window">
-                    {/* Header */}
                     <div className="chat-header">
                         <div className="chat-header-info">
-                            <div className="teacher-avatar">
-                                {teacherName.charAt(0).toUpperCase()}
-                            </div>
+                            <div className="teacher-avatar">{teacherName.charAt(0).toUpperCase()}</div>
                             <div>
                                 <h4>{teacherName}</h4>
-                                {/* ✅ Hiển thị trạng thái hoạt động */}
                                 <div style={{ display: 'flex', alignItems: 'center', fontSize: '12px' }}>
                                     <span className={`status-indicator ${isTeacherActive ? 'status-online' : 'status-offline'}`}></span>
                                     <span style={{ color: isTeacherActive ? '#2ecc71' : '#95a5a6' }}>
@@ -366,8 +415,19 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
                         </div>
                     </div>
 
-                    {/* Messages Area */}
-                    <div className="chat-messages">
+                    {/* ✅ GẮN REF & SỰ KIỆN SCROLL VÀO ĐÂY */}
+                    <div
+                        className="chat-messages"
+                        ref={chatContainerRef}
+                        onScroll={handleScroll}
+                    >
+                        {/* ✅ LOADING CŨ */}
+                        {isLoadingOld && (
+                            <div style={{ textAlign: 'center', padding: '5px', fontSize: '11px', color: '#999' }}>
+                                ⏳ Tải tin nhắn cũ...
+                            </div>
+                        )}
+
                         {loading ? (
                             <div className="chat-loading">
                                 <Loader className="spinner" size={24} />
@@ -376,24 +436,18 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
                         ) : (
                             <>
                                 {messages.map((msg) => (
-                                    <div
-                                        key={msg.id}
-                                        className={`chat-message ${msg.senderId === user?.id ? 'user-message' : 'teacher-message'} ${msg.isTemp ? 'temp-message' : ''}`}
-                                    >
+                                    <div key={msg.id} className={`chat-message ${msg.senderId === user?.id ? 'user-message' : 'teacher-message'} ${msg.isTemp ? 'temp-message' : ''}`}>
                                         <div className="message-bubble">
                                             <p>{msg.content}</p>
                                             {!msg.isSystem && (
                                                 <span className="message-time">
-                                                    {new Date(msg.createdAt).toLocaleTimeString('vi-VN', {
-                                                        hour: '2-digit', minute: '2-digit'
-                                                    })}
+                                                    {new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
                                 ))}
 
-                                {/* ✅ Hiển thị Typing Indicator */}
                                 {isTeacherTyping && (
                                     <div className="typing-indicator-container">
                                         <div className="typing-dots">
@@ -408,22 +462,17 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input Area */}
                     <div className="chat-input-container">
                         <input
                             type="text"
                             value={inputMessage}
-                            onChange={handleInputChange} // ✅ Thay đổi hàm xử lý ở đây
+                            onChange={handleInputChange}
                             onKeyPress={handleKeyPress}
                             placeholder="Nhập tin nhắn..."
                             className="chat-input"
                             disabled={loading}
                         />
-                        <button
-                            onClick={handleSendMessage}
-                            className="chat-send-btn"
-                            disabled={!inputMessage.trim() || loading}
-                        >
+                        <button onClick={handleSendMessage} className="chat-send-btn" disabled={!inputMessage.trim() || loading}>
                             <Send size={20} />
                         </button>
                     </div>

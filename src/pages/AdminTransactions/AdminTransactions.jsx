@@ -53,15 +53,15 @@ export default function AdminTransactions() {
       rows =
         activeTab === "courses"
           ? rows.filter(
-            (r) =>
-              String(r.courseId).includes(s) ||
-              r.courseTitle.toLowerCase().includes(s)
-          )
+              (r) =>
+                String(r.courseId).includes(s) ||
+                r.courseTitle.toLowerCase().includes(s)
+            )
           : rows.filter(
-            (r) =>
-              String(r.studentId).includes(s) ||
-              r.fullName.toLowerCase().includes(s)
-          );
+              (r) =>
+                String(r.studentId).includes(s) ||
+                r.fullName.toLowerCase().includes(s)
+            );
     }
 
     if ((fromDate || toDate) && activeTab === "courses") {
@@ -89,7 +89,6 @@ export default function AdminTransactions() {
 
   return (
     <div className="tx-wrapper">
-      <SellerStatsHeader title="📚 Quản lý giao dịch" subtitle="" />
       <div className="tx-panel">
         {/* Tabs */}
         <div className="tx-tabs">

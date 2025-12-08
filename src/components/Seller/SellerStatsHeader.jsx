@@ -1,4 +1,5 @@
 import React from "react";
+import "../../styles/heroSection.css";
 
 const SellerStatsHeader = ({
   title = "📊 Thống kê",
@@ -15,5 +16,3 @@ const SellerStatsHeader = ({
 };
 
 export default SellerStatsHeader;
-
-

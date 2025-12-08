@@ -2,31 +2,96 @@
   min-height: 100vh;
 }
 
-/* Hero Section */
-.hero-section {
+/* Hero Section - HomePage specific styles */
+.home-page .hero-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 1.5rem 0;
+  padding: 2.5rem 0;
   margin-bottom: 3rem;
   margin-top: 2rem;
   border-radius: 0 0 50px 50px;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(102, 126, 234, 0.25),
+    0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
-.hero-content h1 {
+.home-page .hero-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.home-page .hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.home-page .hero-content h1 {
+  font-family: "Inter", "Segoe UI", "Roboto", system-ui, -apple-system,
+    sans-serif;
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  letter-spacing: -0.02em;
+  animation: fadeInDown 0.6s ease-out;
 }
 
-.hero-content p {
+.home-page .hero-content p {
+  font-family: "Inter", "Segoe UI", "Roboto", system-ui, -apple-system,
+    sans-serif;
   font-size: 1.25rem;
+  font-weight: 400;
   margin-bottom: 2rem;
-  opacity: 0.9;
+  opacity: 0.95;
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-stats {
@@ -158,24 +223,24 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .hero-content h1 {
+  .home-page .hero-content h1 {
     font-size: 2rem;
   }
 
-  .hero-content p {
+  .home-page .hero-content p {
     font-size: 1rem;
     padding: 0 1rem;
   }
 
-  .hero-stats {
+  .home-page .hero-stats {
     gap: 2rem;
   }
 
-  .stat-number {
+  .home-page .stat-number {
     font-size: 1.5rem;
   }
 
-  .hero-section {
+  .home-page .hero-section {
     padding: 3rem 0;
     margin-bottom: 2rem;
     border-radius: 0 0 30px 30px;
@@ -183,11 +248,11 @@
 }
 
 @media (max-width: 480px) {
-  .hero-content h1 {
+  .home-page .hero-content h1 {
     font-size: 1.75rem;
   }
 
-  .hero-stats {
+  .home-page .hero-stats {
     flex-direction: row;
     flex-wrap: wrap;
     gap: 1.5rem;
@@ -195,20 +260,20 @@
     justify-content: center;
   }
 
-  .stat {
+  .home-page .stat {
     flex: 1 1 calc(50% - 0.75rem);
     min-width: 120px;
   }
 
-  .stat-number {
+  .home-page .stat-number {
     font-size: 1.25rem;
   }
 
-  .stat-label {
+  .home-page .stat-label {
     font-size: 0.8rem;
   }
 
-  .hero-section {
+  .home-page .hero-section {
     padding: 2.5rem 0;
   }
 

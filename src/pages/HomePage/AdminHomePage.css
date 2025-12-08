@@ -2,6 +2,12 @@
   grid-template-columns: repeat(3, 1fr);
 }
 
+.admin-management-grid {
+  margin: 2rem auto;
+  max-width: 1400px;
+  padding: 0 1rem;
+}
+
 .user-statistic {
   display: flex;
   flex-direction: column;

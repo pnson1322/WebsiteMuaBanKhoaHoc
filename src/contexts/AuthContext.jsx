@@ -21,6 +21,8 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  // ✅ THÊM: State để lưu token, giúp React re-render khi token thay đổi
+  const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,9 +34,12 @@ export const AuthProvider = ({ children }) => {
       );
 
       try {
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
         const loggedIn = localStorage.getItem("isLoggedIn") === "true";
         const currentUser = localStorage.getItem("currentUser");
+
+        // ✅ Cập nhật state token ngay lúc khởi động
+        setAccessToken(token);
 
         logger.debug("AUTH_CHECK_STORAGE", "LocalStorage auth data", {
           hasToken: !!token,
@@ -43,7 +48,6 @@ export const AuthProvider = ({ children }) => {
         });
 
         if (loggedIn && token) {
-          // Nếu có token, fetch user data mới nhất từ API
           try {
             logger.info("AUTH_FETCH_USER", "Fetching user details from API");
             const userData = await userAPI.getUserDetail();
@@ -62,7 +66,6 @@ export const AuthProvider = ({ children }) => {
             setUser(userData);
             localStorage.setItem("currentUser", JSON.stringify(userData));
           } catch (error) {
-            // Nếu token hết hạn hoặc invalid, clear auth
             logger.error(
               "AUTH_FETCH_FAILED",
               "Failed to fetch user data - clearing auth",
@@ -71,12 +74,10 @@ export const AuthProvider = ({ children }) => {
                 status: error.response?.status,
               }
             );
-
             console.error("Error fetching user data:", error);
             clearAuth();
           }
         } else if (loggedIn && currentUser) {
-          // Fallback: dùng data từ localStorage nếu không có token
           logger.warn(
             "AUTH_FALLBACK",
             "Using cached user data from localStorage"
@@ -85,6 +86,8 @@ export const AuthProvider = ({ children }) => {
           setUser(JSON.parse(currentUser));
         } else {
           logger.info("AUTH_NOT_LOGGED_IN", "User is not logged in");
+          // Đảm bảo clear sạch nếu không khớp
+          clearAuth();
         }
       } catch (error) {
         logger.error("AUTH_CHECK_ERROR", "Error during auth status check", {
@@ -109,6 +112,8 @@ export const AuthProvider = ({ children }) => {
 
     setIsLoggedIn(false);
     setUser(null);
+    setAccessToken(null); // ✅ Clear state token
+
     localStorage.removeItem("token");
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("currentUser");
@@ -129,12 +134,14 @@ export const AuthProvider = ({ children }) => {
 
     setIsLoggedIn(true);
     setUser(userData);
+
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("currentUser", JSON.stringify(userData));
 
-    // Lưu tokens nếu có
     if (tokens?.accessToken) {
       localStorage.setItem("accessToken", tokens.accessToken);
+      localStorage.setItem("token", tokens.accessToken); // Backward compatibility
+      setAccessToken(tokens.accessToken); // ✅ Cập nhật state token
     }
     if (tokens?.refreshToken) {
       localStorage.setItem("refreshToken", tokens.refreshToken);
@@ -142,23 +149,18 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const fullUserData = await userAPI.getUserDetail();
-
       setIsLoggedIn(true);
       setUser(fullUserData);
       localStorage.setItem("currentUser", JSON.stringify(fullUserData));
     } catch (error) {
       console.error("Login success but failed to fetch details", error);
-      const fallbackUser = {
-        ...userData,
-      };
+      const fallbackUser = { ...userData };
       setIsLoggedIn(true);
       setUser(fallbackUser);
       localStorage.setItem("currentUser", JSON.stringify(fallbackUser));
     }
 
-    // 🔄 Sync cart và favorites từ backend sau khi login
     if (appDispatchContext?.syncUserData) {
-      // Delay một chút để đảm bảo token đã được lưu
       setTimeout(() => {
         appDispatchContext.syncUserData();
         logger.info("AUTH_LOGIN_SYNC_DATA", "Syncing user data from backend");
@@ -174,7 +176,6 @@ export const AuthProvider = ({ children }) => {
       email: user?.email,
     });
 
-    // 🗑️ Reset cart và favorites về trạng thái guest
     if (appDispatchContext?.resetUserData) {
       appDispatchContext.resetUserData();
       logger.info("AUTH_LOGOUT_RESET_DATA", "User data reset to guest state");
@@ -214,23 +215,24 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  // Function để refresh user data từ API
   const refreshUser = async () => {
     logger.info("AUTH_REFRESH_USER", "Refreshing user data from API");
-
     try {
       const userData = await userAPI.getUserDetail();
       setUser(userData);
       localStorage.setItem("currentUser", JSON.stringify(userData));
 
+      // Đảm bảo accessToken state đồng bộ với localStorage (phòng hờ)
+      const currentToken = localStorage.getItem("accessToken") || localStorage.getItem("token");
+      if (currentToken !== accessToken) {
+        setAccessToken(currentToken);
+      }
+
       logger.info(
         "AUTH_REFRESH_USER_SUCCESS",
         "User data refreshed successfully",
-        {
-          userId: userData.id,
-        }
+        { userId: userData.id }
       );
-
       return userData;
     } catch (error) {
       logger.error("AUTH_REFRESH_USER_FAILED", "Failed to refresh user data", {
@@ -244,6 +246,8 @@ export const AuthProvider = ({ children }) => {
   const value = {
     isLoggedIn,
     user,
+    accessToken, // ✅ QUAN TRỌNG: Truyền accessToken ra ngoài
+    token: accessToken, // Alias: truyền thêm tên 'token' cho chắc ăn
     login,
     logout,
     updateUser,

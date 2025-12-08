@@ -273,11 +273,6 @@ const SellerCoursesPage = () => {
   return (
     <div className="purchased-page">
       <div className="container">
-        <SellerStatsHeader
-          title="📚 Quản lý khóa học"
-          subtitle="Thống kê thông tin giao dịch khóa học của bạn"
-        />
-
         <SellerStatsSummary
           totalCourses={totalCourses}
           totalStudents={totalStudents}
