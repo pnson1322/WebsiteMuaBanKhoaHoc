@@ -18,9 +18,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { courseAPI } from "../services/courseAPI";
 import { reviewAPI } from "../services/reviewAPI";
 import ChatWidget from "../components/Chat/ChatWidge";
+import { getLevelInVietnamese } from "../utils/courseUtils";
 import { historyAPI } from "../services/historyAPI";
 import logger from "../utils/logger";
-
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -396,7 +396,9 @@ const CourseDetail = () => {
               <div className="stat-item">
                 <Award className="stat-icon" />
                 <div>
-                  <span className="stat-value">{course.level}</span>
+                  <span className="stat-value">
+                    {getLevelInVietnamese(course.level)}
+                  </span>
                   <span className="stat-label">Trình độ</span>
                 </div>
               </div>
@@ -480,8 +482,9 @@ const CourseDetail = () => {
                 return (
                   <span
                     key={starValue}
-                    className={`star ${starValue <= (hover || rating) ? "filled" : ""
-                      }`}
+                    className={`star ${
+                      starValue <= (hover || rating) ? "filled" : ""
+                    }`}
                     onClick={() => setRating(starValue)}
                     onMouseEnter={() => setHover(starValue)}
                     onMouseLeave={() => setHover(rating)}
@@ -571,8 +574,9 @@ const CourseDetail = () => {
                     return (
                       <span
                         key={starValue}
-                        className={`star star-comment ${starValue <= comment.rate ? "filled" : ""
-                          }`}
+                        className={`star star-comment ${
+                          starValue <= comment.rate ? "filled" : ""
+                        }`}
                       >
                         ★
                       </span>
@@ -597,10 +601,11 @@ const CourseDetail = () => {
                           return (
                             <span
                               key={starValue}
-                              className={`star ${starValue <= (hoverEdit || ratingEdit)
-                                ? "filled"
-                                : ""
-                                }`}
+                              className={`star ${
+                                starValue <= (hoverEdit || ratingEdit)
+                                  ? "filled"
+                                  : ""
+                              }`}
                               onClick={() => setRatingEdit(starValue)}
                               onMouseEnter={() => setHoverEdit(starValue)}
                               onMouseLeave={() => setHoverEdit(ratingEdit)}
@@ -658,7 +663,8 @@ const CourseDetail = () => {
           teacherId={course.sellerId}
           teacherName={course.teacherName}
           courseId={course.id}
-        />)}
+        />
+      )}
     </div>
   );
 };

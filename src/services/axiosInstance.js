@@ -88,9 +88,9 @@ instance.interceptors.response.use(
     }
 
     if (
-      error.response?.status === 401
-      && !originalRequest._retry
-      && !isAuthRequest
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthRequest
     ) {
       // ✅ Không thử refresh nếu đang ở login page hoặc không có refresh token
       const isLoginPage =
@@ -212,8 +212,7 @@ instance.interceptors.response.use(
 
         return Promise.reject(err);
       }
-    }
-    else {
+    } else {
       console.log("Non-401 error or whitelisted request:", {
         status: error.response?.status,
         url: requestUrl,

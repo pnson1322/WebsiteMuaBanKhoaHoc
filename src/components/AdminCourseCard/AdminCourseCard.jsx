@@ -2,6 +2,7 @@ import React from "react";
 import { Check, X } from "lucide-react";
 import "../CourseCard/CourseCard.css";
 import CourseStats from "../../components/CourseCard/CourseStats";
+import { getLevelInVietnamese } from "../../utils/courseUtils";
 import "./AdminCourseCard.css";
 
 const AdminCourseCard = React.memo(({ course, onToggleApproval, onClick }) => {
@@ -51,7 +52,9 @@ const AdminCourseCard = React.memo(({ course, onToggleApproval, onClick }) => {
           <CourseStats course={course} />
           <div className="course-price-level">
             <p className="course-price">{course.price.toLocaleString()} VNĐ</p>
-            <span className="level-badge">{course.level || "Cơ bản"}</span>
+            <span className="level-badge">
+              {getLevelInVietnamese(course.level)}
+            </span>
           </div>
 
           <div className="course-actions admin-actions">
