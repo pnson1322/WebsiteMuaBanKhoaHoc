@@ -7,7 +7,7 @@ import { momoAPI } from "../services/momoAPI";
 
 const PaymentResult = () => {
   const [searchParams] = useSearchParams();
-  const { syncUserData } = useAppDispatch();
+  const { syncUserData, removePaidCourses } = useAppDispatch();
   const navigate = useNavigate();
 
   const [status, setStatus] = useState("loading"); // 'loading' | 'success' | 'failed'
@@ -35,6 +35,18 @@ const PaymentResult = () => {
           setStatus("success");
           setMessage("Cảm ơn bạn đã mua khóa học. Chúc bạn học tập tốt!");
 
+          const paidCoursesStr = sessionStorage.getItem("paying_course_ids");
+
+          if (paidCoursesStr) {
+            const paidCourses = JSON.parse(paidCoursesStr);
+
+            if (removePaidCourses) {
+              removePaidCourses(paidCourses);
+            }
+
+            sessionStorage.removeItem("paying_course_ids");
+          }
+
           if (syncUserData) {
             syncUserData();
           }
@@ -52,7 +64,7 @@ const PaymentResult = () => {
     };
 
     verifyPayment();
-  }, [searchParams, syncUserData]);
+  }, [searchParams, syncUserData, removePaidCourses]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {

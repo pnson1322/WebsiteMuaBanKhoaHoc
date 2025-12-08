@@ -51,6 +51,7 @@ const actionTypes = {
   RESET_USER_DATA: "RESET_USER_DATA", // Reset cart, favorites khi logout
   SHOW_LOGIN_POPUP: "SHOW_LOGIN_POPUP",
   HIDE_LOGIN_POPUP: "HIDE_LOGIN_POPUP",
+  REMOVE_MULTIPLE_FROM_CART: "REMOVE_MULTIPLE_FROM_CART",
 };
 
 // Reducer
@@ -138,6 +139,14 @@ const appReducer = (state, action) => {
     case actionTypes.HIDE_LOGIN_POPUP:
       return { ...state, showLoginPopup: false };
 
+    case actionTypes.REMOVE_MULTIPLE_FROM_CART: {
+      // action.payload là mảng các courseId đã mua
+      // Giữ lại những id KHÔNG nằm trong danh sách đã mua
+      const newCart = state.cart.filter((id) => !action.payload.includes(id));
+      localStorage.setItem("cart", JSON.stringify(newCart));
+      return { ...state, cart: newCart };
+    }
+
     default:
       return state;
   }
@@ -190,6 +199,13 @@ export const AppProvider = ({ children }) => {
           console.error("Lỗi làm trống giỏ:", error);
           return { success: false, error };
         }
+      },
+
+      removePaidCourses: (courseIds) => {
+        dispatch({
+          type: actionTypes.REMOVE_MULTIPLE_FROM_CART,
+          payload: courseIds,
+        });
       },
     }),
     []
