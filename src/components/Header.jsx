@@ -236,7 +236,7 @@ const Header = ({ onOpenLoginPopup }) => {
       } catch (error) {
         console.error("❌ Error initializing SignalR:", error);
         setIsSignalRConnected(false);
-        showError("Không thể kết nối real-time notification");
+        //showError("Không thể kết nối real-time notification");
       }
     };
 

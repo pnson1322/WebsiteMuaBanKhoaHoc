@@ -10,6 +10,13 @@ export const chatAPI = {
         return res.data;
     },
 
+    async searchBuyers(name) {
+        const res = await instance.get(`/chat/search-buyers`, {
+            params: { name }, // Backend tự query: WHERE name LIKE %name%
+        });
+        return res.data;
+    },
+
     // Lấy messages của một conversation
     async getMessages(conversationId, page = 1, pageSize = 10) {
         const res = await instance.get(`/chat/conversations/${conversationId}/messages`, {

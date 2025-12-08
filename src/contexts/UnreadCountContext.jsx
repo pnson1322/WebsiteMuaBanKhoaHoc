@@ -21,6 +21,10 @@ export const UnreadCountProvider = ({ children, userId, authToken }) => {
         }
     }, [userId]);
 
+    useEffect(() => {
+        fetchUnreadCount();
+    }, [fetchUnreadCount]);
+
     // 2. Kết nối SignalR (Chỉ để nghe Notification)
     useEffect(() => {
         console.log("useEffect UnreadCountContext:", { userId, authToken });
