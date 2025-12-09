@@ -26,7 +26,7 @@ export default function CourseDetailMain({
   removeIntendedLearner,
   removeSkill,
 }) {
-  const { title, teacherName, level, price, durationHours, description } =
+  const { title, teacherName, level, price, durationHours, description, link } =
     formData;
 
   const [imageUrl, setImageUrl] = useState(null);
@@ -239,6 +239,54 @@ export default function CourseDetailMain({
                     name="durationHours"
                     required
                   />
+                </div>
+
+                <div className="form-field" style={{ gridColumn: "1 / -1" }}>
+                  <label>Link tài liệu (Google Drive) *</label>
+
+                  {isEditable ? (
+                    <input
+                      type="url"
+                      placeholder="https://drive.google.com/..."
+                      value={link || ""}
+                      onChange={handleChange}
+                      name="link"
+                      required
+                    />
+                  ) : (
+                    <div
+                      className="read-only-link-wrapper"
+                      style={{
+                        padding: "0.75rem 1rem",
+                        background: "#f3f4f6",
+                        borderRadius: "8px",
+                        border: "1px solid #e5e7eb",
+                        minHeight: "45px",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      {link ? (
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: "#2563eb",
+                            textDecoration: "underline",
+                            wordBreak: "break-all",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {link}
+                        </a>
+                      ) : (
+                        <span style={{ color: "#9ca3af", fontStyle: "italic" }}>
+                          Chưa cập nhật link tài liệu
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

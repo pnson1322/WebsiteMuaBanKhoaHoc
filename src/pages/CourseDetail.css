@@ -181,6 +181,9 @@
 .course-actions {
   display: flex;
   gap: 1rem;
+  margin-top: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .action-icon {
@@ -189,7 +192,8 @@
 }
 
 .favorite-btn,
-.cart-btn {
+.cart-btn,
+.buy-now-btn {
   flex: 1;
   padding: 0.875rem 1.5rem;
   border: none;
@@ -208,7 +212,7 @@
 .favorite-btn {
   background: #f8f9fa;
   color: #4a5568;
-  border: 2px solid #e2e8f0;
+  border: 0px solid #e2e8f0;
 }
 
 .favorite-btn:hover {
@@ -225,7 +229,7 @@
 .cart-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border: 2px solid transparent;
+  border: 0px solid transparent;
 }
 
 .cart-btn:disabled {
@@ -242,6 +246,17 @@
 .in-cart {
   background: #48bb78;
   cursor: not-allowed;
+}
+
+.buy-now-btn {
+  background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+  color: white;
+  border: 0px solid transparent;
+}
+
+.buy-now-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(56, 239, 125, 0.4);
 }
 
 /* Course Content */
@@ -801,6 +816,11 @@ option:checked {
   .comment-btn {
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+  .buy-now-btn,
+  .cart-btn,
+  .favorite-btn {
+    width: 100%;
   }
 
   .delete-comment-btn,

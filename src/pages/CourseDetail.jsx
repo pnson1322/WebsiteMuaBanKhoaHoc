@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   Star,
   Users,
+  CreditCard,
 } from "lucide-react";
 import { useAppState, useAppDispatch } from "../contexts/AppContext";
 import { useToast } from "../contexts/ToastContext";
@@ -20,7 +21,7 @@ import { reviewAPI } from "../services/reviewAPI";
 import ChatWidget from "../components/Chat/ChatWidge";
 import { historyAPI } from "../services/historyAPI";
 import logger from "../utils/logger";
-
+import PaymentPopup from "../components/PaymentPopup";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -41,7 +42,6 @@ const CourseDetail = () => {
         const data = await courseAPI.getCourseById(id);
         setCourse(data);
 
-        // ✅ Tự động thêm vào lịch sử xem khi user đã đăng nhập
         if (isLoggedIn) {
           try {
             await historyAPI.addToHistory(id);
@@ -49,7 +49,6 @@ const CourseDetail = () => {
               courseId: id,
             });
           } catch (historyError) {
-            // Không hiển thị lỗi cho user vì đây là action phụ
             logger.error(
               "COURSE_DETAIL",
               "Failed to add course to history",
@@ -74,6 +73,32 @@ const CourseDetail = () => {
   const [commentList, setCommentList] = useState([]);
   const [sortMode, setSortMode] = useState("all-comment");
   const [editComment, setEditComment] = useState(0);
+
+  const [showPayment, setShowPayment] = useState(false);
+  const [isPurchased, setIsPurchased] = useState(false);
+
+  useEffect(() => {
+    const checkOwnership = async () => {
+      if (!isLoggedIn) return;
+
+      try {
+        const response = await courseAPI.getPurchasedCourses({
+          page: 1,
+          pageSize: 9999,
+        });
+
+        const found = response.items?.find((item) => item.id == id);
+
+        if (found) {
+          setIsPurchased(true);
+        }
+      } catch (err) {
+        console.error("Lỗi kiểm tra khóa học đã mua:", err);
+      }
+    };
+
+    checkOwnership();
+  }, [id, isLoggedIn]);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -184,9 +209,7 @@ const CourseDetail = () => {
 
       fetchReviews();
     } catch (err) {
-      showError(
-        "Gửi đánh giá thất bại: " + (err.response?.data?.message || err.message)
-      );
+      showError("Gửi đánh giá thất bại: " + err.message);
     }
   };
 
@@ -310,7 +333,15 @@ const CourseDetail = () => {
       return;
     }
 
-    if (isInCart) return;
+    if (isPurchased) {
+      showError("Bạn đã sở hữu khóa học này rồi!");
+      return;
+    }
+
+    if (isInCart) {
+      showError("Bạn đã thêm khóa học này vào giỏ hàng rồi.");
+      return;
+    }
 
     const result = await addToCart(course.id);
 
@@ -319,6 +350,21 @@ const CourseDetail = () => {
     } else {
       showError("Lỗi khi thêm vào giỏ hàng. Vui lòng thử lại.");
     }
+  };
+
+  const handleBuyNow = () => {
+    if (!user) {
+      showError("Vui lòng đăng nhập để mua khóa học");
+      navigate("/login");
+      return;
+    }
+
+    if (isPurchased) {
+      showError("Bạn đã sở hữu khóa học này rồi!");
+      return;
+    }
+
+    setShowPayment(true);
   };
 
   const formatPrice = (price) => {
@@ -426,6 +472,11 @@ const CourseDetail = () => {
                     <ShoppingCart className="action-icon" />
                     {isInCart ? "Đã thêm vào giỏ" : "Thêm vào giỏ hàng"}
                   </button>
+
+                  <button className="buy-now-btn" onClick={handleBuyNow}>
+                    <CreditCard className="action-icon" />
+                    Mua ngay
+                  </button>
                 </div>
               ))}
           </div>
@@ -480,8 +531,9 @@ const CourseDetail = () => {
                 return (
                   <span
                     key={starValue}
-                    className={`star ${starValue <= (hover || rating) ? "filled" : ""
-                      }`}
+                    className={`star ${
+                      starValue <= (hover || rating) ? "filled" : ""
+                    }`}
                     onClick={() => setRating(starValue)}
                     onMouseEnter={() => setHover(starValue)}
                     onMouseLeave={() => setHover(rating)}
@@ -571,8 +623,9 @@ const CourseDetail = () => {
                     return (
                       <span
                         key={starValue}
-                        className={`star star-comment ${starValue <= comment.rate ? "filled" : ""
-                          }`}
+                        className={`star star-comment ${
+                          starValue <= comment.rate ? "filled" : ""
+                        }`}
                       >
                         ★
                       </span>
@@ -597,10 +650,11 @@ const CourseDetail = () => {
                           return (
                             <span
                               key={starValue}
-                              className={`star ${starValue <= (hoverEdit || ratingEdit)
-                                ? "filled"
-                                : ""
-                                }`}
+                              className={`star ${
+                                starValue <= (hoverEdit || ratingEdit)
+                                  ? "filled"
+                                  : ""
+                              }`}
                               onClick={() => setRatingEdit(starValue)}
                               onMouseEnter={() => setHoverEdit(starValue)}
                               onMouseLeave={() => setHoverEdit(ratingEdit)}
@@ -658,7 +712,13 @@ const CourseDetail = () => {
           teacherId={course.sellerId}
           teacherName={course.teacherName}
           courseId={course.id}
-        />)}
+        />
+      )}
+
+      {/* Payment Popup */}
+      {showPayment && (
+        <PaymentPopup onClose={() => setShowPayment(false)} course={[course]} />
+      )}
     </div>
   );
 };
