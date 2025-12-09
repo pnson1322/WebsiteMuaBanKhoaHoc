@@ -24,6 +24,7 @@ export default function CourseDetailPopup({ onClose, course, onUpdate }) {
     description: course.description || "",
     imageFile: null,
     deleteImage: false,
+    link: course.courseLecture || "",
   });
 
   const [targetLearners, setTargetLearners] = useState([]);
@@ -39,6 +40,10 @@ export default function CourseDetailPopup({ onClose, course, onUpdate }) {
           setTargetLearners(freshCourseData.targetLearners || []);
           setCourseSkills(freshCourseData.courseSkills || []);
           setCourseContents(freshCourseData.courseContents || []);
+          setFormData((prev) => ({
+            ...prev,
+            link: freshCourseData.courseLecture,
+          }));
         }
       } catch (error) {
         console.error("Lỗi đồng bộ dữ liệu:", error);
@@ -87,7 +92,6 @@ export default function CourseDetailPopup({ onClose, course, onUpdate }) {
 
       showSuccess("Cập nhật thành công!");
 
-      // Gọi callback để parent refresh data
       if (onUpdate) {
         onUpdate(course.id);
       }

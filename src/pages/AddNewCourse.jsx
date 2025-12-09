@@ -23,6 +23,7 @@ const AddNewCourse = () => {
   const [targetLearners, setTargetLearners] = useState([]);
   const [courseSkills, setCourseSkills] = useState([]);
   const [cate, setCate] = useState([]);
+  const [linkDrive, setLinkDrive] = useState("");
 
   const [loading, setLoading] = useState(false);
 
@@ -135,8 +136,12 @@ const AddNewCourse = () => {
         showError("Vui lòng nhập giá khóa học hợp lệ");
         return;
       }
-      if (!durationHours.trim()) {
+      if (!durationHours || Number(durationHours) <= 0) {
         showError("Vui lòng nhập thời lượng khóa học");
+        return;
+      }
+      if (!linkDrive.trim()) {
+        showError("Vui lòng nhập link tài liệu khóa học");
         return;
       }
 
@@ -154,6 +159,7 @@ const AddNewCourse = () => {
         courseContents,
         courseSkills,
         targetLearners,
+        link: linkDrive,
       };
 
       dispatch({ type: actionTypes.ADD_COURSE, payload });
@@ -191,6 +197,7 @@ const AddNewCourse = () => {
     setSkillInput("");
     setContentTitleInput("");
     setContentDesInput("");
+    setLinkDrive("");
   };
 
   return (
@@ -279,6 +286,17 @@ const AddNewCourse = () => {
                     placeholder="Ví dụ: 92 tiếng"
                     value={durationHours}
                     onChange={(e) => setDurationHours(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-field form-field--full">
+                  <label>Link tài liệu (Google Drive) *</label>
+                  <input
+                    type="url"
+                    placeholder="https://drive.google.com/..."
+                    value={linkDrive}
+                    onChange={(e) => setLinkDrive(e.target.value)}
                     required
                   />
                 </div>
