@@ -31,7 +31,7 @@ const HomePage = () => {
       {user?.role === "Buyer" || !isLoggedIn ? (
         <>
           <HeroSection />
-          <ViewHistory onViewDetails={handleViewDetails} />
+          {isLoggedIn && <ViewHistory onViewDetails={handleViewDetails} />}
           <Filter />
           <CoursesSection onViewDetails={handleViewDetails} />
         </>

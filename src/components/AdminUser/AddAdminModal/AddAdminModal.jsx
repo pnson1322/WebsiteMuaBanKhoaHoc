@@ -1,14 +1,17 @@
-import React from "react";
-import { UserPlus, User, Mail, Lock, Phone } from "lucide-react";
+import React, { useState } from "react";
+import { UserPlus, User, Mail, Lock, Phone, Eye, EyeOff } from "lucide-react";
 import "./AddAdminModal.css";
 
 const AddAdminModal = ({
   isOpen,
   formData,
+  errors = {},
   onClose,
   onSubmit,
   onFormChange,
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
   if (!isOpen) return null;
 
   return (
@@ -67,8 +70,12 @@ const AddAdminModal = ({
               value={formData.email}
               onChange={(e) => onFormChange("email", e.target.value)}
               placeholder="Nhập email..."
+              className={errors.email ? "error" : ""}
               required
             />
+            {errors.email && (
+              <span className="users-form-error">{errors.email}</span>
+            )}
           </div>
 
           {/* Số điện thoại */}
@@ -83,8 +90,12 @@ const AddAdminModal = ({
               value={formData.phoneNumber}
               onChange={(e) => onFormChange("phoneNumber", e.target.value)}
               placeholder="Nhập số điện thoại..."
+              className={errors.phoneNumber ? "error" : ""}
               required
             />
+            {errors.phoneNumber && (
+              <span className="users-form-error">{errors.phoneNumber}</span>
+            )}
           </div>
 
           {/* Mật khẩu */}
@@ -93,14 +104,24 @@ const AddAdminModal = ({
               <Lock size={16} />
               Mật khẩu
             </label>
-            <input
-              id="add-password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => onFormChange("password", e.target.value)}
-              placeholder="Nhập mật khẩu..."
-              required
-            />
+            <div className="users-password-input">
+              <input
+                id="add-password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => onFormChange("password", e.target.value)}
+                placeholder="Nhập mật khẩu..."
+                required
+              />
+              <button
+                type="button"
+                className="users-password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button
