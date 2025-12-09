@@ -8,6 +8,83 @@ import AdminCourseCard from "../../components/AdminCourseCard/AdminCourseCard";
 import CourseDetailPopup from "../../components/CourseDetailPopup/CourseDetailPopup";
 import "../PurchasedCoursesPage/PurchasedCoursesPage.css";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
+import styled from "styled-components";
+
+const FilterDropdown = styled.div`
+  position: relative;
+  user-select: none;
+`;
+
+const FilterButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border: 1.8px solid ${(props) => (props.$isOpen ? "#667eea" : "#cbd5e0")};
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  justify-content: space-between;
+  box-shadow: ${(props) =>
+    props.$isOpen ? "0 4px 15px rgba(102, 126, 234, 0.2)" : "none"};
+
+  &:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+  }
+
+  .icon {
+    color: #667eea;
+    transition: transform 0.3s ease;
+    transform: ${(props) =>
+      props.$isOpen ? "rotate(180deg)" : "rotate(0deg)"};
+  }
+`;
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.8px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 100;
+  opacity: ${(props) => (props.$isOpen ? 1 : 0)};
+  visibility: ${(props) => (props.$isOpen ? "visible" : "hidden")};
+  transform: ${(props) =>
+    props.$isOpen ? "translateY(0)" : "translateY(-10px)"};
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+`;
+
+const DropdownItem = styled.div`
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: ${(props) => (props.$isSelected ? "#f7fafc" : "white")};
+  font-weight: ${(props) => (props.$isSelected ? "600" : "500")};
+  border-left: ${(props) =>
+    props.$isSelected ? "3px solid #667eea" : "3px solid transparent"};
+
+  &:hover {
+    background: #f7fafc;
+    color: #667eea;
+    padding-left: ${(props) => (props.$isSelected ? "16px" : "20px")};
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #f1f3f5;
+  }
+`;
 
 const AdminCoursesPage = () => {
   const navigate = useNavigate();
@@ -17,6 +94,8 @@ const AdminCoursesPage = () => {
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [approvalFilter, setApprovalFilter] = useState("all"); // "all", "approved", "pending", "restricted"
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,6 +107,18 @@ const AdminCoursesPage = () => {
   const [filtered, setFiltered] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
+
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // 🧠 Lấy danh sách khóa học từ API với infinite scroll
   const loadCourses = useCallback(
@@ -309,18 +400,77 @@ const AdminCoursesPage = () => {
               />
             </div>
 
-            <div className="sort-box">
-              <FilterIcon className="icon" />
-              <select
-                value={approvalFilter}
-                onChange={(e) => setApprovalFilter(e.target.value)}
+            <FilterDropdown ref={dropdownRef}>
+              <FilterButton
+                $isOpen={isDropdownOpen}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
-                <option value="all">Tất cả</option>
-                <option value="approved">Đã duyệt</option>
-                <option value="pending">Chưa duyệt</option>
-                <option value="restricted">Bị hạn chế</option>
-              </select>
-            </div>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <FilterIcon size={18} className="icon" />
+                  <span>
+                    {approvalFilter === "all" && "Tất cả"}
+                    {approvalFilter === "approved" && "Đã duyệt"}
+                    {approvalFilter === "pending" && "Chưa duyệt"}
+                    {approvalFilter === "restricted" && "Bị hạn chế"}
+                  </span>
+                </div>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  className="icon"
+                >
+                  <path
+                    d="M2.5 4.5L6 8L9.5 4.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </FilterButton>
+              <DropdownMenu $isOpen={isDropdownOpen}>
+                <DropdownItem
+                  $isSelected={approvalFilter === "all"}
+                  onClick={() => {
+                    setApprovalFilter("all");
+                    setIsDropdownOpen(false);
+                  }}
+                >
+                  Tất cả
+                </DropdownItem>
+                <DropdownItem
+                  $isSelected={approvalFilter === "approved"}
+                  onClick={() => {
+                    setApprovalFilter("approved");
+                    setIsDropdownOpen(false);
+                  }}
+                >
+                  Đã duyệt
+                </DropdownItem>
+                <DropdownItem
+                  $isSelected={approvalFilter === "pending"}
+                  onClick={() => {
+                    setApprovalFilter("pending");
+                    setIsDropdownOpen(false);
+                  }}
+                >
+                  Chưa duyệt
+                </DropdownItem>
+                <DropdownItem
+                  $isSelected={approvalFilter === "restricted"}
+                  onClick={() => {
+                    setApprovalFilter("restricted");
+                    setIsDropdownOpen(false);
+                  }}
+                >
+                  Bị hạn chế
+                </DropdownItem>
+              </DropdownMenu>
+            </FilterDropdown>
           </div>
         </div>
 

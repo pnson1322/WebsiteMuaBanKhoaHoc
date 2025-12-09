@@ -64,7 +64,12 @@ const appReducer = (state, action) => {
       return { ...state, categories: action.payload };
 
     case actionTypes.APPEND_COURSES:
-      return { ...state, courses: [...state.courses, ...action.payload] };
+      // Lọc bỏ các khóa học trùng lặp dựa trên ID
+      const existingIds = new Set(state.courses.map((c) => c.id));
+      const newUniqueCourses = action.payload.filter(
+        (c) => !existingIds.has(c.id)
+      );
+      return { ...state, courses: [...state.courses, ...newUniqueCourses] };
 
     case actionTypes.SET_FILTERED_COURSES:
       return { ...state, filteredCourses: action.payload };
@@ -301,95 +306,35 @@ export const AppProvider = ({ children }) => {
     });
   }, [resetUserData, syncUserData]);
 
-  // ⭐ Load khóa học từ API thật
-  // ✅ Load cho TẤT CẢ: không đăng nhập, Buyer, Admin, Seller
-  // ⚠️ Chỉ skip ở trang /login và /register để tránh API call không cần thiết
-  useEffect(() => {
-    const currentPath = window.location.pathname;
-    const isAuthPage = currentPath === "/login" || currentPath === "/register";
-
-    if (isAuthPage) {
-      console.log("⏭️ Skipping course load on auth page:", currentPath);
-      return;
-    }
-
-    console.log("📚 Loading courses for all users");
-
-    const loadCourses = async () => {
-      try {
-        dispatch({ type: actionTypes.SET_LOADING_SUGGESTIONS, payload: true });
-
-        const res = await courseAPI.getCourses({ page: 1, pageSize: 100 });
-
-        console.log("📦 API Response:", res);
-
-        // ✅ Kiểm tra response structure
-        if (!res || !res.items) {
-          console.error("❌ Invalid response structure:", res);
-          throw new Error("API trả về dữ liệu không đúng format");
-        }
-
-        const normalized = res.items.map((c) => ({
-          ...c,
-          courseId: c.id,
-          image: c.imageUrl,
-        }));
-
-        dispatch({ type: actionTypes.SET_COURSES, payload: normalized });
-        console.log("✅ Courses loaded successfully:", normalized.length);
-      } catch (err) {
-        console.error("❌ Lỗi load courses:", {
-          message: err.message,
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          data: err.response?.data,
-          isNetworkError: err.code === "ERR_NETWORK",
-        });
-
-        // ⚠️ Xử lý các loại lỗi khác nhau
-        if (err.response?.status === 401) {
-          console.warn(
-            "⚠️ Backend requires auth for /api/Course - setting empty courses"
-          );
-          dispatch({ type: actionTypes.SET_COURSES, payload: [] });
-          dispatch({ type: actionTypes.SET_ERROR, payload: null }); // Clear error
-        } else if (err.code === "ERR_NETWORK") {
-          console.error("🌐 Network error - cannot connect to backend");
-          dispatch({
-            type: actionTypes.SET_ERROR,
-            payload: "Không thể kết nối đến server. Vui lòng kiểm tra kết nối.",
-          });
-        } else if (err.response?.status === 500) {
-          console.error("💥 Server error");
-          dispatch({
-            type: actionTypes.SET_ERROR,
-            payload: "Lỗi server. Vui lòng thử lại sau.",
-          });
-        } else {
-          dispatch({
-            type: actionTypes.SET_ERROR,
-            payload: `Lỗi: ${err.message}`,
-          });
-        }
-      } finally {
-        dispatch({ type: actionTypes.SET_LOADING_SUGGESTIONS, payload: false });
-      }
-    };
-
-    loadCourses();
-  }, []);
+  // ⭐ KHÔNG load courses ở đây nữa
+  // ✅ LazyLoadCourses component sẽ tự load với infinite scroll và pagination đúng
+  // ⚠️ Việc load 100 courses ở đây gây ra hiển thị sai và xung đột với lazy load
 
   // ⭐ Load categories từ API
   useEffect(() => {
     const loadCategories = async () => {
       try {
         console.log("📚 Loading categories from API...");
-        const categories = await categoryAPI.getAll();
-        console.log("✅ Categories loaded:", categories);
-        dispatch({ type: actionTypes.SET_CATEGORIES, payload: categories });
+        const data = await categoryAPI.getAll();
+        console.log("✅ Categories loaded:", data);
+        dispatch({ type: actionTypes.SET_CATEGORIES, payload: data });
       } catch (err) {
-        console.error("❌ Lỗi load categories:", err);
-        // Nếu lỗi, vẫn để categories = [] (đã có trong initialState)
+        console.error("❌ Failed to load categories:", err);
+        // Fallback: Extract từ courses nếu API fail
+        if (state.courses.length > 0) {
+          const uniqueCategories = [
+            ...new Set(state.courses.map((course) => course.categoryName)),
+          ];
+          const categories = uniqueCategories.map((name, index) => ({
+            id: index + 1,
+            name: name,
+          }));
+          console.log(
+            "⚠️ Using fallback - categories from courses:",
+            categories
+          );
+          dispatch({ type: actionTypes.SET_CATEGORIES, payload: categories });
+        }
       }
     };
 

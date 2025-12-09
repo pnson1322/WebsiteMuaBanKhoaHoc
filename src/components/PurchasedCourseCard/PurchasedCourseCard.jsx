@@ -2,6 +2,7 @@ import React from "react";
 import { Eye } from "lucide-react";
 import "../CourseCard/CourseCard.css"; // Dùng lại style gốc
 import CourseStats from "../../components/CourseCard/CourseStats";
+import { getLevelInVietnamese } from "../../utils/courseUtils";
 
 const PurchasedCourseCard = React.memo(({ course, onViewDetails }) => {
   return (
@@ -30,7 +31,9 @@ const PurchasedCourseCard = React.memo(({ course, onViewDetails }) => {
           <CourseStats course={course} />
           <div className="course-price-level">
             <p className="course-price">{course.price.toLocaleString()} VNĐ</p>
-            <span className="level-badge">{course.level || "Cơ bản"}</span>
+            <span className="level-badge">
+              {getLevelInVietnamese(course.level)}
+            </span>
           </div>
 
           <div className="course-actions">

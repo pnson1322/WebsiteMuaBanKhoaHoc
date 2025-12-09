@@ -11,8 +11,14 @@ import CourseFooter from "./CourseFooter";
 
 const CourseCard = React.memo(({ course, onViewDetails }) => {
   const state = useAppState();
-  const { dispatch, actionTypes } = useAppDispatch();
-  const { isLoggedIn } = useAuth();
+  const {
+    addToCart,
+    addToFavorite,
+    removeFromFavorite,
+    dispatch,
+    actionTypes,
+  } = useAppDispatch();
+  const { isLoggedIn, user } = useAuth();
   const { showFavorite, showUnfavorite, showSuccess, showError } = useToast();
 
   const isFavorite = state.favorites.includes(course.courseId);
@@ -21,54 +27,49 @@ const CourseCard = React.memo(({ course, onViewDetails }) => {
   const handleToggleFavorite = async (e) => {
     e.stopPropagation();
 
-    // Kiểm tra đăng nhập
-    if (!isLoggedIn) {
+    if (!user) {
       dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
       return;
     }
 
-    try {
-      if (isFavorite) {
-        // Xóa khỏi yêu thích
-        await favoriteAPI.removeFavorite(course.courseId);
-        dispatch({
-          type: actionTypes.REMOVE_FROM_FAVORITES,
-          payload: course.courseId,
-        });
+    if (isFavorite) {
+      const result = await removeFromFavorite(course.courseId);
+      if (result.success) {
         showUnfavorite(`💔 Đã bỏ yêu thích "${course.title}"`);
       } else {
-        // Thêm vào yêu thích
-        await favoriteAPI.addFavorite(course.courseId);
-        dispatch({
-          type: actionTypes.ADD_TO_FAVORITES,
-          payload: course.courseId,
-        });
-        showFavorite(`❤️ Đã thêm "${course.title}" vào danh sách yêu thích!`);
+        showError("Lỗi khi bỏ yêu thích");
       }
-    } catch (error) {
-      console.error("❌ Lỗi khi thao tác yêu thích:", error);
-      showError("Không thể thực hiện thao tác. Vui lòng thử lại!");
+    } else {
+      const result = await addToFavorite(course.courseId);
+      if (result.success) {
+        showFavorite(`❤️ Đã thêm "${course.title}" vào yêu thích!`);
+      } else {
+        showError("Lỗi khi thêm yêu thích");
+      }
     }
   };
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = async (e) => {
     e.stopPropagation();
 
-    // Kiểm tra đăng nhập
-    if (!isLoggedIn) {
+    if (!user) {
       dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
       return;
     }
 
     if (isInCart) return;
 
-    dispatch({
-      type: actionTypes.ADD_TO_CART,
-      payload: course.courseId,
-    });
+    const result = await addToCart(course.courseId);
 
-    showSuccess(`🛒 Đã thêm "${course.title}" vào giỏ hàng!`);
+    if (result.success) {
+      showSuccess(`🛒 Đã thêm "${course.title}" vào giỏ hàng!`);
+    } else {
+      showError("Lỗi khi thêm vào giỏ hàng. Vui lòng thử lại.");
+    }
   };
+
+  // Chỉ hiển thị nút yêu thích và giỏ hàng cho Buyer hoặc người chưa đăng nhập
+  const showActions = !isLoggedIn || (user && user.role === "Buyer");
 
   return (
     <div className="course-card" onClick={() => onViewDetails(course)}>
@@ -76,6 +77,7 @@ const CourseCard = React.memo(({ course, onViewDetails }) => {
         course={course}
         isFavorite={isFavorite}
         onToggleFavorite={handleToggleFavorite}
+        showFavoriteButton={showActions}
       />
 
       <div className="course-content">
@@ -90,6 +92,7 @@ const CourseCard = React.memo(({ course, onViewDetails }) => {
             isInCart={isInCart}
             onAddToCart={handleAddToCart}
             onViewDetails={() => onViewDetails(course)}
+            showCartButton={showActions}
           />
         </div>
       </div>

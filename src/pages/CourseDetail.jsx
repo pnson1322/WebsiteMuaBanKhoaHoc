@@ -19,6 +19,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { courseAPI } from "../services/courseAPI";
 import { reviewAPI } from "../services/reviewAPI";
 import ChatWidget from "../components/Chat/ChatWidge";
+import { getLevelInVietnamese } from "../utils/courseUtils";
 import { historyAPI } from "../services/historyAPI";
 import logger from "../utils/logger";
 import PaymentPopup from "../components/PaymentPopup";
@@ -442,7 +443,9 @@ const CourseDetail = () => {
               <div className="stat-item">
                 <Award className="stat-icon" />
                 <div>
-                  <span className="stat-value">{course.level}</span>
+                  <span className="stat-value">
+                    {getLevelInVietnamese(course.level)}
+                  </span>
                   <span className="stat-label">Trình độ</span>
                 </div>
               </div>
