@@ -258,6 +258,7 @@ export const courseAPI = {
     formData.append("Level", payload.level);
     formData.append("DurationHours", payload.durationHours);
     formData.append("CategoryId", payload.categoryId);
+    formData.append("CourseLecture", payload.link);
 
     if (payload.image instanceof File) {
       formData.append("Image", payload.image);
@@ -308,6 +309,7 @@ export const courseAPI = {
     formData.append("Level", data.level);
     formData.append("DurationHours", data.durationHours);
     formData.append("CategoryId", data.categoryId);
+    formData.append("CourseLecture", data.link);
 
     if (data.imageFile) {
       formData.append("Image", data.imageFile);
