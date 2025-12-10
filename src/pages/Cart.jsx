@@ -25,38 +25,38 @@ const Cart = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showPayment, setShowPayment] = useState(false);
 
-  useEffect(() => {
-    try {
-      if (!state.courses) {
-        setLoading(true);
-        return;
-      }
-
-      const filtered = state.courses.filter((c) => state.cart.includes(c.id));
-      setCartCourses(filtered);
-      console.log(cartCourses);
-      setLoading(false);
-    } catch (err) {
-      setError("Không thể tải giỏ hàng!");
-      setLoading(false);
-    }
-  }, [state.courses, state.cart]);
-
   // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const res = await cartAPI.getCart();
-  //       setCartCourses(res);
-  //       console.log(cartCourses);
-  //       setLoading(false);
-  //     } catch (err) {
-  //       setError("Không thể tải giỏ hàng!" + err);
-  //       setLoading(false);
+  //   try {
+  //     if (!state.courses) {
+  //       setLoading(true);
+  //       return;
   //     }
-  //   };
 
-  //   fetchData();
-  // }, []);
+  //     const filtered = state.courses.filter((c) => state.cart.includes(c.id));
+  //     setCartCourses(filtered);
+  //     console.log(cartCourses);
+  //     setLoading(false);
+  //   } catch (err) {
+  //     setError("Không thể tải giỏ hàng!");
+  //     setLoading(false);
+  //   }
+  // }, [state.courses, state.cart]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await cartAPI.getCart();
+        setCartCourses(res);
+        console.log(cartCourses);
+        setLoading(false);
+      } catch (err) {
+        setError("Không thể tải giỏ hàng!" + err);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const closePopup = () => setShowPayment(false);
 
@@ -210,7 +210,7 @@ const Cart = () => {
                   />
 
                   <img
-                    src={course.image}
+                    src={course.imageUrl}
                     alt={course.title}
                     className="cart-item-image"
                   />
