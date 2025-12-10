@@ -48,10 +48,12 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
   );
 
   // ✅ Login: Lưu access token vào localStorage, refreshToken tự động lưu vào cookie
+  // ✅ Login: Sửa lại để truyền đúng tham số cho AuthContext
   const handleLogin = useCallback(async () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
+      // 1. Gọi API Login
       const res = await instance.post(
         "/api/auth/login",
         {
@@ -61,22 +63,36 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
         { withCredentials: true }
       );
 
-      const userData = res.data;
+      // 2. Tách dữ liệu trả về
+      // Giả sử API trả về: { token: "abc...", refreshToken: "xyz...", id: 1, fullName: "..." }
+      const data = res.data;
 
-      // Lưu access token
-      localStorage.setItem("token", userData.token);
+      // Lấy token ra riêng
+      const tokens = {
+        accessToken: data.token || data.accessToken,
+        refreshToken: data.refreshToken
+      };
 
-      login(userData);
+      // Lấy thông tin user (loại bỏ token ra khỏi object user cho sạch, nếu thích)
+      const { token, accessToken, refreshToken, ...userInfo } = data;
+
+      // 3. 🛑 QUAN TRỌNG: Xóa token cũ trước khi set cái mới để tránh xung đột
+      localStorage.removeItem("token");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("currentUser");
+
+      // 4. Gọi login của AuthContext với ĐỦ 2 THAM SỐ
+      // Tham số 1: Thông tin user
+      // Tham số 2: Object chứa token
+      await login(userInfo, tokens);
 
       showSuccess("Đăng nhập thành công!");
       if (onSuccess) {
         onSuccess();
       }
-      // Navigate sẽ được xử lý ở component cha
     } catch (error) {
       console.error("Login error:", error);
 
-      // ⭐ THÊM PHẦN NÀY – BẮT LỖI SAI MẬT KHẨU
       if (error.response?.status === 401) {
         showError("Email hoặc mật khẩu không khớp, vui lòng thử lại!");
         setLoading(false);
@@ -96,12 +112,11 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
     formData,
     validateForm,
     login,
-    navigate,
+    navigate, // Không cần navigate ở đây nếu component cha xử lý
     onSuccess,
     showError,
     showSuccess,
   ]);
-
   // ✅ Register: KHÔNG login tự động, yêu cầu verify email
   const handleRegister = useCallback(async () => {
     if (!validateForm()) return;
@@ -154,9 +169,19 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
   // ✅ Logout: Gọi logout từ AuthContext (đã xử lý API + clear storage)
   const handleLogout = useCallback(async () => {
     try {
-      await logout(); // ✅ logout từ AuthContext đã xử lý tất cả
+      // 1. Gọi logout context
+      await logout();
+
+      // 2. Xóa thủ công thêm lần nữa cho chắc (Double check)
+      localStorage.clear();
+
       showSuccess("Đăng xuất thành công!");
+
+      // 3. Chuyển trang
       navigate("/login");
+
+      // 4. Reload trang để xóa sạch bộ nhớ RAM của React (Tránh cache biến global)
+      // window.location.reload(); // 👉 Bỏ comment dòng này nếu lỗi vẫn còn tái diễn
     } catch (error) {
       console.error("Logout error:", error);
       showError("Có lỗi khi đăng xuất, vui lòng thử lại!");

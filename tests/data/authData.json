@@ -1,0 +1,124 @@
+[
+    {
+        "id": "TC01",
+        "description": "Buyer đăng nhập thành công -> Vào trang Home/Courses",
+        "role": "buyer",
+        "email": "an.nguyen@gmail.com",
+        "password": "Test123456",
+        "isSuccess": true,
+        "expectedResult": "Chào mừng đến EduMart"
+    },
+    {
+        "id": "TC02",
+        "description": "Admin đăng nhập thành công -> Vào trang Admin Dashboard",
+        "role": "admin",
+        "email": "sang@gmail.com",
+        "password": "Test123456",
+        "isSuccess": true,
+        "expectedResult": "Quản lý EduMart"
+    },
+    {
+        "id": "TC03",
+        "description": "Seller đăng nhập thành công -> Vào trang Thống kê",
+        "role": "seller",
+        "email": "huong.tran@gmail.com",
+        "password": "Test123456",
+        "isSuccess": true,
+        "expectedResult": "Thống kê"
+    },
+    {
+        "id": "TC04",
+        "description": "Đăng nhập thất bại do sai mật khẩu",
+        "role": "guest",
+        "email": "an.nguyen@gmail.com",
+        "password": "wrongpassword",
+        "isSuccess": false,
+        "isToastError": true,
+        "expectedResult": "Email hoặc mật khẩu không khớp, vui lòng thử lại!"
+    },
+    {
+        "id": "TC05",
+        "description": "Đăng nhập thất bại do sai mật khẩu",
+        "email": "an.nguyen@gmail.com",
+        "password": "wrongpassword",
+        "isSuccess": false,
+        "isToastError": true,
+        "expectedResult": "Email hoặc mật khẩu không khớp, vui lòng thử lại!"
+    },
+    {
+        "id": "TC06",
+        "description": "Đăng nhập thất bại do email chưa đăng ký",
+        "email": "unknown@edumart.com",
+        "password": "password123",
+        "isSuccess": false,
+        "isToastError": true,
+        "expectedResult": "Email hoặc mật khẩu không khớp, vui lòng thử lại!"
+    },
+    {
+        "id": "TC07",
+        "description": "Email để trống",
+        "email": "",
+        "password": "password123",
+        "isSuccess": false,
+        "isToastError": false,
+        "expectedResult": "Vui lòng nhập email"
+    },
+    {
+        "id": "TC08",
+        "description": "Mật khẩu để trống",
+        "email": "test@gmail.com",
+        "password": "",
+        "isSuccess": false,
+        "isToastError": false,
+        "expectedResult": "Vui lòng nhập mật khẩu"
+    },
+    {
+        "id": "TC09",
+        "description": "Không nhập email và mật khẩu (Lỗi kép)",
+        "email": "",
+        "password": "",
+        "isSuccess": false,
+        "isToastError": false,
+        "expectedResult": [
+            "Vui lòng nhập email",
+            "Vui lòng nhập mật khẩu"
+        ]
+    },
+    {
+        "id": "TC10",
+        "description": "Email sai định dạng (không có @)",
+        "email": "sanggmail.com",
+        "password": "password123",
+        "isSuccess": false,
+        "isToastError": false,
+        "isNativeError": true,
+        "expectedResult": "Email không hợp lệ"
+    },
+    {
+        "id": "TC11",
+        "description": "Email sai định dạng (không có domain)",
+        "email": "sang@",
+        "password": "password123",
+        "isSuccess": false,
+        "isToastError": false,
+        "isNativeError": true,
+        "expectedResult": "Email không hợp lệ"
+    },
+    {
+        "id": "TC12",
+        "description": "Email có khoảng trắng đầu/cuối (Test Trim)",
+        "email": "  sang@gmail.com  ",
+        "password": "Test123456",
+        "isSuccess": true,
+        "expectedResult": "Quản lý EduMart"
+    },
+    {
+        "id": "TC13",
+        "description": "Mật khẩu sai độ dài (ít hơn 6 ký tự)",
+        "email": "test@gmail.com",
+        "password": "123",
+        "isSuccess": false,
+        "isToastError": false,
+        "expectedResult": "Mật khẩu phải có ít nhất 6 ký tự"
+    }
+]
