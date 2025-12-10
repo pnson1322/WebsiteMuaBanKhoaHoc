@@ -18,7 +18,18 @@ export const userAPI = {
    * Lấy thông tin user hiện tại
    */
   async getCurrentUser() {
-    const res = await instance.get("/User/Detail");
+    const res = await instance.get("/User/Detail", {
+      // 1. Thêm params _t (time) để URL luôn khác nhau từng mili giây -> Trình duyệt buộc phải tải mới
+      params: {
+        _t: new Date().getTime()
+      },
+      // 2. Thêm Header ép buộc không dùng cache
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     return res.data;
   },
 
@@ -119,7 +130,16 @@ export const userAPI = {
 
   // Lấy thông tin user hiện tại
   async getUserDetail() {
-    const res = await instance.get("/User/Detail");
+    const res = await instance.get("/User/Detail", {
+      params: {
+        _t: new Date().getTime()
+      },
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     return res.data;
   },
 
