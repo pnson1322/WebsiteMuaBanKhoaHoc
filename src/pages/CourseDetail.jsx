@@ -238,7 +238,7 @@ const CourseDetail = () => {
       fetchReviews();
     } catch (err) {
       showError(
-        "Cập nhật thất bại: " + (err.response?.data?.message || err.message)
+        "Gửi đánh giá thất bại: " + (err.response?.data?.message || err.message)
       );
     }
   };
@@ -534,9 +534,8 @@ const CourseDetail = () => {
                 return (
                   <span
                     key={starValue}
-                    className={`star ${
-                      starValue <= (hover || rating) ? "filled" : ""
-                    }`}
+                    className={`star ${starValue <= (hover || rating) ? "filled" : ""
+                      }`}
                     onClick={() => setRating(starValue)}
                     onMouseEnter={() => setHover(starValue)}
                     onMouseLeave={() => setHover(rating)}
@@ -626,9 +625,8 @@ const CourseDetail = () => {
                     return (
                       <span
                         key={starValue}
-                        className={`star star-comment ${
-                          starValue <= comment.rate ? "filled" : ""
-                        }`}
+                        className={`star star-comment ${starValue <= comment.rate ? "filled" : ""
+                          }`}
                       >
                         ★
                       </span>
@@ -653,11 +651,10 @@ const CourseDetail = () => {
                           return (
                             <span
                               key={starValue}
-                              className={`star ${
-                                starValue <= (hoverEdit || ratingEdit)
+                              className={`star ${starValue <= (hoverEdit || ratingEdit)
                                   ? "filled"
                                   : ""
-                              }`}
+                                }`}
                               onClick={() => setRatingEdit(starValue)}
                               onMouseEnter={() => setHoverEdit(starValue)}
                               onMouseLeave={() => setHoverEdit(ratingEdit)}
