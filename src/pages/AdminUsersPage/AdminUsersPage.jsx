@@ -8,6 +8,7 @@ import UserViewModal from "../../components/AdminUser/UserViewModal/UserViewModa
 import AddAdminModal from "../../components/AdminUser/AddAdminModal/AddAdminModal";
 import DeleteUserModal from "../../components/AdminUser/DeleteUserModal/DeleteUserModal";
 import { userAPI } from "../../services/userAPI";
+import { useToast } from "../../contexts/ToastContext";
 import {
   convertRoleToAPIFormat,
   normalizeRoleFromAPI,
@@ -19,6 +20,7 @@ import "./AdminUsersPage.css";
 const PAGE_SIZE = 10;
 
 const AdminUsersPage = () => {
+  const { addToast } = useToast();
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -44,6 +46,11 @@ const AdminUsersPage = () => {
     fullName: "",
     email: "",
     password: "",
+    phoneNumber: "",
+  });
+
+  const [addAdminErrors, setAddAdminErrors] = useState({
+    email: "",
     phoneNumber: "",
   });
 
@@ -531,10 +538,41 @@ const AdminUsersPage = () => {
       password: "",
       phoneNumber: "",
     });
+    setAddAdminErrors({
+      email: "",
+      phoneNumber: "",
+    });
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) return "";
+    if (!emailRegex.test(email)) {
+      return "Email không hợp lệ. Vui lòng nhập đúng định dạng (ví dụ: admin@example.com)";
+    }
+    return "";
+  };
+
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^(0|\+84)(\d{9,10})$/;
+    if (!phone) return "";
+    if (!phoneRegex.test(phone)) {
+      return "Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số bắt đầu bằng 0 hoặc +84";
+    }
+    return "";
   };
 
   const handleAddAdminFormChange = (field, value) => {
     setAddAdminForm((prev) => ({ ...prev, [field]: value }));
+
+    // Validate khi người dùng nhập
+    if (field === "email") {
+      const error = validateEmail(value);
+      setAddAdminErrors((prev) => ({ ...prev, email: error }));
+    } else if (field === "phoneNumber") {
+      const error = validatePhoneNumber(value);
+      setAddAdminErrors((prev) => ({ ...prev, phoneNumber: error }));
+    }
   };
 
   const handleAddAdminSubmit = async (e) => {
@@ -542,14 +580,38 @@ const AdminUsersPage = () => {
 
     const { fullName, email, password, phoneNumber } = addAdminForm;
 
-    await userAPI.createAdmin({
-      fullName: fullName,
-      email,
-      password,
-      phoneNumber,
-    });
+    // Validate trước khi submit
+    const emailError = validateEmail(email);
+    const phoneError = validatePhoneNumber(phoneNumber);
 
-    closeAddAdminModal();
+    if (emailError || phoneError) {
+      setAddAdminErrors({
+        email: emailError,
+        phoneNumber: phoneError,
+      });
+      addToast("Vui lòng kiểm tra lại thông tin!", "error");
+      return;
+    }
+
+    try {
+      await userAPI.createAdmin({
+        fullName: fullName,
+        email,
+        password,
+        phoneNumber,
+      });
+
+      addToast("Thêm admin thành công!", "success");
+      closeAddAdminModal();
+    } catch (error) {
+      console.error("❌ Error creating admin:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data ||
+        "Không thể thêm admin. Vui lòng thử lại!";
+      addToast(errorMessage, "error");
+      return;
+    }
 
     // reload users và stats
     const reloadData = async () => {
@@ -653,6 +715,7 @@ const AdminUsersPage = () => {
       <AddAdminModal
         isOpen={showAddAdminModal}
         formData={addAdminForm}
+        errors={addAdminErrors}
         onClose={closeAddAdminModal}
         onSubmit={handleAddAdminSubmit}
         onFormChange={handleAddAdminFormChange}
