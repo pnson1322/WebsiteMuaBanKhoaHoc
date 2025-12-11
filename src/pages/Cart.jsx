@@ -47,6 +47,8 @@ const Cart = () => {
       try {
         const res = await cartAPI.getCart();
         setCartCourses(res);
+        console.log(state.cart);
+        console.log(res);
         console.log(cartCourses);
         setLoading(false);
       } catch (err) {
@@ -76,7 +78,8 @@ const Cart = () => {
     console.log(courseId);
     const result = await removeFromCart(courseId);
     if (result.success) {
-      setSelectedIds((prev) => prev.filter((id) => id !== courseId));
+      setSelectedIds((prev) => prev.filter((item) => item.id !== courseId));
+      setCartCourses((prev) => prev.filter((item) => item.id !== courseId));
     } else {
       alert("Có lỗi khi xóa sản phẩm!");
     }
@@ -87,6 +90,7 @@ const Cart = () => {
       const result = await clearCart();
       if (result.success) {
         setSelectedIds([]);
+        setCartCourses([]);
       } else {
         alert("Lỗi khi xóa giỏ hàng");
       }

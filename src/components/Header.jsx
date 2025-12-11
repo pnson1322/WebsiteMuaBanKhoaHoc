@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppState } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { useUnreadCount } from '../contexts/UnreadCountContext';
+import { useUnreadCount } from "../contexts/UnreadCountContext";
 import "./Header.css";
 import {
   Search,
@@ -37,7 +37,7 @@ const Header = ({ onOpenLoginPopup }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isActive = (path) => location.pathname === path;
-  
+
   function handleLogoClick() {
     navigate("/");
   }
@@ -274,7 +274,7 @@ const Header = ({ onOpenLoginPopup }) => {
         if (isMounted) {
           showError(
             "Không thể tải thông báo: " +
-            (err.response?.data?.message || err.message)
+              (err.response?.data?.message || err.message)
           );
         }
       }
@@ -449,10 +449,6 @@ const Header = ({ onOpenLoginPopup }) => {
 
     const timerId = setTimeout(async () => {
       console.log("Đang lấy gợi ý cho:", state.searchTerm);
-
-      const filteredSuggestions = ALL_COURSES.filter((course) =>
-        course.name.toLowerCase().includes(state.searchTerm.toLowerCase())
-      );
 
       try {
         const res = await courseAPI.getCourses({
@@ -647,7 +643,7 @@ const Header = ({ onOpenLoginPopup }) => {
                 {/* 3. Thay thế logic cũ bằng unreadCount */}
                 {chatUnreadCount > 0 && (
                   <span className="badge">
-                    {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+                    {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
                   </span>
                 )}
 

@@ -13,6 +13,7 @@ import { setAppDispatchContext } from "./AuthContext";
 import { cartAPI } from "../services/cartAPI";
 import { favoriteAPI } from "../services/favoriteAPI";
 import { useDebounce } from "../hooks/useDebounce";
+import instance from "../services/axiosInstance";
 
 // Initial state
 const initialState = {
@@ -261,40 +262,68 @@ export const AppProvider = ({ children }) => {
     dispatch({ type: actionTypes.RESET_USER_DATA });
   }, []);
 
-  const syncUserData = useCallback(async () => {
+  const syncUserData = useCallback(async (tokenOverride = null) => {
     const token =
-      localStorage.getItem("token") || localStorage.getItem("accessToken");
-    if (!token) return;
+      tokenOverride ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("token");
 
-    console.log("🔄 Syncing user data (Cart & Favorites)...");
+    if (!token) {
+      console.warn("⚠️ syncUserData: Không tìm thấy token");
+      dispatch({ type: actionTypes.SET_CART, payload: [] });
+      dispatch({ type: actionTypes.SET_FAVORITES, payload: [] });
+      return;
+    }
 
     try {
+      instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      console.log("🚀 Bắt đầu Sync Data với token:", token);
+
       const [favoriteRes, cartRes] = await Promise.allSettled([
         favoriteAPI.getFavorites(),
         cartAPI.getCart(),
       ]);
 
-      // Xử lý Favorites
-      if (favoriteRes.status === "fulfilled") {
-        const favoriteData = favoriteRes.value;
-        // Kiểm tra xem API trả về mảng trực tiếp hay object { items: [] }
-        // Giả sử API trả về mảng các object [{ courseId: 1, ... }]
-        const favoriteIds = Array.isArray(favoriteData)
-          ? favoriteData.map((item) => item.courseId || item.id) // Fallback nếu cấu trúc khác
-          : [];
-        dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
+      if (cartRes.status === "fulfilled") {
+        const rawData = cartRes.value;
+        console.log("📦 Dữ liệu gốc từ API Cart:", rawData);
+
+        let items = [];
+
+        if (Array.isArray(rawData)) {
+          items = rawData;
+        } else if (rawData && Array.isArray(rawData.items)) {
+          items = rawData.items;
+        }
+
+        const cartIds = items
+          .map((item) => {
+            return Number(item.courseId || item.id);
+          })
+          .filter((id) => !isNaN(id));
+
+        console.log("✅ Danh sách ID Cart sau khi xử lý:", cartIds);
+
+        dispatch({ type: actionTypes.SET_CART, payload: cartIds });
+      } else {
+        console.error("❌ Lỗi gọi API Cart:", cartRes.reason);
       }
 
-      // Xử lý Cart
-      if (cartRes.status === "fulfilled") {
-        const cartData = cartRes.value;
-        if (cartData && cartData.items) {
-          const cartIds = cartData.items.map((item) => item.courseId);
-          dispatch({ type: actionTypes.SET_CART, payload: cartIds });
-        }
+      if (favoriteRes.status === "fulfilled") {
+        const rawFav = favoriteRes.value;
+        let favItems = [];
+        if (Array.isArray(rawFav)) favItems = rawFav;
+        else if (rawFav && Array.isArray(rawFav.items)) favItems = rawFav.items;
+
+        const favoriteIds = favItems
+          .map((item) => Number(item.courseId || item.id))
+          .filter((id) => !isNaN(id));
+
+        dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
       }
     } catch (err) {
-      console.error("❌ General sync error:", err);
+      console.error("💥 Lỗi nghiêm trọng trong syncUserData:", err);
     }
   }, []);
 

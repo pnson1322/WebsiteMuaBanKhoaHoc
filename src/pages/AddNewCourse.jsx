@@ -132,16 +132,36 @@ const AddNewCourse = () => {
         showError("Vui lòng chọn mức độ");
         return;
       }
-      if (!price || Number(price) <= 0) {
-        showError("Vui lòng nhập giá khóa học hợp lệ");
+
+      const numPrice = Number(price);
+      if (price === "" || isNaN(numPrice)) {
+        showError("Giá khóa học phải là số hợp lệ.");
         return;
       }
-      if (!durationHours || Number(durationHours) <= 0) {
-        showError("Vui lòng nhập thời lượng khóa học");
+      if (numPrice <= 0) {
+        showError("Giá khóa học phải lớn hơn 0.");
         return;
       }
-      if (!linkDrive.trim()) {
-        showError("Vui lòng nhập link tài liệu khóa học");
+
+      const numDuration = Number(durationHours);
+      if (durationHours === "" || isNaN(numDuration)) {
+        showError("Thời lượng khóa học phải là số.");
+        return;
+      }
+      if (numDuration <= 0) {
+        showError("Thời lượng khóa học phải lớn hơn 0.");
+        return;
+      }
+      if (!Number.isInteger(numDuration)) {
+        showError(
+          "Thời lượng khóa học phải là số nguyên (Ví dụ: 10, 40), không được nhập số lẻ (Ví dụ: 1.5)."
+        );
+        return;
+      }
+
+      const urlRegex = /^(https?:\/\/)/;
+      if (!urlRegex.test(linkDrive.trim())) {
+        showError("Link tài liệu phải bắt đầu bằng http:// hoặc https://");
         return;
       }
 
@@ -153,13 +173,13 @@ const AddNewCourse = () => {
         teacherName,
         categoryId,
         level,
-        price: Number(price) || 0,
-        durationHours,
+        price: numPrice,
+        durationHours: numDuration,
         image: image,
         courseContents,
         courseSkills,
         targetLearners,
-        link: linkDrive,
+        link: linkDrive.trim(),
       };
 
       dispatch({ type: actionTypes.ADD_COURSE, payload });
@@ -214,7 +234,7 @@ const AddNewCourse = () => {
           <div className="add-course-title">Tạo khóa học mới</div>
 
           <div className="add-course-main">
-            <form className="course-form" onSubmit={handleSubmit}>
+            <form className="course-form" onSubmit={handleSubmit} noValidate>
               <div className="form-grid">
                 <div className="form-field">
                   <label>Tên khóa học *</label>
@@ -277,6 +297,7 @@ const AddNewCourse = () => {
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     required
+                    onWheel={(e) => e.target.blur()}
                   />
                 </div>
                 <div className="form-field">
@@ -287,6 +308,7 @@ const AddNewCourse = () => {
                     value={durationHours}
                     onChange={(e) => setDurationHours(e.target.value)}
                     required
+                    onWheel={(e) => e.target.blur()}
                   />
                 </div>
 
