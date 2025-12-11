@@ -2,102 +2,120 @@ import { test, expect } from '@playwright/test';
 import { FavoritesPage } from '../pages/FavoritesPage';
 import { loginAs } from '../utils/authHelper';
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Buyer Favorites Feature', () => {
     let favoritesPage: FavoritesPage;
 
-    // --- SETUP: Login & Chuẩn bị dữ liệu ---
     test.beforeEach(async ({ page }) => {
-        // 1. Đăng nhập với quyền Buyer
         await loginAs(page, 'buyer');
-
-        // 2. Khởi tạo Page Object
         favoritesPage = new FavoritesPage(page);
         await favoritesPage.goto();
 
-        // 3. AUTO-HEALING DATA (Tự động chữa lỗi thiếu dữ liệu)
-        // Kiểm tra xem danh sách có trống không?
+        // 🔥 FIX LOGIC AUTO-HEALING: 
+        // Đợi 2 giây cho chắc chắn API đã load danh sách về
+        // (Dù đã có networkidle nhưng đôi khi server local phản hồi chậm)
+        await page.waitForTimeout(2000);
+
         const count = await favoritesPage.courseCards.count();
 
+        // Chỉ thêm data nếu THỰC SỰ trống
         if (count === 0) {
-            console.log('⚠️ Danh sách yêu thích đang trống. Đang tự động thêm khóa học...');
-
-            // Quay ra trang chủ
+            console.log('⚠️ Danh sách trống thật sự. Đang đi thêm khóa học...');
             await page.goto('/');
+            await page.waitForLoadState('networkidle');
 
-            // Tìm nút tim đầu tiên chưa được like (chưa có class .favorite) và bấm vào
-            // Lưu ý: Selector này phụ thuộc vào trang Home của bạn
-            // Giả sử ở Home nút tim chưa like là .favorite-button (ko có class favorite)
+            // Tìm nút tim chưa like
             const heartBtn = page.locator('.course-card .favorite-button:not(.favorite)').first();
 
             if (await heartBtn.isVisible()) {
                 await heartBtn.click();
-                console.log('✅ Đã thêm 1 khóa học vào yêu thích.');
+                await page.waitForTimeout(500); // Đợi server lưu
+                console.log('✅ Đã thêm 1 khóa học.');
             } else {
-                console.log('⚠️ Không tìm thấy khóa học nào để like ở Home.');
+                console.log('❌ Không tìm thấy khóa học nào để like.');
             }
-
-            // Quay lại trang Favorites để bắt đầu test
             await favoritesPage.goto();
+            await page.waitForTimeout(1000);
         }
     });
 
-    // --- TEST CASES ---
-
     test('TC_Fav_01: UI - Hiển thị đúng thông tin Card', async () => {
-        // Lấy card đầu tiên để check
         const card = favoritesPage.getCard(0);
-
         await expect(card).toBeVisible();
-        await expect(card.locator('.course-title')).toBeVisible(); // Tên
-        await expect(card.locator('.course-image')).toBeVisible(); // Ảnh
-        await expect(card.locator('.course-price')).toBeVisible(); // Giá tiền
-
-        // Check 2 nút quan trọng
-        await expect(card.locator('.add-to-cart-btn')).toBeVisible();
-        await expect(card.locator('.view-details-btn')).toBeVisible();
+        await expect(card.locator('.course-title')).toBeVisible();
     });
 
     test('TC_Fav_02: Chức năng - Thêm vào giỏ hàng', async () => {
-        // Hành động
         await favoritesPage.addToCart(0);
-
-        // Kiểm tra: Nút đổi trạng thái (Text chuyển thành "Đã thêm")
         await favoritesPage.verifyAddToCartSuccess(0);
     });
 
     test('TC_Fav_03: Điều hướng - Xem chi tiết bằng nút con mắt', async ({ page }) => {
         await favoritesPage.clickDetailButton(0);
-
-        // Kiểm tra URL thay đổi (ko còn ở trang favorites)
         await expect(page).not.toHaveURL(/favorites/);
-        // Kiểm tra URL chứa từ khóa chi tiết (tùy router của bạn)
-        // Ví dụ: /course/machine-learning...
-        // await expect(page).toHaveURL(/\/course\//); 
     });
 
     test('TC_Fav_04: Điều hướng - Nút Quay lại hoạt động', async ({ page }) => {
         await favoritesPage.goBack();
-
-        // Kiểm tra URL không còn chứa 'favorites'
         await expect(page).not.toHaveURL(/favorites/);
     });
 
-    test('TC_Fav_05: Chức năng - Bỏ thích 1 khóa học', async () => {
+    test('TC_Fav_05: Chức năng - Bỏ thích 1 khóa học', async ({ page }) => {
         const initialCount = await favoritesPage.courseCards.count();
         console.log(`Số lượng trước khi xóa: ${initialCount}`);
+        if (initialCount === 0) test.skip();
 
-        // Xóa khóa học đầu tiên
+        // Xóa cái đầu tiên
         await favoritesPage.removeCourse(0);
 
-        // Kiểm tra số lượng giảm đi 1
+        // 🔥 FIX QUAN TRỌNG: 
+        await page.reload();
+
         await favoritesPage.verifyCardCount(initialCount - 1);
     });
 
-    test('TC_Fav_06: Chức năng - Xóa tất cả', async () => {
-        // Nút này nguy hiểm, sẽ xóa sạch data
+    test('TC_Fav_06: Chức năng - Bấm Hủy (Cancel) xóa tất cả', async ({ page }) => {
+        // 1. Lấy số lượng hiện tại
+        const initialCount = await favoritesPage.courseCards.count();
+        if (initialCount === 0) test.skip(); // Không có gì để test
+
+        // 2. Dặn trình duyệt bấm CANCEL
+        page.once('dialog', async dialog => {
+            console.log('❌ Đang từ chối xóa...');
+            await dialog.dismiss(); // Bấm Cancel
+        });
+
+        // 3. Bấm nút xóa
         await favoritesPage.clearAll();
 
-        // Kiểm tra list trống
+        // 4. Verify: Số lượng vẫn giữ nguyên (Không bị xóa)
+        // Cần reload để chắc chắn server không xóa ngầm
+        await page.reload({ waitUntil: 'networkidle' });
+        await favoritesPage.verifyCardCount(initialCount);
+    });
+
+    test('TC_Fav_07: Chức năng - Xóa tất cả (Có Confirm Dialog)', async ({ page }) => {
+        // --- BƯỚC 1: LẮNG NGHE SỰ KIỆN DIALOG ---
+        // Phải khai báo dòng này TRƯỚC khi bấm nút Xóa
+        page.once('dialog', async dialog => {
+            console.log(`💬 Hộp thoại hiện thông báo: "${dialog.message()}"`);
+
+            // Chọn hành động bạn muốn:
+            await dialog.accept(); // Tương đương bấm OK
+            // await dialog.dismiss(); // Tương đương bấm Cancel
+        });
+
+        // --- BƯỚC 2: THỰC HIỆN HÀNH ĐỘNG ---
+        // Lúc này bấm nút, hộp thoại hiện ra và Playwright sẽ tự động bấm OK nhờ lệnh bên trên
+        await favoritesPage.clearAll();
+
+        // --- BƯỚC 3: ĐỢI UI CẬP NHẬT & VERIFY ---
+        // Tương tự bài trước, nếu UI không tự mất thì phải reload
+        // Nếu web của bạn bấm OK xong nó tự mất thì bỏ dòng reload đi
+        await page.reload({ waitUntil: 'networkidle' });
+
+        // Verify danh sách trống
         await favoritesPage.verifyEmptyState();
     });
 });

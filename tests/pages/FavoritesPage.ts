@@ -7,11 +7,12 @@ export class FavoritesPage {
     readonly clearAllButton: Locator;
     readonly backButton: Locator;
     readonly pageHeading: Locator;
-    readonly emptyMessage: Locator; // Thông báo khi list trống
+    readonly emptyMessage: Locator;
 
     // --- Course Card Elements ---
     readonly courseCards: Locator;
-    // Toast
+
+    // --- Toast Elements ---
     readonly toastSuccessIcon: Locator;
     readonly toastErrorIcon: Locator;
 
@@ -22,16 +23,16 @@ export class FavoritesPage {
         this.clearAllButton = page.locator('.clear-favorites-btn');
         this.backButton = page.locator('.back-button');
 
-        // Tiêu đề trang (Giả định là thẻ H1 hoặc text to nhất)
+        // Tiêu đề trang
         this.pageHeading = page.getByText('Khóa học yêu thích', { exact: false });
 
         // Locators danh sách Card
         this.courseCards = page.locator('.course-card');
 
-        // Thông báo trống (Check text xuất hiện khi không còn card nào)
-        // Bạn cần thay text này nếu web của bạn hiển thị khác (VD: "Bạn chưa có khóa học nào")
+        // Thông báo trống
         this.emptyMessage = page.getByText('Chưa có khóa học yêu thích', { exact: false });
 
+        // Toast
         this.toastSuccessIcon = page.locator('.toast-icon.success-icon');
         this.toastErrorIcon = page.locator('.toast-icon.error-icon');
     }
@@ -40,8 +41,12 @@ export class FavoritesPage {
 
     // 1. Vào trang Favorites
     async goto() {
-        // Thay '/favorites' bằng đường dẫn thật của bạn (VD: /user/wishlist)
-        await this.page.goto('/favorites', { waitUntil: 'domcontentloaded' });
+        await this.page.goto('/favorites');
+
+        // 🔥 QUAN TRỌNG: Đổi từ 'domcontentloaded' sang 'networkidle'
+        // Lý do: Để Playwright đợi API load xong danh sách khóa học rồi mới chạy tiếp.
+        // Giúp khắc phục lỗi "Ma trơi" (lúc đầu count=0, sau đó count=2).
+        await this.page.waitForLoadState('networkidle');
     }
 
     // 2. Lấy Card tại vị trí index
@@ -52,8 +57,23 @@ export class FavoritesPage {
     // 3. Click nút "Thêm vào giỏ"
     async addToCart(index: number = 0) {
         const card = this.getCard(index);
-        await card.locator('.add-to-cart-btn').click();
-        await expect(this.toastSuccessIcon).toBeVisible();
+        const btn = card.locator('.add-to-cart-btn');
+
+        // 1. Kiểm tra trạng thái hiện tại
+        // Dùng textContent() thay vì innerText() đôi khi nhanh hơn
+        const btnText = await btn.textContent() || "";
+
+        if (btnText.includes('Đã thêm')) {
+            console.log('ℹ️ Đã có trong giỏ hàng -> Skip click.');
+            return;
+        }
+
+        // 2. Click
+        await btn.click();
+
+        // 3. VERIFY: Đợi cho nút đổi chữ thành "Đã thêm"
+        // Cách này xịn hơn check Toast vì nút "Đã thêm" nó nằm im đó mãi mãi
+        await expect(btn).toContainText('Đã thêm');
     }
 
     // 4. Click nút "Xem chi tiết" (Con mắt)
@@ -62,23 +82,26 @@ export class FavoritesPage {
         await card.locator('.view-details-btn').click();
     }
 
-    // 5. Click vào Title hoặc Ảnh của Card (Để vào chi tiết)
+    // 5. Click vào Title hoặc Ảnh của Card
     async clickCardTitle(index: number = 0) {
         const card = this.getCard(index);
-        // Click vào title cho chắc ăn (tránh bấm nhầm nút)
         await card.locator('.course-title').click();
     }
 
     // 6. Click nút Tim (Bỏ yêu thích)
     async removeCourse(index: number = 0) {
         const card = this.getCard(index);
-        // class .favorite là class định danh cho nút tim
-        await card.locator('.favorite-button.favorite').click();
+
+        // Tìm nút tim ĐANG ĐỎ (.favorite)
+        const heartBtn = card.locator('.favorite-button.favorite');
+
+        // Đợi nút hiện ra chắc chắn rồi mới bấm (tránh bấm hụt khi UI đang render)
+        await expect(heartBtn).toBeVisible();
+        await heartBtn.click();
     }
 
     // 7. Click nút Xóa tất cả
     async clearAll() {
-        // Nếu có popup confirm thì thêm bước handle dialog ở đây
         await this.clearAllButton.click();
     }
 
@@ -89,22 +112,23 @@ export class FavoritesPage {
 
     // --- VERIFY ---
 
-    // Kiểm tra đã thêm vào giỏ thành công (Nút đổi text)
+    // Kiểm tra đã thêm vào giỏ thành công
     async verifyAddToCartSuccess(index: number = 0) {
         const card = this.getCard(index);
         const btn = card.locator('.add-to-cart-btn');
-        // Kiểm tra text đổi thành "Đã thêm" hoặc check class thay đổi
+
+        // Kiểm tra text đổi thành "Đã thêm"
         await expect(btn).toContainText('Đã thêm');
     }
 
     // Kiểm tra số lượng card còn lại
     async verifyCardCount(expectedCount: number) {
+        // Playwright sẽ tự động retry (thử lại) trong 5s cho đến khi số lượng khớp
         await expect(this.courseCards).toHaveCount(expectedCount);
     }
 
     // Kiểm tra danh sách đã sạch trơn
     async verifyEmptyState() {
         await expect(this.courseCards).toHaveCount(0);
-        // await expect(this.emptyMessage).toBeVisible(); // Bật lên nếu web có hiện thông báo
     }
 }
