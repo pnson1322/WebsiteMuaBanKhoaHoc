@@ -7,10 +7,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 
 // Context Providers
-import { AuthProvider, useAuth } from "./contexts/AuthContext"; // ✅ Nhớ import useAuth
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
 import { ToastProvider } from "./contexts/ToastContext";
-import { UnreadCountProvider } from "./contexts/UnreadCountContext"; // ✅ Import Context Chat mới
+import { UnreadCountProvider } from "./contexts/UnreadCountContext";
 
 // Các trang chính
 import HomePage from "./pages/HomePage/HomePage";
@@ -31,36 +31,25 @@ import AdminUsersPage from "./pages/AdminUsersPage/AdminUsersPage";
 import SellerChat from "./pages/Chat/SellerChat";
 import PaymentResult from "./pages/PaymentResult";
 
-// ✅ TẠO COMPONENT CON: Để dùng được hook useAuth()
-// Component này nằm BÊN TRONG AuthProvider nên nó lấy được user & token
 const AppContent = () => {
-  // Lấy thông tin từ AuthContext (nơi đã load từ localStorage lên)
-  // Bạn kiểm tra lại AuthContext trả về 'token' hay 'accessToken' nhé, thường là một trong hai
   const { user, accessToken, token } = useAuth();
-
-  // Ưu tiên lấy accessToken, nếu không có thì lấy token
   const finalToken = accessToken || token;
-  const userId = user?.id || user?.Id; // Lấy ID an toàn
+  const userId = user?.id || user?.Id;
   console.log("AppContent Render:", { user, finalToken });
 
   return (
-    // ✅ Bọc UnreadCountProvider ở đây để truyền userId và token vào
     <UnreadCountProvider userId={userId} authToken={finalToken}>
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<Layout />}>
-            {/* Trang chủ */}
+            {/* --- PUBLIC ROUTES --- */}
             <Route index element={<HomePage />} />
-            {/* Trang lịch sử xem */}
             <Route path="history" element={<HistoryPage />} />
-            {/* Trang chi tiết khóa học */}
             <Route path="course/:id" element={<CourseDetail />} />
-            {/* Đăng nhập / đăng ký */}
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<LoginPage />} />
 
-            {/* Trang khóa học đã mua */}
             <Route
               path="/purchased"
               element={
@@ -69,61 +58,6 @@ const AppContent = () => {
                 </ProtectedRoute>
               }
             />
-            {/* Trang quản lý khóa học (Seller) */}
-            <Route
-              path="seller-courses"
-              element={
-                <ProtectedRoute>
-                  <SellerCoursesPage />
-                </ProtectedRoute>
-              }
-            />
-            {/* Trang chat của seller */}
-            <Route
-              path="seller-chat"
-              element={
-                <ProtectedRoute>
-                  <SellerChat />
-                </ProtectedRoute>
-              }
-            />
-            {/* Trang quản lý khóa học (Admin) */}
-            <Route
-              path="admin-courses"
-              element={
-                <ProtectedRoute>
-                  <AdminCoursesPage />
-                </ProtectedRoute>
-              }
-            />
-            {/* Trang quản lý danh mục (Admin) */}
-            <Route
-              path="admin-categories"
-              element={
-                <ProtectedRoute>
-                  <AdminCategories />
-                </ProtectedRoute>
-              }
-            />
-            {/* Trang quản lý người dùng (Admin) */}
-            <Route
-              path="admin-users"
-              element={
-                <ProtectedRoute>
-                  <AdminUsersPage />
-                </ProtectedRoute>
-              }
-            />
-            {/* Trang quản lý giao dịch (Admin) */}
-            <Route
-              path="/transactions"
-              element={
-                <ProtectedRoute>
-                  <AdminTransactions />
-                </ProtectedRoute>
-              }
-            />
-            {/* Thông tin người dùng */}
             <Route
               path="user-info"
               element={
@@ -132,50 +66,93 @@ const AppContent = () => {
                 </ProtectedRoute>
               }
             />
-
-            {/* Trang yêu thích */}
             <Route
               path="favorites"
               element={
-                <ProtectedRoute showModal={true}>
+                <ProtectedRoute showModal={true} allowedRoles={["Buyer"]}>
                   <Favorites />
                 </ProtectedRoute>
               }
             />
-            {/* Giỏ hàng */}
             <Route
               path="cart"
               element={
-                <ProtectedRoute showModal={true}>
+                <ProtectedRoute showModal={true} allowedRoles={["Buyer"]}>
                   <Cart />
                 </ProtectedRoute>
               }
             />
-
-            {/* Thêm khóa học mới */}
-            <Route
-              path="add-new-course"
-              element={
-                <ProtectedRoute>
-                  <AddNewCourse />
-                </ProtectedRoute>
-              }
-            />
-            {/* Trang chi tiết giao dịch tổng hợp */}
             <Route
               path="course-transactions/details"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["Admin"]}>
                   <CourseTransactionDetails />
                 </ProtectedRoute>
               }
             />
-            {/* Trang thông báo thanh toán */}
             <Route
               path="payment-result"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["Buyer"]}>
                   <PaymentResult />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="seller-courses"
+              element={
+                <ProtectedRoute allowedRoles={["Seller"]}>
+                  <SellerCoursesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="seller-chat"
+              element={
+                <ProtectedRoute allowedRoles={["Seller"]}>
+                  <SellerChat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="add-new-course"
+              element={
+                <ProtectedRoute allowedRoles={["Seller"]}>
+                  <AddNewCourse />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="admin-courses"
+              element={
+                <ProtectedRoute allowedRoles={["Admin"]}>
+                  <AdminCoursesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin-categories"
+              element={
+                <ProtectedRoute allowedRoles={["Admin"]}>
+                  <AdminCategories />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin-users"
+              element={
+                <ProtectedRoute allowedRoles={["Admin"]}>
+                  <AdminUsersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute allowedRoles={["Admin"]}>
+                  <AdminTransactions />
                 </ProtectedRoute>
               }
             />
@@ -198,11 +175,9 @@ const AppContent = () => {
 
 function App() {
   return (
-    // AuthProvider bọc ngoài cùng để cung cấp context cho AppContent
     <AuthProvider>
       <AppProvider>
         <ToastProvider>
-          {/* ✅ Gọi AppContent thay vì viết trực tiếp Router ở đây */}
           <AppContent />
         </ToastProvider>
       </AppProvider>
