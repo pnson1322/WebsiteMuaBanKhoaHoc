@@ -17,31 +17,13 @@ const Filter = () => {
 
   // 🔥 Lấy categories từ API (đã được load trong AppContext)
   const categories = useMemo(() => {
-    // Nếu có categories từ API, sử dụng chúng
+    // Categories từ API
     if (state.categories && state.categories.length > 0) {
       const categoryNames = state.categories.map((cat) => cat.name);
-      const categoriesArray = ["Tất cả", ...categoryNames.sort()];
-      console.log("📚 Categories from API:", categoriesArray);
-      return categoriesArray;
+      return ["Tất cả", ...categoryNames.sort()];
     }
-
-    // Fallback: Extract từ courses nếu chưa có categories từ API
-    if (state.courses && state.courses.length > 0) {
-      console.log("⚠️ Using fallback - extracting categories from courses");
-      const categorySet = new Set();
-      state.courses.forEach((course) => {
-        if (course.categoryName) {
-          categorySet.add(course.categoryName);
-        }
-      });
-      const categoriesArray = ["Tất cả", ...Array.from(categorySet).sort()];
-      return categoriesArray;
-    }
-
-    // Không có dữ liệu
-    console.log("⚠️ No categories available");
     return ["Tất cả"];
-  }, [state.categories, state.courses]);
+  }, [state.categories]);
 
   return (
     <div className="filter-container">

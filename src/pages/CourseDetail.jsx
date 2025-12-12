@@ -76,30 +76,9 @@ const CourseDetail = () => {
   const [editComment, setEditComment] = useState(0);
 
   const [showPayment, setShowPayment] = useState(false);
-  const [isPurchased, setIsPurchased] = useState(false);
 
-  useEffect(() => {
-    const checkOwnership = async () => {
-      if (!isLoggedIn) return;
-
-      try {
-        const response = await courseAPI.getPurchasedCourses({
-          page: 1,
-          pageSize: 9999,
-        });
-
-        const found = response.items?.find((item) => item.id == id);
-
-        if (found) {
-          setIsPurchased(true);
-        }
-      } catch (err) {
-        console.error("Lỗi kiểm tra khóa học đã mua:", err);
-      }
-    };
-
-    checkOwnership();
-  }, [id, isLoggedIn]);
+  // ⭐ Dùng context thay vì gọi API - đã được sync trong AppContext
+  const isPurchased = state.purchasedCourses.includes(Number(id));
 
   const fetchReviews = useCallback(async () => {
     try {

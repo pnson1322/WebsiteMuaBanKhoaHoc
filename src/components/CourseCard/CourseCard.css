@@ -3,22 +3,23 @@
   border-radius: 25px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
   cursor: pointer;
   height: 100%;
   display: flex;
   flex-direction: column;
   border: 1px solid #f0f0f0;
-  /* Tối ưu performance */
-  will-change: transform;
+  /* ⭐ Tối ưu performance - chỉ dùng transform và opacity */
   contain: layout style paint;
   /* GPU acceleration */
   transform: translateZ(0);
   backface-visibility: hidden;
+  /* ⭐ Chỉ transition transform và box-shadow, không dùng 'all' */
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out,
+    border-color 0.2s ease-out;
 }
 
 .course-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-8px) translateZ(0);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   border-color: #667eea;
 }
@@ -28,16 +29,49 @@
   position: relative;
   height: 200px;
   overflow: hidden;
+  background: #f0f0f0;
+}
+
+/* ⭐ Skeleton placeholder khi image đang load */
+.course-image-skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .course-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  /* ⭐ Ẩn image khi chưa load xong */
+  opacity: 0;
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 
-.course-card:hover .course-image {
+.course-image.loaded {
+  opacity: 1;
+}
+
+.course-image.loading {
+  opacity: 0;
+}
+
+/* ⭐ Chỉ scale khi hover và image đã load */
+.course-card:hover .course-image.loaded {
   transform: scale(1.05);
 }
 
