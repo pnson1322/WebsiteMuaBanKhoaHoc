@@ -221,6 +221,25 @@ export default function AdminHomePage() {
     },
   ];
 
+  const EmptyState = ({ message, height = 300 }) => (
+    <div
+      style={{
+        height: height,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#f8f9fa",
+        borderRadius: "8px",
+        border: "1px dashed #cbd5e1",
+        color: "#64748b",
+      }}
+    >
+      <FolderTree size={48} style={{ opacity: 0.5, marginBottom: "1rem" }} />
+      <p style={{ margin: 0, fontWeight: 500 }}>{message}</p>
+    </div>
+  );
+
   return (
     <>
       <section className="hero-section">
@@ -297,77 +316,97 @@ export default function AdminHomePage() {
           <h3>Khóa học theo doanh mục</h3>
 
           <div ref={pieRef} className="pie-chart-container">
-            <div
-              className="pie-chart-wrapper"
-              style={{ width: `${pieWidth * 0.6}px` }}
-            >
-              <PieChart
-                series={[
-                  {
-                    innerRadius: 70,
-                    data: dataPieChart.map(({ id, value, label }) => ({
-                      id,
-                      value,
-                      label,
-                    })),
-                    highlightScope: {
-                      fade: "global",
-                      highlight: "item",
+            {totalCourses > 0 ? (
+              <div
+                className="pie-chart-wrapper"
+                style={{ width: `${pieWidth * 0.6}px` }}
+              >
+                <PieChart
+                  series={[
+                    {
+                      innerRadius: 70,
+                      data: dataPieChart.map(({ id, value, label }) => ({
+                        id,
+                        value,
+                        label,
+                      })),
+                      highlightScope: {
+                        fade: "global",
+                        highlight: "item",
+                      },
+                      highlighted: {
+                        innerRadius: 0,
+                      },
+                      faded: {
+                        innerRadius: 0,
+                        additionalRadius: -30,
+                        color: "gray",
+                      },
                     },
-                    highlighted: {
-                      innerRadius: 0,
+                  ]}
+                  colors={pieChartColors}
+                  margin={{ right: 0, top: 0, bottom: 0, left: 0 }}
+                  slotProps={{
+                    legend: {
+                      hidden: true,
                     },
-                    faded: {
-                      innerRadius: 0,
-                      additionalRadius: -30,
-                      color: "gray",
+                  }}
+                  sx={{
+                    "& .MuiChartsLegend-root": {
+                      display: "none !important",
                     },
-                  },
-                ]}
-                colors={pieChartColors}
-                margin={{ right: 0, top: 0, bottom: 0, left: 0 }}
-                slotProps={{
-                  legend: {
-                    hidden: true,
-                  },
-                }}
-                sx={{
-                  "& .MuiChartsLegend-root": {
-                    display: "none !important",
-                  },
-                }}
-                width={pieWidth * 0.6}
-                height={300}
-              />
-              <div className="pie-chart-center">
-                <div className="pie-chart-total-number">
-                  {totalCourses.toLocaleString()}
-                </div>
-                <div className="pie-chart-total-label">Tổng khóa học</div>
-              </div>
-            </div>
-            <div className="pie-chart-legend">
-              {dataPieChart.map((item) => {
-                const percentage = ((item.value / totalCourses) * 100).toFixed(
-                  1
-                );
-                return (
-                  <div key={item.id} className="pie-chart-legend-item">
-                    <div
-                      className="pie-chart-legend-dot"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <div className="pie-chart-legend-text">
-                      <span className="pie-chart-legend-label">
-                        {item.label}
-                      </span>
-                      <span className="pie-chart-legend-value">
-                        {item.value} khóa • {percentage}%
-                      </span>
-                    </div>
+                  }}
+                  width={pieWidth * 0.6}
+                  height={300}
+                />
+                <div className="pie-chart-center">
+                  <div className="pie-chart-total-number">
+                    {totalCourses.toLocaleString()}
                   </div>
-                );
-              })}
+                  <div className="pie-chart-total-label">Tổng khóa học</div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ width: "100%" }}>
+                <EmptyState message="Chưa có khóa học nào" />
+              </div>
+            )}
+            <div className="pie-chart-legend">
+              {dataPieChart.length > 0 ? (
+                dataPieChart.map((item) => {
+                  const percentage =
+                    totalCourses > 0
+                      ? ((item.value / totalCourses) * 100).toFixed(1)
+                      : "0.0";
+
+                  return (
+                    <div key={item.id} className="pie-chart-legend-item">
+                      <div
+                        className="pie-chart-legend-dot"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <div className="pie-chart-legend-text">
+                        <span className="pie-chart-legend-label">
+                          {item.label}
+                        </span>
+                        <span className="pie-chart-legend-value">
+                          {item.value} khóa • {percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p
+                  style={{
+                    color: "#999",
+                    fontSize: "0.9rem",
+                    fontStyle: "italic",
+                  }}
+                >
+                  Chưa có danh mục
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -474,38 +513,40 @@ export default function AdminHomePage() {
             ref={revenueChartRef}
             style={{ width: "100%", overflow: "hidden" }}
           >
-            {revenuePeriod === "7days" ? (
-              <BarChart
-                xAxis={[
-                  {
-                    data: dataBarChart.map((i) => i.date),
-                    scaleType: "band",
-                  },
-                ]}
-                series={[
-                  {
-                    data: dataBarChart.map((i) => i.revenue || 0),
-                    color: revenueBarColor,
-                    label: "Doanh thu: ",
-                    valueFormatter: (v) => `${v} triệu đồng`,
-                  },
-                ]}
-                yAxis={[
-                  {
-                    min: 0,
-                    max: 5,
-                    tickNumber: 6,
-                    tickMinStep: 0.5,
-                    valueFormatter: (v) => `${v} triệu`,
-                  },
-                ]}
-                grid={{ horizontal: true }}
-                width={revenueChartWidth}
-                height={300}
-                margin={{ left: 0 }}
-              />
-            ) : (
-              revenueChartWidth > 0 && (
+            {(revenuePeriod === "7days" ? dataBarChart : dataLineChart).some(
+              (i) => i.revenue > 0
+            ) ? (
+              revenuePeriod === "7days" ? (
+                <BarChart
+                  xAxis={[
+                    {
+                      data: dataBarChart.map((i) => i.date),
+                      scaleType: "band",
+                    },
+                  ]}
+                  series={[
+                    {
+                      data: dataBarChart.map((i) => i.revenue || 0),
+                      color: revenueBarColor,
+                      label: "Doanh thu: ",
+                      valueFormatter: (v) => `${v} triệu đồng`,
+                    },
+                  ]}
+                  yAxis={[
+                    {
+                      min: 0,
+                      max: 5,
+                      tickNumber: 6,
+                      tickMinStep: 0.5,
+                      valueFormatter: (v) => `${v} triệu`,
+                    },
+                  ]}
+                  grid={{ horizontal: true }}
+                  width={revenueChartWidth}
+                  height={300}
+                  margin={{ left: 0 }}
+                />
+              ) : (
                 <LineChart
                   xAxis={[
                     {
@@ -549,6 +590,8 @@ export default function AdminHomePage() {
                   }}
                 />
               )
+            ) : (
+              <EmptyState message="Chưa có dữ liệu doanh thu" />
             )}
           </div>
         </div>
@@ -564,29 +607,49 @@ export default function AdminHomePage() {
             </button>
           </div>
 
-          {transaction.map((item) => (
-            <div className="revenue-item">
-              <div className="revenue-item-icon-wrapper done-wrapper">
-                <Check className="revenue-item-icon done" />
-              </div>
-
-              <div>
-                <div className="text-chart-number" style={{ fontSize: "1rem" }}>
-                  {item.name}
+          {transaction && transaction.length > 0 ? (
+            transaction.map((item) => (
+              <div className="revenue-item">
+                <div className="revenue-item-icon-wrapper done-wrapper">
+                  <Check className="revenue-item-icon done" />
                 </div>
-                <div
-                  className="text-chart-text"
-                  style={{ fontSize: "0.75rem" }}
-                >
-                  {item.date}
+
+                <div>
+                  <div
+                    className="text-chart-number"
+                    style={{ fontSize: "1rem" }}
+                  >
+                    {item.name}
+                  </div>
+                  <div
+                    className="text-chart-text"
+                    style={{ fontSize: "0.75rem" }}
+                  >
+                    {item.date}
+                  </div>
+                </div>
+
+                <div className="revenue-item-price done">
+                  {formatPrice(item.revenue)}
                 </div>
               </div>
-
-              <div className="revenue-item-price done">
-                {formatPrice(item.revenue)}
-              </div>
+            ))
+          ) : (
+            <div
+              style={{
+                padding: "2rem",
+                textAlign: "center",
+                color: "#94a3b8",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
+              <Receipt size={40} style={{ opacity: 0.5 }} />
+              <span>Chưa có giao dịch nào phát sinh</span>
             </div>
-          ))}
+          )}
         </div>
       </div>
       <Filter></Filter>

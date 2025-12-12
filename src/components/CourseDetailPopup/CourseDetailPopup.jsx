@@ -101,7 +101,7 @@ export default function CourseDetailPopup({ onClose, course, onUpdate }) {
         showError("Giá khóa học phải là số hợp lệ.");
         return;
       }
-      if (numPrice < 0) {
+      if (numPrice <= 0) {
         showError("Giá khóa học không được nhỏ hơn 0.");
         return;
       }

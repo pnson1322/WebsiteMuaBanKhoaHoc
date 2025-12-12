@@ -210,7 +210,10 @@ const CourseDetail = () => {
 
       fetchReviews();
     } catch (err) {
-      showError("Gửi đánh giá thất bại: " + err.message);
+      const errorMsg =
+        err.response?.data?.message || err.message || "Có lỗi xảy ra";
+
+      showError(errorMsg);
     }
   };
 
