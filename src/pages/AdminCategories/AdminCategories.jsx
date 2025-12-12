@@ -4,6 +4,7 @@ import CategoryForm from "../../components/AdminCategory/CategoryForm/CategoryFo
 import CategoryList from "../../components/AdminCategory/CategoryList/CategoryList";
 import EditCategoryModal from "../../components/AdminCategory/EditCategoryModal/EditCategoryModal";
 import DeleteCategoryModal from "../../components/AdminCategory/DeleteCategoryModal/DeleteCategoryModal";
+import { useToast } from "../../contexts/ToastContext";
 import "./AdminCategories.css";
 import { categoryAPI } from "../../services/categoryAPI";
 
@@ -11,6 +12,7 @@ const AdminCategories = () => {
   const [newCategory, setNewCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [categories, setCategories] = useState([]);
+  const { showSuccess, showError } = useToast();
 
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingName, setEditingName] = useState("");
@@ -36,12 +38,18 @@ const AdminCategories = () => {
 
     const name = newCategory.trim();
     if (!name) return;
+    try {
+      const ok = await categoryAPI.createCategory(name);
+      if (ok) {
+        const data = await categoryAPI.getAll(); // reload list
+        setCategories(data);
+        setNewCategory("");
+      }
+    } catch (err) {
+      const message =
+        "Tên danh mục đã tồn tại hoặc có lỗi hệ thống. Vui lòng thử lại.";
 
-    const ok = await categoryAPI.createCategory(name);
-    if (ok) {
-      const data = await categoryAPI.getAll(); // reload list
-      setCategories(data);
-      setNewCategory("");
+      showError(message);
     }
   };
 
@@ -72,7 +80,13 @@ const AdminCategories = () => {
   };
 
   const openDeleteModal = (category) => {
-    setDeletingCategory(category);
+    try {
+      setDeletingCategory(category);
+    } catch (error) {
+      const errorMsg = err.response?.data?.message || err.message || "Có lỗi xảy ra";
+
+      showError(errorMsg);
+    }
   };
 
   const closeDeleteModal = () => {
@@ -82,14 +96,25 @@ const AdminCategories = () => {
   const confirmDeleteCategory = async () => {
     if (!deletingCategory) return;
 
-    const ok = await categoryAPI.deleteCategory(deletingCategory.id);
-    if (ok) {
-      const data = await categoryAPI.getAll();
-      setCategories(data);
+    try {
+      const ok = await categoryAPI.deleteCategory(deletingCategory.id);
+
+      if (ok) {
+        const data = await categoryAPI.getAll();
+        setCategories(data);
+        showSuccess("Xóa danh mục thành công");
+      }
+    } catch (error) {
+      const errorMsg =
+        error.response?.data?.message ||
+        "Có lỗi xảy ra khi xóa danh mục";
+
+      showError(errorMsg);
     }
 
     closeDeleteModal();
   };
+
 
   useEffect(() => {
     if (!editingCategory && !deletingCategory) return;

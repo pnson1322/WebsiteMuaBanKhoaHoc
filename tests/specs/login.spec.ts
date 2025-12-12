@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
-// Dùng assert type: json để import file json
 import authData from '../data/authData.json' with { type: 'json' };
 
 test.describe('EduMart Login & Role Redirect Feature', () => {
@@ -15,18 +14,19 @@ test.describe('EduMart Login & Role Redirect Feature', () => {
         test(`${data.id}: ${data.description}`, async () => {
             console.log(`🚀 Testing case: ${data.id} - Role: ${data.role || 'Buyer'}`);
 
-            // 1. Login
+            // 1. Nhập liệu & Click Login (Hàm này sẽ tự BẮT ĐẦU bấm giờ khi click)
             await loginPage.performLogin(data.email, data.password);
 
-            // 2. Phân loại kết quả
+            // 2. Verify (Hàm này sẽ verify UI xong -> KẾT THÚC bấm giờ -> Check < 5s)
             if (data.isSuccess) {
-                // --- NHÁNH 1: LOGIN THÀNH CÔNG (CHECK QUYỀN HẠN) ---
-                // data.expectedResult lúc này là Text của H1 ("Quản lý EduMart"...)
                 await loginPage.verifyLoginSuccess(data.expectedResult as string);
             }
-            // --- NHÁNH 2: LỖI NATIVE ---
             else if (data["isNativeError"]) {
-                // ... (Logic cũ giữ nguyên)
+                // Với lỗi Native (validation browser), nó hiện tức thì ngay khi click hoặc blur
+                // Code cũ của bạn đang verify getEmailValidationMessage
+                // Nếu muốn đo thời gian lỗi này hiện ra thì hơi khó vì nó không có API chờ
+                // Tuy nhiên, thường native error rất nhanh. Ta có thể bỏ qua đo ở đây hoặc check thủ công.
+
                 const actualNativeMsg = await loginPage.getEmailValidationMessage();
                 if (actualNativeMsg) {
                     const isMissingAtSymbol = actualNativeMsg.includes('@');
@@ -34,10 +34,10 @@ test.describe('EduMart Login & Role Redirect Feature', () => {
                         actualNativeMsg.toLowerCase().includes('thiếu');
                     expect(isMissingAtSymbol || isMissingKeyword).toBeTruthy();
                 } else {
+                    // Nếu lỗi native không bắt được mà fallback sang lỗi UI thì hàm này sẽ đo giờ
                     await loginPage.verifyLoginFail(data.expectedResult, false);
                 }
             }
-            // --- NHÁNH 3: LỖI UI ---
             else {
                 await loginPage.verifyLoginFail(data.expectedResult, data.isToastError);
             }
@@ -47,14 +47,15 @@ test.describe('EduMart Login & Role Redirect Feature', () => {
 
 test.describe('Kiểm tra điều hướng & Popup', () => {
     let loginPage: LoginPage;
-    // Vẫn dùng beforeEach để vào trang login trước
     test.beforeEach(async ({ page }) => {
         loginPage = new LoginPage(page);
         await loginPage.goto();
     });
 
     test('TC_Nav_01: Nhấn "Đăng ký ngay" phải chuyển sang trang Register', async () => {
+        // Hàm này tự bấm giờ khi click
         await loginPage.clickRegister();
+        // Hàm này verify xong sẽ check thời gian < 5s
         await loginPage.verifyNavigateToRegister();
     });
 

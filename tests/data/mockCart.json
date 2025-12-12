@@ -1,0 +1,42 @@
+[
+    {
+        "id": 13,
+        "title": "Marketing trên Facebook & Instagram",
+        "description": "Chiến lược marketing hiệu quả trên mạng xã hội, chạy quảng cáo Facebook Ads và Instagram Ads.",
+        "price": 1000000.0,
+        "level": "Beginner",
+        "imageUrl": "https://images.unsplash.com/photo-1611162617474-5b21e879e113",
+        "averageRating": 4.5,
+        "totalPurchased": 250,
+        "teacherName": "Lê Văn Minh",
+        "sellerId": 3,
+        "durationHours": 25,
+        "categoryName": "Khác",
+        "isApproved": true,
+        "isRestricted": false,
+        "commentCount": 0,
+        "courseContents": null,
+        "courseSkills": null,
+        "targetLearners": null
+    },
+    {
+        "id": 14,
+        "title": "Adobe Photoshop cho người mới bắt đầu",
+        "description": "Thành thạo công cụ thiết kế cho người mới.",
+        "price": 1200000.0,
+        "level": "Beginner",
+        "imageUrl": "https://images.unsplash.com/photo-example",
+        "averageRating": 5.0,
+        "totalPurchased": 100,
+        "teacherName": "Hoàng Văn Nam",
+        "sellerId": 4,
+        "durationHours": 10,
+        "categoryName": "Thiết kế",
+        "isApproved": true,
+        "isRestricted": false,
+        "commentCount": 5,
+        "courseContents": null,
+        "courseSkills": null,
+        "targetLearners": null
+    }
+]

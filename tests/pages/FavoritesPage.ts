@@ -16,6 +16,8 @@ export class FavoritesPage {
     readonly toastSuccessIcon: Locator;
     readonly toastErrorIcon: Locator;
 
+    readonly accessDeniedMessage: Locator;
+
     constructor(page: Page) {
         this.page = page;
 
@@ -35,6 +37,7 @@ export class FavoritesPage {
         // Toast
         this.toastSuccessIcon = page.locator('.toast-icon.success-icon');
         this.toastErrorIcon = page.locator('.toast-icon.error-icon');
+        this.accessDeniedMessage = page.locator('h2', { hasText: 'Truy cập bị từ chối' });
     }
 
     // --- ACTIONS ---

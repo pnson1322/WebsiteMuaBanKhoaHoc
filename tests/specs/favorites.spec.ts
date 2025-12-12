@@ -119,3 +119,34 @@ test.describe('Buyer Favorites Feature', () => {
         await favoritesPage.verifyEmptyState();
     });
 });
+
+test.describe('Buyer Access Control', () => {
+
+    test('Admin role should NOT access Buyer categories page', async ({ page }) => {
+        // 1. Đăng nhập với quyền Admin (Role khác)
+        await loginAs(page, 'admin');
+
+        // 2. Cố tình truy cập trang Buyer
+        const categoryPage = new FavoritesPage(page);
+        await categoryPage.goto();
+
+        // 3. Assert: Phải hiện thông báo "Truy cập bị từ chối"
+        await expect(categoryPage.accessDeniedMessage).toBeVisible();
+
+        await expect(categoryPage.accessDeniedMessage).toHaveCSS('color', 'rgb(239, 68, 68)');
+    });
+
+    test('Seller role should NOT access Buyer categories page', async ({ page }) => {
+        // 1. Đăng nhập với quyền Seller (Role khác)
+        await loginAs(page, 'seller');
+
+        // 2. Cố tình truy cập trang Buyer
+        const categoryPage = new FavoritesPage(page);
+        await categoryPage.goto();
+
+        // 3. Assert: Phải hiện thông báo "Truy cập bị từ chối"
+        await expect(categoryPage.accessDeniedMessage).toBeVisible();
+
+        await expect(categoryPage.accessDeniedMessage).toHaveCSS('color', 'rgb(239, 68, 68)');
+    });
+});
