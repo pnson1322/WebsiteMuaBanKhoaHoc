@@ -5,76 +5,146 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-  useState,
 } from "react";
-import { courseAPI } from "../services/courseAPI"; // ⭐ Dùng API thật
-import { categoryAPI } from "../services/categoryAPI"; // ⭐ API danh mục
+import { courseAPI } from "../services/courseAPI";
+import { categoryAPI } from "../services/categoryAPI";
 import { setAppDispatchContext } from "./AuthContext";
 import { cartAPI } from "../services/cartAPI";
 import { favoriteAPI } from "../services/favoriteAPI";
-import { useDebounce } from "../hooks/useDebounce";
 import instance from "../services/axiosInstance";
 
-// Initial state
+/**
+ * ✅ REFACTORED AppContext
+ * - Chỉ giữ state GLOBAL thực sự cần thiết
+ * - KHÔNG lưu courses, filteredCourses (chuyển về Page level)
+ * - Tách riêng StateContext và DispatchContext để tránh re-render cascade
+ */
+
+// ==================== INITIAL STATE ====================
 const initialState = {
-  courses: [],
-  categories: [], // ⭐ Danh sách danh mục từ API
-  filteredCourses: [],
-  favorites: JSON.parse(localStorage.getItem("favorites")) || [],
-  viewHistory: JSON.parse(localStorage.getItem("viewHistory")) || [],
+  // Global user data
+  cart: [],
+  favorites: [],
+  purchasedCourses: [],
+  viewHistory: [],
+
+  // Categories (ít thay đổi)
+  categories: [],
+
+  // UI state
+  showLoginPopup: false,
+
+  // Filter preferences (global để share giữa các page)
   searchTerm: "",
   selectedCategory: "Tất cả",
   selectedPriceRange: { label: "Tất cả", min: 0, max: Infinity },
-  isLoadingSuggestions: false,
-  error: null,
-  cart: JSON.parse(localStorage.getItem("cart")) || [],
-  showLoginPopup: false,
 };
 
-// Action types
+// ==================== ACTION TYPES ====================
 const actionTypes = {
-  SET_COURSES: "SET_COURSES",
-  SET_CATEGORIES: "SET_CATEGORIES", // ⭐ Action để set danh mục
-  APPEND_COURSES: "APPEND_COURSES",
-  SET_FILTERED_COURSES: "SET_FILTERED_COURSES",
-  SET_SEARCH_TERM: "SET_SEARCH_TERM",
-  SET_CATEGORY: "SET_CATEGORY",
-  SET_PRICE_RANGE: "SET_PRICE_RANGE",
-  ADD_TO_FAVORITES: "ADD_TO_FAVORITES",
-  REMOVE_FROM_FAVORITES: "REMOVE_FROM_FAVORITES",
-  SET_FAVORITES: "SET_FAVORITES",
-  ADD_TO_VIEW_HISTORY: "ADD_TO_VIEW_HISTORY",
-  SET_LOADING_SUGGESTIONS: "SET_LOADING_SUGGESTIONS",
-  SET_ERROR: "SET_ERROR",
+  // Cart
   ADD_TO_CART: "ADD_TO_CART",
   REMOVE_FROM_CART: "REMOVE_FROM_CART",
   SET_CART: "SET_CART",
-  RESET_USER_DATA: "RESET_USER_DATA", // Reset cart, favorites khi logout
+  REMOVE_MULTIPLE_FROM_CART: "REMOVE_MULTIPLE_FROM_CART",
+
+  // Favorites
+  ADD_TO_FAVORITES: "ADD_TO_FAVORITES",
+  REMOVE_FROM_FAVORITES: "REMOVE_FROM_FAVORITES",
+  SET_FAVORITES: "SET_FAVORITES",
+
+  // Purchased
+  SET_PURCHASED_COURSES: "SET_PURCHASED_COURSES",
+
+  // View History
+  ADD_TO_VIEW_HISTORY: "ADD_TO_VIEW_HISTORY",
+  CLEAR_VIEW_HISTORY: "CLEAR_VIEW_HISTORY",
+
+  // Categories
+  SET_CATEGORIES: "SET_CATEGORIES",
+
+  // Filter (global preferences)
+  SET_SEARCH_TERM: "SET_SEARCH_TERM",
+  SET_CATEGORY: "SET_CATEGORY",
+  SET_PRICE_RANGE: "SET_PRICE_RANGE",
+
+  // UI
   SHOW_LOGIN_POPUP: "SHOW_LOGIN_POPUP",
   HIDE_LOGIN_POPUP: "HIDE_LOGIN_POPUP",
-  REMOVE_MULTIPLE_FROM_CART: "REMOVE_MULTIPLE_FROM_CART",
+
+  // Auth
+  RESET_USER_DATA: "RESET_USER_DATA",
 };
 
-// Reducer
+// ==================== REDUCER ====================
 const appReducer = (state, action) => {
   switch (action.type) {
-    case actionTypes.SET_COURSES:
-      return { ...state, courses: action.payload };
+    // Cart
+    case actionTypes.ADD_TO_CART: {
+      if (state.cart.includes(action.payload)) return state;
+      const newCart = [...state.cart, action.payload];
+      localStorage.setItem("cart", JSON.stringify(newCart));
+      return { ...state, cart: newCart };
+    }
 
+    case actionTypes.REMOVE_FROM_CART: {
+      const newCart = state.cart.filter((id) => id !== action.payload);
+      localStorage.setItem("cart", JSON.stringify(newCart));
+      return { ...state, cart: newCart };
+    }
+
+    case actionTypes.SET_CART:
+      localStorage.setItem("cart", JSON.stringify(action.payload));
+      return { ...state, cart: action.payload };
+
+    case actionTypes.REMOVE_MULTIPLE_FROM_CART: {
+      const newCart = state.cart.filter((id) => !action.payload.includes(id));
+      localStorage.setItem("cart", JSON.stringify(newCart));
+      return { ...state, cart: newCart };
+    }
+
+    // Favorites
+    case actionTypes.ADD_TO_FAVORITES: {
+      if (state.favorites.includes(action.payload)) return state;
+      const newFav = [...state.favorites, action.payload];
+      localStorage.setItem("favorites", JSON.stringify(newFav));
+      return { ...state, favorites: newFav };
+    }
+
+    case actionTypes.REMOVE_FROM_FAVORITES: {
+      const newFav = state.favorites.filter((id) => id !== action.payload);
+      localStorage.setItem("favorites", JSON.stringify(newFav));
+      return { ...state, favorites: newFav };
+    }
+
+    case actionTypes.SET_FAVORITES:
+      localStorage.setItem("favorites", JSON.stringify(action.payload));
+      return { ...state, favorites: action.payload };
+
+    // Purchased
+    case actionTypes.SET_PURCHASED_COURSES:
+      return { ...state, purchasedCourses: action.payload };
+
+    // View History
+    case actionTypes.ADD_TO_VIEW_HISTORY: {
+      const id = action.payload;
+      const updated = [id, ...state.viewHistory.filter((i) => i !== id)].slice(
+        0,
+        10
+      );
+      localStorage.setItem("viewHistory", JSON.stringify(updated));
+      return { ...state, viewHistory: updated };
+    }
+
+    case actionTypes.CLEAR_VIEW_HISTORY:
+      localStorage.removeItem("viewHistory");
+      return { ...state, viewHistory: [] };
+
+    // Categories
     case actionTypes.SET_CATEGORIES:
       return { ...state, categories: action.payload };
 
-    case actionTypes.APPEND_COURSES:
-      // Lọc bỏ các khóa học trùng lặp dựa trên ID
-      const existingIds = new Set(state.courses.map((c) => c.id));
-      const newUniqueCourses = action.payload.filter(
-        (c) => !existingIds.has(c.id)
-      );
-      return { ...state, courses: [...state.courses, ...newUniqueCourses] };
-
-    case actionTypes.SET_FILTERED_COURSES:
-      return { ...state, filteredCourses: action.payload };
-
+    // Filter preferences
     case actionTypes.SET_SEARCH_TERM:
       return { ...state, searchTerm: action.payload };
 
@@ -84,51 +154,15 @@ const appReducer = (state, action) => {
     case actionTypes.SET_PRICE_RANGE:
       return { ...state, selectedPriceRange: action.payload };
 
-    case actionTypes.ADD_TO_FAVORITES:
-      const newFav = [...state.favorites, action.payload];
-      localStorage.setItem("favorites", JSON.stringify(newFav));
-      return { ...state, favorites: newFav };
+    // UI
+    case actionTypes.SHOW_LOGIN_POPUP:
+      return { ...state, showLoginPopup: true };
 
-    case actionTypes.REMOVE_FROM_FAVORITES:
-      const updatedFav = state.favorites.filter((id) => id !== action.payload);
-      localStorage.setItem("favorites", JSON.stringify(updatedFav));
-      return { ...state, favorites: updatedFav };
+    case actionTypes.HIDE_LOGIN_POPUP:
+      return { ...state, showLoginPopup: false };
 
-    case actionTypes.SET_FAVORITES:
-      localStorage.setItem("favorites", JSON.stringify(action.payload));
-      return { ...state, favorites: action.payload };
-
-    case actionTypes.ADD_TO_VIEW_HISTORY:
-      const id = action.payload;
-      const updatedHistory = [
-        id,
-        ...state.viewHistory.filter((i) => i !== id),
-      ].slice(0, 10);
-      localStorage.setItem("viewHistory", JSON.stringify(updatedHistory));
-      return { ...state, viewHistory: updatedHistory };
-
-    case actionTypes.SET_LOADING_SUGGESTIONS:
-      return { ...state, isLoadingSuggestions: action.payload };
-
-    case actionTypes.SET_ERROR:
-      return { ...state, error: action.payload };
-
-    case actionTypes.ADD_TO_CART:
-      const newCart = [...state.cart, action.payload];
-      localStorage.setItem("cart", JSON.stringify(newCart));
-      return { ...state, cart: newCart };
-
-    case actionTypes.REMOVE_FROM_CART:
-      const cartAfter = state.cart.filter((i) => i !== action.payload);
-      localStorage.setItem("cart", JSON.stringify(cartAfter));
-      return { ...state, cart: cartAfter };
-
-    case actionTypes.SET_CART:
-      localStorage.setItem("cart", JSON.stringify(action.payload));
-      return { ...state, cart: action.payload };
-
+    // Auth reset
     case actionTypes.RESET_USER_DATA:
-      // Reset về guest state - clear cart và favorites
       localStorage.removeItem("cart");
       localStorage.removeItem("favorites");
       localStorage.removeItem("viewHistory");
@@ -137,41 +171,81 @@ const appReducer = (state, action) => {
         cart: [],
         favorites: [],
         viewHistory: [],
+        purchasedCourses: [],
       };
-
-    case actionTypes.SHOW_LOGIN_POPUP:
-      return { ...state, showLoginPopup: true };
-
-    case actionTypes.HIDE_LOGIN_POPUP:
-      return { ...state, showLoginPopup: false };
-
-    case actionTypes.REMOVE_MULTIPLE_FROM_CART: {
-      // action.payload là mảng các courseId đã mua
-      // Giữ lại những id KHÔNG nằm trong danh sách đã mua
-      const newCart = state.cart.filter((id) => !action.payload.includes(id));
-      localStorage.setItem("cart", JSON.stringify(newCart));
-      return { ...state, cart: newCart };
-    }
 
     default:
       return state;
   }
 };
 
-// Context
-const AppContext = createContext();
-const AppDispatchContext = createContext();
+// ==================== CONTEXTS ====================
+// Tách riêng để component chỉ subscribe cái cần
+const AppStateContext = createContext(null);
+const AppDispatchContext = createContext(null);
 
-export const useAppState = () => useContext(AppContext);
-export const useAppDispatch = () => useContext(AppDispatchContext);
+// ==================== SELECTORS (tránh re-render) ====================
+// Dùng để lấy subset của state
+export const useCartIds = () => {
+  const state = useContext(AppStateContext);
+  return state?.cart ?? [];
+};
 
-// Provider
+export const useFavoriteIds = () => {
+  const state = useContext(AppStateContext);
+  return state?.favorites ?? [];
+};
+
+export const usePurchasedIds = () => {
+  const state = useContext(AppStateContext);
+  return state?.purchasedCourses ?? [];
+};
+
+export const useCategories = () => {
+  const state = useContext(AppStateContext);
+  return state?.categories ?? [];
+};
+
+export const useFilterPreferences = () => {
+  const state = useContext(AppStateContext);
+  return {
+    searchTerm: state?.searchTerm ?? "",
+    selectedCategory: state?.selectedCategory ?? "Tất cả",
+    selectedPriceRange: state?.selectedPriceRange ?? {
+      label: "Tất cả",
+      min: 0,
+      max: Infinity,
+    },
+  };
+};
+
+// ==================== HOOKS ====================
+export const useAppState = () => {
+  const context = useContext(AppStateContext);
+  if (!context) {
+    throw new Error("useAppState must be used within AppProvider");
+  }
+  return context;
+};
+
+export const useAppDispatch = () => {
+  const context = useContext(AppDispatchContext);
+  if (!context) {
+    throw new Error("useAppDispatch must be used within AppProvider");
+  }
+  return context;
+};
+
+// ==================== PROVIDER ====================
 export const AppProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+  const [state, dispatch] = useReducer(appReducer, {
+    ...initialState,
+    cart: JSON.parse(localStorage.getItem("cart") || "[]"),
+    favorites: JSON.parse(localStorage.getItem("favorites") || "[]"),
+    viewHistory: JSON.parse(localStorage.getItem("viewHistory") || "[]"),
+  });
 
-  // Debounce search term để tránh filter quá nhiều lần
-  const debouncedSearchTerm = useDebounce(state.searchTerm, 300);
-
+  // ========== CART ACTIONS ==========
   const cartActions = useMemo(
     () => ({
       addToCart: async (courseId) => {
@@ -217,6 +291,7 @@ export const AppProvider = ({ children }) => {
     []
   );
 
+  // ========== FAVORITE ACTIONS ==========
   const favoriteActions = useMemo(
     () => ({
       addToFavorite: async (courseId) => {
@@ -257,8 +332,8 @@ export const AppProvider = ({ children }) => {
     []
   );
 
+  // ========== USER DATA SYNC ==========
   const resetUserData = useCallback(() => {
-    console.log("🗑️ Resetting user data");
     dispatch({ type: actionTypes.RESET_USER_DATA });
   }, []);
 
@@ -269,168 +344,91 @@ export const AppProvider = ({ children }) => {
       localStorage.getItem("token");
 
     if (!token) {
-      console.warn("⚠️ syncUserData: Không tìm thấy token");
       dispatch({ type: actionTypes.SET_CART, payload: [] });
       dispatch({ type: actionTypes.SET_FAVORITES, payload: [] });
+      dispatch({ type: actionTypes.SET_PURCHASED_COURSES, payload: [] });
       return;
     }
 
     try {
       instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      console.log("🚀 Bắt đầu Sync Data với token:", token);
-
-      const [favoriteRes, cartRes] = await Promise.allSettled([
+      const [favoriteRes, cartRes, purchasedRes] = await Promise.allSettled([
         favoriteAPI.getFavorites(),
         cartAPI.getCart(),
+        courseAPI.getPurchasedCourses({ page: 1, pageSize: 9999 }),
       ]);
 
+      // Cart
       if (cartRes.status === "fulfilled") {
-        const rawData = cartRes.value;
-        console.log("📦 Dữ liệu gốc từ API Cart:", rawData);
-
-        let items = [];
-
-        if (Array.isArray(rawData)) {
-          items = rawData;
-        } else if (rawData && Array.isArray(rawData.items)) {
-          items = rawData.items;
-        }
-
-        const cartIds = items
-          .map((item) => {
-            return Number(item.courseId || item.id);
-          })
-          .filter((id) => !isNaN(id));
-
-        console.log("✅ Danh sách ID Cart sau khi xử lý:", cartIds);
-
-        dispatch({ type: actionTypes.SET_CART, payload: cartIds });
-      } else {
-        console.error("❌ Lỗi gọi API Cart:", cartRes.reason);
-      }
-
-      if (favoriteRes.status === "fulfilled") {
-        const rawFav = favoriteRes.value;
-        let favItems = [];
-        if (Array.isArray(rawFav)) favItems = rawFav;
-        else if (rawFav && Array.isArray(rawFav.items)) favItems = rawFav.items;
-
-        const favoriteIds = favItems
+        const raw = cartRes.value;
+        const items = Array.isArray(raw) ? raw : raw?.items || [];
+        const ids = items
           .map((item) => Number(item.courseId || item.id))
           .filter((id) => !isNaN(id));
+        dispatch({ type: actionTypes.SET_CART, payload: ids });
+      }
 
-        dispatch({ type: actionTypes.SET_FAVORITES, payload: favoriteIds });
+      // Favorites
+      if (favoriteRes.status === "fulfilled") {
+        const raw = favoriteRes.value;
+        const items = Array.isArray(raw) ? raw : raw?.items || [];
+        const ids = items
+          .map((item) => Number(item.courseId || item.id))
+          .filter((id) => !isNaN(id));
+        dispatch({ type: actionTypes.SET_FAVORITES, payload: ids });
+      }
+
+      // Purchased
+      if (purchasedRes.status === "fulfilled") {
+        const raw = purchasedRes.value;
+        const items = Array.isArray(raw) ? raw : raw?.items || [];
+        const ids = items
+          .map((item) => Number(item.courseId || item.id))
+          .filter((id) => !isNaN(id));
+        dispatch({ type: actionTypes.SET_PURCHASED_COURSES, payload: ids });
       }
     } catch (err) {
-      console.error("💥 Lỗi nghiêm trọng trong syncUserData:", err);
+      console.error("Lỗi sync user data:", err);
     }
   }, []);
 
   // Set context cho Auth
   useEffect(() => {
-    setAppDispatchContext({
-      resetUserData,
-      syncUserData,
-    });
+    setAppDispatchContext({ resetUserData, syncUserData });
   }, [resetUserData, syncUserData]);
 
-  // ⭐ KHÔNG load courses ở đây nữa
-  // ✅ LazyLoadCourses component sẽ tự load với infinite scroll và pagination đúng
-  // ⚠️ Việc load 100 courses ở đây gây ra hiển thị sai và xung đột với lazy load
-
-  // ⭐ Load categories từ API
+  // Load categories
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        console.log("📚 Loading categories from API...");
         const data = await categoryAPI.getAll();
-        console.log("✅ Categories loaded:", data);
         dispatch({ type: actionTypes.SET_CATEGORIES, payload: data });
       } catch (err) {
-        console.error("❌ Failed to load categories:", err);
-        // Fallback: Extract từ courses nếu API fail
-        if (state.courses.length > 0) {
-          const uniqueCategories = [
-            ...new Set(state.courses.map((course) => course.categoryName)),
-          ];
-          const categories = uniqueCategories.map((name, index) => ({
-            id: index + 1,
-            name: name,
-          }));
-          console.log(
-            "⚠️ Using fallback - categories from courses:",
-            categories
-          );
-          dispatch({ type: actionTypes.SET_CATEGORIES, payload: categories });
-        }
+        console.error("Failed to load categories:", err);
       }
     };
-
     loadCategories();
   }, []);
 
-  // ⭐ Auto filter với useMemo và debounced search để tránh re-render không cần thiết
-  const filteredCoursesResult = useMemo(() => {
-    let filtered = state.courses;
-
-    // Search - sử dụng debounced value để giảm số lần filter
-    if (debouncedSearchTerm) {
-      const term = debouncedSearchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (c) =>
-          c.title.toLowerCase().includes(term) ||
-          c.description.toLowerCase().includes(term) ||
-          c.categoryName?.toLowerCase().includes(term)
-      );
-    }
-
-    // Category
-    if (state.selectedCategory !== "Tất cả") {
-      filtered = filtered.filter(
-        (c) => c.categoryName === state.selectedCategory
-      );
-    }
-
-    // Price range
-    if (state.selectedPriceRange.label !== "Tất cả") {
-      filtered = filtered.filter(
-        (c) =>
-          c.price >= state.selectedPriceRange.min &&
-          c.price <= state.selectedPriceRange.max
-      );
-    }
-
-    return filtered;
-  }, [
-    state.courses,
-    debouncedSearchTerm,
-    state.selectedCategory,
-    state.selectedPriceRange,
-  ]);
-
-  // Cập nhật filteredCourses chỉ khi thực sự thay đổi
-  useEffect(() => {
-    dispatch({
-      type: actionTypes.SET_FILTERED_COURSES,
-      payload: filteredCoursesResult,
-    });
-  }, [filteredCoursesResult]);
+  // ========== DISPATCH VALUE (stable reference) ==========
+  const dispatchValue = useMemo(
+    () => ({
+      dispatch,
+      actionTypes,
+      resetUserData,
+      syncUserData,
+      ...cartActions,
+      ...favoriteActions,
+    }),
+    [cartActions, favoriteActions, resetUserData, syncUserData]
+  );
 
   return (
-    <AppContext.Provider value={state}>
-      <AppDispatchContext.Provider
-        value={{
-          dispatch,
-          actionTypes,
-          resetUserData,
-          syncUserData,
-          ...cartActions,
-          ...favoriteActions,
-        }}
-      >
+    <AppStateContext.Provider value={state}>
+      <AppDispatchContext.Provider value={dispatchValue}>
         {children}
       </AppDispatchContext.Provider>
-    </AppContext.Provider>
+    </AppStateContext.Provider>
   );
 };

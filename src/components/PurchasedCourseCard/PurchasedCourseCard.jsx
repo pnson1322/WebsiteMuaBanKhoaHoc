@@ -1,12 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Eye } from "lucide-react";
 import "../CourseCard/CourseCard.css"; // Dùng lại style gốc
 import CourseStats from "../../components/CourseCard/CourseStats";
 import { getLevelInVietnamese } from "../../utils/courseUtils";
 import { courseAPI } from "../../services/courseAPI";
 
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1529101091764-c3526daf38fe";
+
 const PurchasedCourseCard = React.memo(({ course, onViewDetails }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+    setImageLoaded(true);
+  }, []);
+
+  // Xử lý image source với fallback
+  const imageSrc = imageError
+    ? DEFAULT_IMAGE
+    : course.imageUrl || course.image || DEFAULT_IMAGE;
 
   const handleViewLecture = async (e) => {
     e.stopPropagation();
@@ -38,28 +57,41 @@ const PurchasedCourseCard = React.memo(({ course, onViewDetails }) => {
     <div className="course-card" onClick={() => onViewDetails(course)}>
       {/* Ảnh */}
       <div className="course-image-container">
+        {!imageLoaded && <div className="course-image-skeleton" />}
         <img
-          src={course.imageUrl}
+          src={imageSrc}
           alt={course.title}
-          className="course-image"
+          className={`course-image ${imageLoaded ? "loaded" : "loading"}`}
+          loading="lazy"
+          decoding="async"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
         />
-        <div className="course-category">{course.categoryName}</div>
+        <div className="course-category">
+          {course.categoryName || "Khóa học"}
+        </div>
       </div>
 
       {/* Nội dung */}
       <div className="course-content">
         <h3 className="course-title">{course.title}</h3>
-        <p className="course-description">{course.shortDescription}</p>
+        <p className="course-description">
+          {course.shortDescription || course.description || ""}
+        </p>
 
         {/* Footer */}
         <div className="course-footer">
           <div className="course-instructor">
-            <span className="instructor-badge">👨‍🏫 {course.teacherName}</span>
+            <span className="instructor-badge">
+              👨‍🏫 {course.teacherName || "Giảng viên"}
+            </span>
           </div>
 
           <CourseStats course={course} />
           <div className="course-price-level">
-            <p className="course-price">{course.price.toLocaleString()} VNĐ</p>
+            <p className="course-price">
+              {(course.price || 0).toLocaleString()} VNĐ
+            </p>
             <span className="level-badge">
               {getLevelInVietnamese(course.level)}
             </span>
