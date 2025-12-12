@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import instance from "../services/axiosInstance";
+import { useAppDispatch } from "../contexts/AppContext";
 
 const useAuthForm = (initialMode = "login", onSuccess = null) => {
   const { login, logout } = useAuth();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
+  const { syncUserData } = useAppDispatch();
 
   const [mode, setMode] = useState(initialMode);
   const [formData, setFormData] = useState({
@@ -67,10 +69,12 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
       // Giả sử API trả về: { token: "abc...", refreshToken: "xyz...", id: 1, fullName: "..." }
       const data = res.data;
 
+      const validToken = data.token || data.accessToken;
+
       // Lấy token ra riêng
       const tokens = {
-        accessToken: data.token || data.accessToken,
-        refreshToken: data.refreshToken
+        accessToken: validToken,
+        refreshToken: data.refreshToken,
       };
 
       // Lấy thông tin user (loại bỏ token ra khỏi object user cho sạch, nếu thích)
@@ -81,10 +85,19 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("currentUser");
 
+      if (validToken) {
+        localStorage.setItem("token", validToken);
+      }
+
       // 4. Gọi login của AuthContext với ĐỦ 2 THAM SỐ
       // Tham số 1: Thông tin user
       // Tham số 2: Object chứa token
       await login(userInfo, tokens);
+
+      if (syncUserData) {
+        console.log("🔄 Syncing user data (Cart & Favorites) after login...");
+        await syncUserData(validToken);
+      }
 
       showSuccess("Đăng nhập thành công!");
       if (onSuccess) {
@@ -116,6 +129,7 @@ const useAuthForm = (initialMode = "login", onSuccess = null) => {
     onSuccess,
     showError,
     showSuccess,
+    syncUserData,
   ]);
   // ✅ Register: KHÔNG login tự động, yêu cầu verify email
   const handleRegister = useCallback(async () => {

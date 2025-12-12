@@ -210,7 +210,10 @@ const CourseDetail = () => {
 
       fetchReviews();
     } catch (err) {
-      showError("Gửi đánh giá thất bại: " + err.message);
+      const errorMsg =
+        err.response?.data?.message || err.message || "Có lỗi xảy ra";
+
+      showError(errorMsg);
     }
   };
 
@@ -301,8 +304,15 @@ const CourseDetail = () => {
     );
   }
 
-  const isFavorite = course && state.favorites.includes(course.id);
-  const isInCart = course && state.cart.includes(course.id);
+  const currentCourseId = Number(id);
+
+  const isInCart = state.cart.some(
+    (cartId) => Number(cartId) === currentCourseId
+  );
+
+  const isFavorite = state.favorites.some(
+    (favId) => Number(favId) === currentCourseId
+  );
 
   const handleToggleFavorite = async () => {
     if (!user) {
@@ -534,8 +544,9 @@ const CourseDetail = () => {
                 return (
                   <span
                     key={starValue}
-                    className={`star ${starValue <= (hover || rating) ? "filled" : ""
-                      }`}
+                    className={`star ${
+                      starValue <= (hover || rating) ? "filled" : ""
+                    }`}
                     onClick={() => setRating(starValue)}
                     onMouseEnter={() => setHover(starValue)}
                     onMouseLeave={() => setHover(rating)}
@@ -625,8 +636,9 @@ const CourseDetail = () => {
                     return (
                       <span
                         key={starValue}
-                        className={`star star-comment ${starValue <= comment.rate ? "filled" : ""
-                          }`}
+                        className={`star star-comment ${
+                          starValue <= comment.rate ? "filled" : ""
+                        }`}
                       >
                         ★
                       </span>
@@ -651,10 +663,11 @@ const CourseDetail = () => {
                           return (
                             <span
                               key={starValue}
-                              className={`star ${starValue <= (hoverEdit || ratingEdit)
+                              className={`star ${
+                                starValue <= (hoverEdit || ratingEdit)
                                   ? "filled"
                                   : ""
-                                }`}
+                              }`}
                               onClick={() => setRatingEdit(starValue)}
                               onMouseEnter={() => setHoverEdit(starValue)}
                               onMouseLeave={() => setHoverEdit(ratingEdit)}

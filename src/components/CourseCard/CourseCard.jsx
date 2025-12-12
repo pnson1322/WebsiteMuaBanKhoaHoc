@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { favoriteAPI } from "../../services/favoriteAPI";
+import { courseAPI } from "../../services/courseAPI";
 import "./CourseCard.css";
 import CourseImageSection from "./CourseImageSection";
 import CourseContent from "./CourseContent";
@@ -23,6 +24,31 @@ const CourseCard = React.memo(({ course, onViewDetails }) => {
 
   const isFavorite = state.favorites.includes(course.courseId);
   const isInCart = state.cart.includes(course.courseId);
+
+  const [isPurchased, setIsPurchased] = useState(false);
+
+  useEffect(() => {
+    const checkOwnership = async () => {
+      if (!isLoggedIn) return;
+
+      try {
+        const response = await courseAPI.getPurchasedCourses({
+          page: 1,
+          pageSize: 9999,
+        });
+
+        const found = response.items?.find((item) => item.id == course.id);
+
+        if (found) {
+          setIsPurchased(true);
+        }
+      } catch (err) {
+        console.error("Lỗi kiểm tra khóa học đã mua:", err);
+      }
+    };
+
+    checkOwnership();
+  }, [course.id, isLoggedIn]);
 
   const handleToggleFavorite = async (e) => {
     e.stopPropagation();
@@ -57,7 +83,15 @@ const CourseCard = React.memo(({ course, onViewDetails }) => {
       return;
     }
 
-    if (isInCart) return;
+    if (isPurchased) {
+      showError("Bạn đã sở hữu khóa học này rồi!");
+      return;
+    }
+
+    if (isInCart) {
+      showError("Bạn đã thêm khóa học này vào giỏ hàng rồi.");
+      return;
+    }
 
     const result = await addToCart(course.courseId);
 

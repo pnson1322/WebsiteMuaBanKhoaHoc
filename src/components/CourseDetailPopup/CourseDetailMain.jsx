@@ -225,6 +225,7 @@ export default function CourseDetailMain({
                     onChange={handleChange}
                     name="price"
                     required
+                    onWheel={(e) => e.target.blur()}
                   />
                 </div>
 
@@ -238,6 +239,7 @@ export default function CourseDetailMain({
                     onChange={handleChange}
                     name="durationHours"
                     required
+                    onWheel={(e) => e.target.blur()}
                   />
                 </div>
 

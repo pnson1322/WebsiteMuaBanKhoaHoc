@@ -88,7 +88,45 @@ export default function CourseDetailPopup({ onClose, course, onUpdate }) {
     console.log(formData);
 
     try {
-      await courseAPI.updateCourse(course.id, formData);
+      const urlRegex = /^(https?:\/\/)/;
+      if (formData.link && !urlRegex.test(formData.link.trim())) {
+        showError("Link tài liệu phải bắt đầu bằng http:// hoặc https://");
+        return;
+      }
+
+      const numPrice = Number(formData.price);
+      const numDuration = Number(formData.durationHours);
+
+      if (formData.price === "" || isNaN(numPrice)) {
+        showError("Giá khóa học phải là số hợp lệ.");
+        return;
+      }
+      if (numPrice <= 0) {
+        showError("Giá khóa học không được nhỏ hơn 0.");
+        return;
+      }
+
+      if (formData.durationHours === "" || isNaN(numDuration)) {
+        showError("Thời lượng khóa học phải là số.");
+        return;
+      }
+      if (numDuration <= 0) {
+        showError("Thời lượng khóa học phải lớn hơn 0.");
+        return;
+      }
+      if (!Number.isInteger(numDuration)) {
+        showError("Thời lượng khóa học phải là số nguyên (không nhập số lẻ).");
+        return;
+      }
+
+      const payload = {
+        ...formData,
+        price: numPrice,
+        durationHours: numDuration,
+        link: formData.link ? formData.link.trim() : "",
+      };
+
+      await courseAPI.updateCourse(course.id, payload);
 
       showSuccess("Cập nhật thành công!");
 
