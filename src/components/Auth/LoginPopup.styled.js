@@ -45,19 +45,12 @@ export const ScrollArea = styled.div`
   overflow-y: auto;
   padding-right: 4px;
 
-  /* thanh cuộn nhẹ */
+  /* ẩn thanh cuộn */
   &::-webkit-scrollbar {
-    width: 6px;
+    display: none;
   }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: rgba(102, 125, 233, 0.6);
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  -ms-overflow-style: none; /* IE và Edge */
+  scrollbar-width: none; /* Firefox */
 `;
 export const Header = styled.div`
   display: flex;
