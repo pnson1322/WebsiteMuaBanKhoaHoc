@@ -5,6 +5,7 @@ import { courseAPI } from "../../services/courseAPI";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
 import Filter from "../../components/Filter/Filter";
 import AdminCourseCard from "../../components/AdminCourseCard/AdminCourseCard";
+import { CourseCardSkeleton } from "../../components/LoadingSkeleton";
 import CourseDetailPopup from "../../components/CourseDetailPopup/CourseDetailPopup";
 import "../PurchasedCoursesPage/PurchasedCoursesPage.css";
 import SellerStatsHeader from "../../components/Seller/SellerStatsHeader";
@@ -481,7 +482,11 @@ const AdminCoursesPage = () => {
 
         {/* 🧾 Danh sách khóa học */}
         {loading ? (
-          <p className="loading-text">⏳ Đang tải dữ liệu...</p>
+          <div className="courses-grid">
+            {[...Array(6)].map((_, i) => (
+              <CourseCardSkeleton key={i} />
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="admin-no-results-state">
             <div className="admin-no-results-icon">

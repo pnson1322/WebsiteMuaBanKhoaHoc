@@ -1,20 +1,42 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, ArrowLeft, Trash2 } from "lucide-react";
 import { favoriteAPI } from "../services/favoriteAPI";
 import CourseCard from "../components/CourseCard/CourseCard";
+import { CourseCardSkeleton } from "../components/LoadingSkeleton";
 import logger from "../utils/logger";
-import { useAppDispatch } from "../contexts/AppContext";
+import { useAppState, useAppDispatch } from "../contexts/AppContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import "./Favorites.css";
 
 const Favorites = () => {
   const navigate = useNavigate();
-  const { dispatch, actionTypes } = useAppDispatch();
+  const state = useAppState();
+  const { dispatch, actionTypes, addToCart, removeFromFavorite } =
+    useAppDispatch();
+  const { user, isLoggedIn } = useAuth();
+  const { showUnfavorite, showSuccess, showError } = useToast();
   const [favoriteCourses, setFavoriteCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 9;
+
+  // === MEMOIZED SETS cho O(1) lookup ===
+  const favoriteSet = useMemo(
+    () => new Set(state.favorites),
+    [state.favorites]
+  );
+  const cartSet = useMemo(() => new Set(state.cart), [state.cart]);
+  const purchasedSet = useMemo(
+    () => new Set(state.purchasedCourses),
+    [state.purchasedCourses]
+  );
+  const showActions = useMemo(
+    () => !isLoggedIn || user?.role === "Buyer",
+    [isLoggedIn, user]
+  );
 
   // ===========================
   //   LOAD FAVORITES FROM API
@@ -101,7 +123,7 @@ const Favorites = () => {
   // ===========================
   const handleViewDetails = useCallback(
     (course) => {
-      navigate(`/course/${course.id}`);
+      navigate(`/course/${course.courseId || course.id}`);
     },
     [navigate]
   );
@@ -127,28 +149,53 @@ const Favorites = () => {
   }, [dispatch, actionTypes]);
 
   // ===========================
-  //   REMOVE ONE COURSE
+  //   REMOVE ONE COURSE (Toggle Favorite)
   // ===========================
-  const handleRemoveFavorite = useCallback(
+  const handleToggleFavorite = useCallback(
     async (courseId) => {
       try {
-        await favoriteAPI.removeFavorite(courseId);
-        setFavoriteCourses((prev) => prev.filter((c) => c.id !== courseId));
-        // ⭐ Cập nhật AppContext
-        dispatch({
-          type: actionTypes.REMOVE_FROM_FAVORITES,
-          payload: courseId,
-        });
+        const result = await removeFromFavorite(courseId);
+        if (result.success) {
+          showUnfavorite("💔 Đã bỏ yêu thích");
+          // Xóa khỏi danh sách local
+          setFavoriteCourses((prev) => prev.filter((c) => c.id !== courseId));
+        } else {
+          showError("Lỗi khi bỏ yêu thích");
+        }
       } catch (err) {
         console.error("❌ Lỗi khi xóa khóa học:", err);
-        alert("Không thể xóa khóa học khỏi yêu thích.");
+        showError("Không thể xóa khóa học khỏi yêu thích.");
       }
     },
-    [dispatch, actionTypes]
+    [removeFromFavorite, showUnfavorite, showError]
   );
 
   // ===========================
-  //   LOADING UI
+  //   ADD TO CART
+  // ===========================
+  const handleAddToCart = useCallback(
+    async (courseId, title, isPurchased, isInCart) => {
+      if (!user) {
+        dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
+        return;
+      }
+      if (isPurchased) {
+        showError("Bạn đã sở hữu khóa học này rồi!");
+        return;
+      }
+      if (isInCart) {
+        showError("Đã có trong giỏ hàng.");
+        return;
+      }
+      const result = await addToCart(courseId);
+      if (result.success) showSuccess(`🛒 Đã thêm "${title}" vào giỏ hàng!`);
+      else showError("Lỗi khi thêm vào giỏ hàng.");
+    },
+    [user, dispatch, actionTypes, addToCart, showSuccess, showError]
+  );
+
+  // ===========================
+  //   LOADING UI - Skeleton Cards
   // ===========================
   if (loading) {
     return (
@@ -166,8 +213,10 @@ const Favorites = () => {
             </div>
           </div>
 
-          <div className="favorites-loading">
-            <p>Đang tải khóa học yêu thích...</p>
+          <div className="favorites-grid">
+            {[...Array(6)].map((_, i) => (
+              <CourseCardSkeleton key={i} />
+            ))}
           </div>
         </div>
       </div>
@@ -244,9 +293,14 @@ const Favorites = () => {
               {favoriteCourses.map((course) => (
                 <CourseCard
                   key={course.id}
-                  course={{ ...course, courseId: course.id }}
-                  onViewDetails={() => handleViewDetails(course)}
-                  onRemoveFavorite={() => handleRemoveFavorite(course.id)}
+                  course={course}
+                  isFavorite={favoriteSet.has(course.id)}
+                  isInCart={cartSet.has(course.id)}
+                  isPurchased={purchasedSet.has(course.id)}
+                  showActions={showActions}
+                  onViewDetails={handleViewDetails}
+                  onToggleFavorite={handleToggleFavorite}
+                  onAddToCart={handleAddToCart}
                 />
               ))}
             </div>
@@ -303,4 +357,5 @@ const Favorites = () => {
   );
 };
 
-export default Favorites;
+// Wrap với React.memo để tránh re-render không cần thiết từ parent
+export default React.memo(Favorites);

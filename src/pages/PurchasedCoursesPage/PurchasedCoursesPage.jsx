@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { courseAPI } from "../../services/courseAPI";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import PurchasedCourseCard from "../../components/PurchasedCourseCard/PurchasedCourseCard";
+import { CourseCardSkeleton } from "../../components/LoadingSkeleton";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
 import Filter from "../../components/Filter/Filter";
 import "./PurchasedCoursesPage.css";
@@ -222,7 +223,11 @@ const PurchasedCoursesPage = () => {
 
         {/* Content */}
         {isLoading ? (
-          <p className="loading-text">⏳ Đang tải dữ liệu...</p>
+          <div className="courses-grid">
+            {[...Array(6)].map((_, i) => (
+              <CourseCardSkeleton key={i} />
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">📚</div>
