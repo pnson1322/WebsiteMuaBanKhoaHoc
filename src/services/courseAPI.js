@@ -379,4 +379,10 @@ export const courseAPI = {
     );
     return res.data;
   },
+
+  // /api/Course/student/{courseId}: GET: Lấy danh sách học viên
+  async getStudentList(courseId) {
+    const res = await instance.get(`/api/Course/student/${courseId}`);
+    return res.data;
+  },
 };
