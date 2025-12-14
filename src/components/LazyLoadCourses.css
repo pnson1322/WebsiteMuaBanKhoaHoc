@@ -61,7 +61,132 @@
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Course Card Skeleton - giống CourseCard thực */
+.course-card-skeleton {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-card-skeleton .skeleton-image {
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.course-card-skeleton .skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+}
+
+.skeleton-category {
+  width: 80px;
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+}
+
+.course-card-skeleton .skeleton-title {
+  height: 22px;
+  width: 90%;
+  margin-bottom: 0.75rem;
+}
+
+.course-card-skeleton .skeleton-text {
+  height: 14px;
+  margin-bottom: 0.5rem;
+}
+
+.course-card-skeleton .skeleton-text.short {
+  width: 60%;
+}
+
+.skeleton-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.skeleton-price-row .skeleton-price {
+  width: 100px;
+  height: 28px;
+}
+
+.skeleton-rating {
+  width: 70px;
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.skeleton-button {
+  flex: 1;
+  height: 42px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 10px;
+}
+
+.skeleton-button.small {
+  flex: 0 0 42px;
+}
+
+/* Shimmer effect overlay */
+.skeleton-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: shimmerOverlay 1.5s infinite;
+}
+
+@keyframes shimmerOverlay {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Skeleton Results Info */
+.skeleton-results {
+  background: rgba(0, 13, 255, 0.08);
+  display: flex;
+  justify-content: center;
+}
+
+.skeleton-text-line {
+  background: linear-gradient(90deg, #e0e0e0 25%, #d0d0d0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
 }
 
 @keyframes pulse {
@@ -180,53 +305,108 @@
   align-items: center;
   justify-content: center;
   padding: 4rem 2rem;
-  margin: 3rem 0;
+  margin-bottom: 2rem;
+  width: 100%;
   text-align: center;
-  background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(229, 62, 62, 0.1);
-  border: 2px solid #feb2b2;
+  background: linear-gradient(145deg, #ffffff 0%, #fef2f2 50%, #fff5f5 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  position: relative;
+  overflow: hidden;
 }
 
-.error-iconn {
+.error-state::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ef4444, #f97316, #ef4444);
+  background-size: 200% 100%;
+  animation: errorGradient 3s ease-in-out infinite;
+}
+
+@keyframes errorGradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.error-icon {
   width: 100px;
   height: 100px;
-  margin-bottom: 2rem;
-  background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+  margin-bottom: 1.5rem;
+  background: linear-gradient(145deg, #fecaca 0%, #fca5a5 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  animation: errorPulse 2s ease-in-out infinite;
-  box-shadow: 0 10px 30px rgba(229, 62, 62, 0.3);
+  color: #dc2626;
+  animation: errorBounce 2s ease-in-out infinite;
+  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.3),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.1),
+    inset 0 4px 12px rgba(255, 255, 255, 0.5);
+  position: relative;
 }
 
-@keyframes errorPulse {
+.error-icon::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px dashed rgba(239, 68, 68, 0.3);
+  animation: errorRotate 10s linear infinite;
+}
+
+@keyframes errorBounce {
   0%,
   100% {
-    transform: scale(1);
-    box-shadow: 0 10px 30px rgba(229, 62, 62, 0.3);
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-8px) scale(1.02);
   }
   50% {
-    transform: scale(1.05);
-    box-shadow: 0 15px 40px rgba(229, 62, 62, 0.4);
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    transform: translateY(-4px) scale(1.01);
+  }
+}
+
+@keyframes errorRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
 .error-state h2 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #2d3748;
-  margin-bottom: 1rem;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
 }
 
 .error-message {
   font-size: 1.1rem;
-  color: #e53e3e;
+  color: #dc2626;
   margin-bottom: 2rem;
   line-height: 1.6;
   font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .error-actions {
@@ -241,52 +421,88 @@
 .contact-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 2rem;
-  border-radius: 12px;
+  gap: 0.6rem;
+  padding: 0.875rem 1.75rem;
+  border-radius: 14px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .retry-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.retry-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.retry-button:hover::before {
+  left: 100%;
 }
 
 .retry-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 28px rgba(59, 130, 246, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.retry-button:active {
+  transform: translateY(-1px) scale(0.98);
 }
 
 .contact-button {
   background: white;
-  color: #667eea;
-  border: 2px solid #667eea;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .contact-button:hover {
-  background: #f7fafc;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+}
+
+.contact-button:active {
+  transform: translateY(-1px) scale(0.98);
 }
 
 .error-tips {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  max-width: 400px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  max-width: 420px;
   text-align: left;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .error-tips p {
   margin: 0 0 1rem 0;
-  color: #2d3748;
+  color: #1f2937;
   font-size: 1rem;
+  font-weight: 600;
 }
 
 .error-tips ul {
@@ -296,17 +512,74 @@
 }
 
 .error-tips li {
-  padding: 0.5rem 0;
-  color: #718096;
+  padding: 0.6rem 0;
+  padding-left: 1.75rem;
+  color: #4b5563;
   font-size: 0.95rem;
-  line-height: 1.6;
+  line-height: 1.5;
+  position: relative;
+  transition: all 0.2s ease;
 }
 
-.error-tips li:before {
-  content: "✓";
-  color: #48bb78;
-  font-weight: bold;
-  margin-right: 0.5rem;
+.error-tips li:hover {
+  color: #1f2937;
+  transform: translateX(4px);
+}
+
+.error-tips li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+
+.error-tips li:hover::before {
+  transform: translateX(2px);
+}
+
+/* Responsive for error state */
+@media (max-width: 640px) {
+  .error-state {
+    padding: 2.5rem 1.5rem;
+    margin: 1.5rem 1rem;
+    border-radius: 20px;
+  }
+
+  .error-icon {
+    width: 80px;
+    height: 80px;
+  }
+
+  .error-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .error-state h2 {
+    font-size: 1.4rem;
+  }
+
+  .error-message {
+    font-size: 1rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .error-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .retry-button,
+  .contact-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .error-tips {
+    padding: 1.25rem;
+  }
 }
 
 /* Error Container (Legacy) */
