@@ -241,7 +241,7 @@ const LazyLoadCourses = ({ onViewDetails }) => {
     return (
       <div className="lazy-load-courses">
         <div className="error-state">
-          <div className="error-icon">
+          <div className="lazy-load-error-icon">
             <svg
               width="48"
               height="48"

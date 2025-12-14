@@ -338,7 +338,7 @@
   }
 }
 
-.error-icon {
+.lazy-load-error-icon {
   width: 100px;
   height: 100px;
   margin-bottom: 1.5rem;
@@ -355,7 +355,7 @@
   position: relative;
 }
 
-.error-icon::after {
+.lazy-loaderror-icon::after {
   content: "";
   position: absolute;
   inset: -4px;
@@ -547,12 +547,12 @@
     border-radius: 20px;
   }
 
-  .error-icon {
+  .lazy-load-error-icon {
     width: 80px;
     height: 80px;
   }
 
-  .error-icon svg {
+  .lazy-load-error-icon svg {
     width: 36px;
     height: 36px;
   }
