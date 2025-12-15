@@ -42,7 +42,10 @@ const CourseList = ({ courses, onViewDetails }) => {
   // Stable callback - toggle favorite
   const handleToggleFavorite = useCallback(
     async (courseId) => {
-      if (!user) {
+      const isAuth =
+        isLoggedIn || localStorage.getItem("isLoggedIn") === "true";
+
+      if (!isAuth) {
         dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
         return;
       }
@@ -65,7 +68,7 @@ const CourseList = ({ courses, onViewDetails }) => {
       }
     },
     [
-      user,
+      isLoggedIn,
       favoriteSet,
       dispatch,
       actionTypes,
@@ -80,7 +83,10 @@ const CourseList = ({ courses, onViewDetails }) => {
   // Stable callback - add to cart
   const handleAddToCart = useCallback(
     async (courseId, title, isPurchased, isInCart) => {
-      if (!user) {
+      const isAuth =
+        isLoggedIn || localStorage.getItem("isLoggedIn") === "true";
+
+      if (!isAuth) {
         dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
         return;
       }
@@ -102,12 +108,12 @@ const CourseList = ({ courses, onViewDetails }) => {
         showError("Lỗi khi thêm vào giỏ hàng.");
       }
     },
-    [user, dispatch, actionTypes, addToCart, showSuccess, showError]
+    [isLoggedIn, dispatch, actionTypes, addToCart, showSuccess, showError]
   );
 
   return (
     <div className="courses-grid">
-      {courses.map((course) => {
+      {courses.map((course, index) => {
         const courseId = course.courseId || course.id;
         return (
           <CourseCard
@@ -117,6 +123,7 @@ const CourseList = ({ courses, onViewDetails }) => {
             isInCart={cartSet.has(courseId)}
             isPurchased={purchasedSet.has(courseId)}
             showActions={showActions}
+            priority={index < 6}
             onViewDetails={onViewDetails}
             onToggleFavorite={handleToggleFavorite}
             onAddToCart={handleAddToCart}

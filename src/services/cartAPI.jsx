@@ -14,8 +14,18 @@ export const cartAPI = {
 
   // /api/Cart/items: POST: Thêm khóa học vào giỏ hàng
   async createCartItem(courseId) {
-    const res = await instance.post(`/api/Cart/items/${courseId}`);
-    return res.data;
+    try {
+      const res = await instance.post(`/api/Cart/items/${courseId}`);
+      return res.data;
+    } catch (err) {
+      // 🚨 Token sai / hết hạn / chưa login
+      if (err.response?.status === 401) {
+        return {
+          unauthorized: true,
+        };
+      }
+      throw err;
+    }
   },
 
   // /api/Cart/items/{itemId}: DELETE: Xóa khóa học khỏi giỏ hàng

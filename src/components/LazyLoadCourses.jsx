@@ -373,7 +373,7 @@ const LazyLoadCourses = ({ onViewDetails }) => {
       {filteredCourses.length > 0 ? (
         <>
           <div className="courses-grid">
-            {filteredCourses.map((course) => {
+            {filteredCourses.map((course, index) => {
               const courseId = course.courseId || course.id;
               return (
                 <CourseCard
@@ -383,6 +383,7 @@ const LazyLoadCourses = ({ onViewDetails }) => {
                   isInCart={cartSet.has(courseId)}
                   isPurchased={purchasedSet.has(courseId)}
                   showActions={showActions}
+                  priority={index < 6}
                   onViewDetails={onViewDetails}
                   onToggleFavorite={handleToggleFavorite}
                   onAddToCart={handleAddToCart}
