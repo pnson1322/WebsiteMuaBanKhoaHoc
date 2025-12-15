@@ -164,16 +164,17 @@ export default function AdminHomePage() {
           }))
         );
         setDataBarChart(
-          days7Revenue.map((item) => {
-            const d = new Date(item.date);
-            const dateStr = d.toLocaleDateString("vi-VN");
-
-            return {
-              revenue: item.totalAmount,
-              date: dateStr,
-            };
-          })
+          (Array.isArray(days7Revenue) ? days7Revenue : []).map((item) => ({
+            date: new Date(item.date).toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+            }),
+            revenue: item.revenue || 0,
+          }))
         );
+
+        console.log(days7Revenue);
+        console.log(dataBarChart);
       } catch (err) {
         showError("Lỗi: " + err);
       }
@@ -513,6 +514,7 @@ export default function AdminHomePage() {
             ref={revenueChartRef}
             style={{ width: "100%", overflow: "hidden" }}
           >
+            {console.log(dataBarChart)}
             {(revenuePeriod === "7days" ? dataBarChart : dataLineChart).some(
               (i) => i.revenue > 0
             ) ? (
@@ -529,22 +531,19 @@ export default function AdminHomePage() {
                       data: dataBarChart.map((i) => i.revenue || 0),
                       color: revenueBarColor,
                       label: "Doanh thu: ",
-                      valueFormatter: (v) => `${v} triệu đồng`,
+                      valueFormatter: (v) => `${v?.toLocaleString("vi-VN")} đ`,
                     },
                   ]}
                   yAxis={[
                     {
                       min: 0,
-                      max: 5,
-                      tickNumber: 6,
-                      tickMinStep: 0.5,
-                      valueFormatter: (v) => `${v} triệu`,
+                      valueFormatter: (v) => `${v / 1000000} tr`,
                     },
                   ]}
                   grid={{ horizontal: true }}
                   width={revenueChartWidth}
                   height={300}
-                  margin={{ left: 0 }}
+                  margin={{ left: 45, right: 10, top: 10, bottom: 30 }}
                 />
               ) : (
                 <LineChart
