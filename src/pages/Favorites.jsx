@@ -175,7 +175,10 @@ const Favorites = () => {
   // ===========================
   const handleAddToCart = useCallback(
     async (courseId, title, isPurchased, isInCart) => {
-      if (!user) {
+      const isAuth =
+        !!user || localStorage.getItem("isLoggedIn") === "true";
+
+      if (!isAuth) {
         dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
         return;
       }

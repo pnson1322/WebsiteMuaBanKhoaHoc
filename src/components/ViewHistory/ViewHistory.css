@@ -33,15 +33,15 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* ⭐ Đơn giản hóa transition */
+  transition: filter 0.1s ease-out;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .view-all-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 25px rgba(99, 102, 241, 0.3);
+  filter: brightness(1.1);
 }
 
 .arrow-icon {
@@ -86,16 +86,15 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  /* ⭐ Đơn giản hóa transition */
+  transition: background-color 0.1s ease-out;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .clear-history-btn:hover {
-  background: rgba(229, 62, 62, 0.18);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(203, 38, 38, 0.12);
+  background: rgba(229, 62, 62, 0.22);
 }
 
 .trash-icon {
@@ -116,17 +115,23 @@
   border-radius: 18px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  /* ⭐ Transition rất ngắn để có hiệu ứng mượt nhưng vẫn nhanh */
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
   display: flex;
   flex-direction: column;
   height: 100%;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
   border: 1px solid rgba(99, 102, 241, 0.08);
+  /* GPU acceleration */
+  transform: translate3d(0, 0, 0);
+  contain: layout style paint;
+  isolation: isolate;
 }
 
 .history-item:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 40px rgba(79, 70, 229, 0.18);
+  /* ⭐ Hiệu ứng nâng card + shadow nhẹ */
+  transform: translate3d(0, -5px, 0);
+  box-shadow: 0 12px 24px rgba(99, 102, 241, 0.15);
 }
 
 .history-index {
@@ -150,12 +155,14 @@
   width: 100%;
   height: 130px;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  /* ⭐ Bỏ transition scale - gây lag */
+  transform: translate3d(0, 0, 0);
 }
 
-.history-item:hover .history-image {
+/* ⭐ Bỏ scale image khi hover */
+/* .history-item:hover .history-image {
   transform: scale(1.06);
-}
+} */
 
 .history-content {
   padding: 1rem;
@@ -221,13 +228,17 @@
   justify-content: center;
   gap: 0.5rem;
   color: #ffffff;
+  /* ⭐ Hiệu ứng fade mượt */
   opacity: 0;
-  transition: opacity 0.25s ease;
-  backdrop-filter: blur(6px);
+  visibility: hidden;
+  transition: opacity 0.1s ease-out, visibility 0.1s ease-out;
+  /* GPU layer riêng */
+  transform: translate3d(0, 0, 0);
 }
 
 .history-item:hover .history-overlay {
   opacity: 1;
+  visibility: visible;
 }
 
 .view-icon {

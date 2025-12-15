@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import { courseAPI } from "../services/courseAPI";
 import { categoryAPI } from "../services/categoryAPI";
@@ -12,6 +13,7 @@ import { setAppDispatchContext } from "./AuthContext";
 import { cartAPI } from "../services/cartAPI";
 import { favoriteAPI } from "../services/favoriteAPI";
 import instance from "../services/axiosInstance";
+import { useAuth } from "./AuthContext";
 
 /**
  * ✅ REFACTORED AppContext
@@ -123,6 +125,7 @@ const appReducer = (state, action) => {
 
     // Purchased
     case actionTypes.SET_PURCHASED_COURSES:
+      localStorage.setItem("purchasedCourses", JSON.stringify(action.payload));
       return { ...state, purchasedCourses: action.payload };
 
     // View History
@@ -166,6 +169,7 @@ const appReducer = (state, action) => {
       localStorage.removeItem("cart");
       localStorage.removeItem("favorites");
       localStorage.removeItem("viewHistory");
+      localStorage.removeItem("purchasedCourses");
       return {
         ...state,
         cart: [],
@@ -243,14 +247,34 @@ export const AppProvider = ({ children }) => {
     cart: JSON.parse(localStorage.getItem("cart") || "[]"),
     favorites: JSON.parse(localStorage.getItem("favorites") || "[]"),
     viewHistory: JSON.parse(localStorage.getItem("viewHistory") || "[]"),
+    purchasedCourses: JSON.parse(
+      localStorage.getItem("purchasedCourses") || "[]"
+    ),
   });
+  const { isLoggedIn } = useAuth();
 
   // ========== CART ACTIONS ==========
   const cartActions = useMemo(
     () => ({
       addToCart: async (courseId) => {
+        // 🚨 FRONTEND GUARD – CHƯA LOGIN → KHÔNG GỌI API
+        const isAuth =
+          isLoggedIn || localStorage.getItem("isLoggedIn") === "true";
+
+        if (!isAuth) {
+          dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
+          return { success: false, unauthorized: true };
+        }
+
         try {
-          await cartAPI.createCartItem(courseId);
+          const res = await cartAPI.createCartItem(courseId);
+
+          // 🚨 PHÒNG HỜ TOKEN HẾT HẠN
+          if (res?.unauthorized) {
+            dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
+            return { success: false, unauthorized: true };
+          }
+
           dispatch({ type: actionTypes.ADD_TO_CART, payload: courseId });
           return { success: true };
         } catch (error) {
@@ -288,7 +312,7 @@ export const AppProvider = ({ children }) => {
         });
       },
     }),
-    []
+    [isLoggedIn, dispatch]
   );
 
   // ========== FAVORITE ACTIONS ==========
@@ -350,6 +374,8 @@ export const AppProvider = ({ children }) => {
       return;
     }
 
+    // ✅ Auto sync user data khi reload trang
+
     try {
       instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
@@ -398,6 +424,33 @@ export const AppProvider = ({ children }) => {
     setAppDispatchContext({ resetUserData, syncUserData });
   }, [resetUserData, syncUserData]);
 
+  const prevAuthStatusRef = useRef(isLoggedIn);
+
+  /**
+   * Keep UI state in sync with auth status.
+   * - Khi đăng nhập thành công: ẩn popup yêu cầu đăng nhập + đồng bộ dữ liệu mới nhất
+   * - Khi đăng xuất/unauthenticated: xóa sạch dữ liệu phụ thuộc user để tránh hiển thị “ảo”
+   */
+  useEffect(() => {
+    if (isLoggedIn) {
+      dispatch({ type: actionTypes.HIDE_LOGIN_POPUP });
+      syncUserData();
+    } else {
+      const token =
+        localStorage.getItem("accessToken") || localStorage.getItem("token");
+
+      // Nếu không còn token → chắc chắn reset local data để tránh “login ảo”
+      if (!token) {
+        dispatch({ type: actionTypes.RESET_USER_DATA });
+      } else if (prevAuthStatusRef.current) {
+        // Trường hợp vừa logout nhưng token vẫn còn (edge) → vẫn reset
+        dispatch({ type: actionTypes.RESET_USER_DATA });
+      }
+    }
+
+    prevAuthStatusRef.current = isLoggedIn;
+  }, [isLoggedIn, syncUserData]);
+
   // Load categories
   useEffect(() => {
     const loadCategories = async () => {
@@ -410,6 +463,15 @@ export const AppProvider = ({ children }) => {
     };
     loadCategories();
   }, []);
+  // ✅ Auto sync user data khi reload trang
+  useEffect(() => {
+    const token =
+      localStorage.getItem("accessToken") || localStorage.getItem("token");
+
+    if (token) {
+      syncUserData(token);
+    }
+  }, [syncUserData]);
 
   // ========== DISPATCH VALUE (stable reference) ==========
   const dispatchValue = useMemo(

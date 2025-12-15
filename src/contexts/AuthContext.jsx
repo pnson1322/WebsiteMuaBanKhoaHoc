@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { userAPI } from "../services/userAPI";
 import logger from "../utils/logger";
+import instance from "../services/axiosInstance"; // ✅ ADD: cần để set/clear Authorization
 
 const AuthContext = createContext();
 
@@ -12,21 +13,29 @@ export const setAppDispatchContext = (context) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
-  // ✅ THÊM: State để lưu token, giúp React re-render khi token thay đổi
-  const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || localStorage.getItem("token"));
+
+  const [accessToken, setAccessToken] = useState(
+    localStorage.getItem("accessToken") || localStorage.getItem("token")
+  );
   const [loading, setLoading] = useState(true);
 
+  // ✅ Helper: apply token to axios
+  const applyTokenToAxios = (token) => {
+    if (token) {
+      instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      delete instance.defaults.headers.common["Authorization"];
+    }
+  };
+
   useEffect(() => {
-    // Check if user is logged in on app start
     const checkAuthStatus = async () => {
       logger.info(
         "AUTH_CHECK_START",
@@ -34,12 +43,14 @@ export const AuthProvider = ({ children }) => {
       );
 
       try {
-        const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+        const token =
+          localStorage.getItem("accessToken") || localStorage.getItem("token");
         const loggedIn = localStorage.getItem("isLoggedIn") === "true";
         const currentUser = localStorage.getItem("currentUser");
 
-        // ✅ Cập nhật state token ngay lúc khởi động
+        // ✅ set token state + axios header ngay khi app start
         setAccessToken(token);
+        applyTokenToAxios(token);
 
         logger.debug("AUTH_CHECK_STORAGE", "LocalStorage auth data", {
           hasToken: !!token,
@@ -51,16 +62,6 @@ export const AuthProvider = ({ children }) => {
           try {
             logger.info("AUTH_FETCH_USER", "Fetching user details from API");
             const userData = await userAPI.getUserDetail();
-
-            logger.info(
-              "AUTH_FETCH_SUCCESS",
-              "User data fetched successfully",
-              {
-                userId: userData.id,
-                email: userData.email,
-                role: userData.role,
-              }
-            );
 
             setIsLoggedIn(true);
             setUser(userData);
@@ -74,10 +75,11 @@ export const AuthProvider = ({ children }) => {
                 status: error.response?.status,
               }
             );
-            console.error("Error fetching user data:", error);
             clearAuth();
           }
         } else if (loggedIn && currentUser) {
+          // ⚠️ trường hợp này thường xảy ra khi token thiếu -> không nên set logged in “ảo”
+          // nhưng để giữ behavior cũ, vẫn fallback user; đồng thời KHÔNG set axios token vì không có token
           logger.warn(
             "AUTH_FALLBACK",
             "Using cached user data from localStorage"
@@ -85,23 +87,21 @@ export const AuthProvider = ({ children }) => {
           setIsLoggedIn(true);
           setUser(JSON.parse(currentUser));
         } else {
-          logger.info("AUTH_NOT_LOGGED_IN", "User is not logged in");
-          // Đảm bảo clear sạch nếu không khớp
           clearAuth();
         }
       } catch (error) {
         logger.error("AUTH_CHECK_ERROR", "Error during auth status check", {
           error: error.message,
         });
-        console.error("Error checking auth status:", error);
         clearAuth();
       } finally {
-        logger.debug("AUTH_CHECK_COMPLETE", "Auth check completed");
         setLoading(false);
+        logger.debug("AUTH_CHECK_COMPLETE", "Auth check completed");
       }
     };
 
     checkAuthStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clearAuth = () => {
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
 
     setIsLoggedIn(false);
     setUser(null);
-    setAccessToken(null); // ✅ Clear state token
+    setAccessToken(null);
 
     localStorage.removeItem("token");
     localStorage.removeItem("isLoggedIn");
@@ -120,51 +120,64 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
 
+    // ✅ FIX: clear axios header để logout xong không gọi API bằng token cũ
+    // applyTokenToAxios(null);
+
     logger.info("AUTH_CLEAR_COMPLETE", "Auth state cleared successfully");
+    delete instance.defaults.headers.common["Authorization"];
   };
 
   const login = async (userData, tokens) => {
     logger.info("AUTH_LOGIN", "User logging in", {
-      userId: userData.id,
-      email: userData.email,
-      role: userData.role,
+      userId: userData?.id,
+      email: userData?.email,
+      role: userData?.role,
       hasAccessToken: !!tokens?.accessToken,
       hasRefreshToken: !!tokens?.refreshToken,
     });
 
-    setIsLoggedIn(true);
-    setUser(userData);
-
+    // ✅ 1) persist auth flags first
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("currentUser", JSON.stringify(userData));
 
-    if (tokens?.accessToken) {
-      localStorage.setItem("accessToken", tokens.accessToken);
-      localStorage.setItem("token", tokens.accessToken); // Backward compatibility
-      setAccessToken(tokens.accessToken); // ✅ Cập nhật state token
+    // ✅ 2) set token to storage + state + axios IMMEDIATELY (quan trọng nhất)
+    const token = tokens?.accessToken;
+    if (token) {
+      localStorage.setItem("accessToken", token);
+      localStorage.setItem("token", token); // backward compatibility
+      setAccessToken(token);
+      applyTokenToAxios(token);
     }
+
     if (tokens?.refreshToken) {
       localStorage.setItem("refreshToken", tokens.refreshToken);
     }
 
+    // ✅ 3) update state (UI login)
+    setIsLoggedIn(true);
+    setUser(userData);
+
+    // ✅ 4) fetch full detail (bây giờ axios đã có token nên sẽ không 401 giả)
     try {
       const fullUserData = await userAPI.getUserDetail();
-      setIsLoggedIn(true);
       setUser(fullUserData);
       localStorage.setItem("currentUser", JSON.stringify(fullUserData));
     } catch (error) {
-      console.error("Login success but failed to fetch details", error);
-      const fallbackUser = { ...userData };
-      setIsLoggedIn(true);
-      setUser(fallbackUser);
-      localStorage.setItem("currentUser", JSON.stringify(fallbackUser));
+      // Không coi là “login fail”; chỉ log warning
+      logger.warn(
+        "AUTH_LOGIN_USERDETAIL_FAILED",
+        "Login ok but failed to fetch user details",
+        {
+          error: error.message,
+          status: error.response?.status,
+        }
+      );
     }
 
+    // ✅ 5) sync AppContext ngay, không dùng setTimeout
     if (appDispatchContext?.syncUserData) {
-      setTimeout(() => {
-        appDispatchContext.syncUserData();
-        logger.info("AUTH_LOGIN_SYNC_DATA", "Syncing user data from backend");
-      }, 100);
+      appDispatchContext.syncUserData(token);
+      logger.info("AUTH_LOGIN_SYNC_DATA", "Syncing user data from backend");
     }
 
     logger.info("AUTH_LOGIN_COMPLETE", "Login completed successfully");
@@ -176,6 +189,7 @@ export const AuthProvider = ({ children }) => {
       email: user?.email,
     });
 
+    // ✅ reset app data trước/hoặc sau đều được, nhưng QUAN TRỌNG là clear axios token
     if (appDispatchContext?.resetUserData) {
       appDispatchContext.resetUserData();
       logger.info("AUTH_LOGOUT_RESET_DATA", "User data reset to guest state");
@@ -186,68 +200,33 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (updates) => {
-    logger.debug("AUTH_UPDATE_USER", "Updating user data", {
-      updates,
-    });
-
     setUser((prev) => {
-      if (!prev) {
-        logger.warn(
-          "AUTH_UPDATE_FAILED",
-          "Cannot update user - no user logged in"
-        );
-        return prev;
-      }
-
+      if (!prev) return prev;
       const nextUser = { ...prev, ...updates };
-      try {
-        localStorage.setItem("currentUser", JSON.stringify(nextUser));
-        logger.info("AUTH_UPDATE_SUCCESS", "User data updated successfully");
-      } catch (error) {
-        logger.error(
-          "AUTH_UPDATE_ERROR",
-          "Error persisting updated user",
-          error
-        );
-        console.error("Error persisting updated user:", error);
-      }
+      localStorage.setItem("currentUser", JSON.stringify(nextUser));
       return nextUser;
     });
   };
 
   const refreshUser = async () => {
-    logger.info("AUTH_REFRESH_USER", "Refreshing user data from API");
-    try {
-      const userData = await userAPI.getUserDetail();
-      setUser(userData);
-      localStorage.setItem("currentUser", JSON.stringify(userData));
+    const userData = await userAPI.getUserDetail();
+    setUser(userData);
+    localStorage.setItem("currentUser", JSON.stringify(userData));
 
-      // Đảm bảo accessToken state đồng bộ với localStorage (phòng hờ)
-      const currentToken = localStorage.getItem("accessToken") || localStorage.getItem("token");
-      if (currentToken !== accessToken) {
-        setAccessToken(currentToken);
-      }
-
-      logger.info(
-        "AUTH_REFRESH_USER_SUCCESS",
-        "User data refreshed successfully",
-        { userId: userData.id }
-      );
-      return userData;
-    } catch (error) {
-      logger.error("AUTH_REFRESH_USER_FAILED", "Failed to refresh user data", {
-        error: error.message,
-      });
-      console.error("Error refreshing user data:", error);
-      throw error;
+    const currentToken =
+      localStorage.getItem("accessToken") || localStorage.getItem("token");
+    if (currentToken !== accessToken) {
+      setAccessToken(currentToken);
+      applyTokenToAxios(currentToken);
     }
+    return userData;
   };
 
   const value = {
     isLoggedIn,
     user,
-    accessToken, // ✅ QUAN TRỌNG: Truyền accessToken ra ngoài
-    token: accessToken, // Alias: truyền thêm tên 'token' cho chắc ăn
+    accessToken,
+    token: accessToken,
     login,
     logout,
     updateUser,

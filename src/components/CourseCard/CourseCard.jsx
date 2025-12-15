@@ -22,6 +22,7 @@ const CourseCard = React.memo(
     onViewDetails,
     onToggleFavorite,
     onAddToCart,
+    priority = false,
   }) => {
     // Lấy courseId một lần
     const courseId = course.courseId || course.id;
@@ -58,6 +59,7 @@ const CourseCard = React.memo(
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
           showFavoriteButton={showActions}
+          priority={priority}
         />
 
         <div className="course-content">
@@ -83,10 +85,13 @@ const CourseCard = React.memo(
   (prevProps, nextProps) => {
     return (
       prevProps.course.id === nextProps.course.id &&
+      prevProps.course.imageUrl === nextProps.course.imageUrl &&
+      prevProps.course.image === nextProps.course.image &&
       prevProps.isFavorite === nextProps.isFavorite &&
       prevProps.isInCart === nextProps.isInCart &&
       prevProps.isPurchased === nextProps.isPurchased &&
-      prevProps.showActions === nextProps.showActions
+      prevProps.showActions === nextProps.showActions &&
+      prevProps.priority === nextProps.priority
     );
   }
 );
