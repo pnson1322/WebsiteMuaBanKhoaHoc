@@ -3,7 +3,6 @@ import { LoginPage } from '../pages/LoginPage';
 // Import file JSON data
 import authData from '../data/authData.json' with { type: 'json' };
 
-// Định nghĩa kiểu Role cho chặt chẽ (gợi ý code cho sướng)
 type UserRole = 'buyer' | 'admin' | 'seller';
 export { UserRole };
 

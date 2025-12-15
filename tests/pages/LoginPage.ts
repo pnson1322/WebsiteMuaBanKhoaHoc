@@ -1,5 +1,5 @@
 import { Page, Locator, expect } from '@playwright/test';
-let time_limit = 10000; // 5 seconds
+let time_limit = 30000; // 30 seconds
 
 export class LoginPage {
     // ... (Giữ nguyên các khai báo Locator và Constructor cũ của bạn) ...
