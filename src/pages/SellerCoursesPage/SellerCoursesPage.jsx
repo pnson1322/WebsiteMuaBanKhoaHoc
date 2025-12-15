@@ -12,6 +12,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import Filter from "../../components/Filter/Filter";
 import PurchasedCourseCard from "../../components/PurchasedCourseCard/PurchasedCourseCard";
+import { CourseCardSkeleton } from "../../components/LoadingSkeleton";
 import CourseDetailPopup from "../../components/CourseDetailPopup/CourseDetailPopup";
 import "../PurchasedCoursesPage/PurchasedCoursesPage.css";
 import SellerStatsSummary from "../../components/Seller/SellerStatsSummary";
@@ -449,8 +450,10 @@ const SellerCoursesPage = () => {
 
         {/* Content */}
         {isLoading ? (
-          <div className="empty-state">
-            <p>Đang tải khóa học...</p>
+          <div className="courses-grid">
+            {[...Array(6)].map((_, i) => (
+              <CourseCardSkeleton key={i} />
+            ))}
           </div>
         ) : error ? (
           <div className="empty-state">

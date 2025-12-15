@@ -70,11 +70,15 @@ const LazyLoadCourses = ({ onViewDetails }) => {
         return;
       }
 
+      const startTime = Date.now();
+      const MIN_LOADING_TIME = 20000; // 20 giây chờ tối thiểu trước khi hiện lỗi
+
       try {
         if (isLoadMore) {
           setIsLoadingMore(true);
         } else {
           setIsLoading(true);
+          setError(null); // Reset error khi bắt đầu load
           loadedPagesRef.current.clear();
         }
 
@@ -96,10 +100,22 @@ const LazyLoadCourses = ({ onViewDetails }) => {
 
         setHasMore(page < (data.totalPages || 1));
         setError(null);
+        setIsLoading(false);
+        setIsLoadingMore(false);
       } catch (err) {
-        setError("Không thể tải danh sách khóa học");
         console.error("Load courses error:", err);
-      } finally {
+
+        // Chờ đủ 20s trước khi hiển thị lỗi (chỉ cho lần load đầu)
+        if (!isLoadMore) {
+          const elapsed = Date.now() - startTime;
+          const remaining = MIN_LOADING_TIME - elapsed;
+
+          if (remaining > 0) {
+            await new Promise((resolve) => setTimeout(resolve, remaining));
+          }
+        }
+
+        setError("Không thể tải danh sách khóa học");
         setIsLoading(false);
         setIsLoadingMore(false);
       }
@@ -225,35 +241,111 @@ const LazyLoadCourses = ({ onViewDetails }) => {
     return (
       <div className="lazy-load-courses">
         <div className="error-state">
+          <div className="lazy-load-error-icon">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
           <h2>Không thể tải khóa học</h2>
-          <p>{error}</p>
-          <button onClick={() => loadCourses(1, false)}>Thử lại</button>
+          <p className="error-message">{error}</p>
+          <div className="error-actions">
+            <button
+              className="retry-button"
+              onClick={() => loadCourses(1, false)}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              Thử lại
+            </button>
+            <button
+              className="contact-button"
+              onClick={() =>
+                (window.location.href = "mailto:support@example.com")
+              }
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              Liên hệ hỗ trợ
+            </button>
+          </div>
+          <div className="error-tips">
+            <p>
+              <strong>💡 Gợi ý khắc phục:</strong>
+            </p>
+            <ul>
+              <li>Kiểm tra kết nối internet của bạn</li>
+              <li>Thử tải lại trang sau vài giây</li>
+              <li>Xóa cache và cookies trình duyệt</li>
+              <li>Thử sử dụng trình duyệt khác</li>
+            </ul>
+          </div>
         </div>
       </div>
     );
   }
 
-  // === RENDER: Loading State ===
+  // === RENDER: Loading State - Skeleton Cards trong Grid ===
   if (isLoading) {
     return (
       <div className="lazy-load-courses">
-        <div className="loading-skeleton-container">
-          <div className="loading-header">
-            <div className="loading-spinner"></div>
-            <h3>Đang tải khóa học...</h3>
-          </div>
-          <div className="courses-grid">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="skeleton-card">
-                <div className="skeleton-image"></div>
-                <div className="skeleton-content">
-                  <div className="skeleton-title"></div>
-                  <div className="skeleton-text"></div>
-                  <div className="skeleton-text short"></div>
+        <div className="results-info skeleton-results">
+          <div
+            className="skeleton-text-line"
+            style={{ width: "200px", height: "16px" }}
+          ></div>
+        </div>
+        <div className="courses-grid">
+          {[...Array(pageSize)].map((_, i) => (
+            <div key={i} className="skeleton-card course-card-skeleton">
+              <div className="skeleton-image">
+                <div className="skeleton-shimmer"></div>
+              </div>
+              <div className="skeleton-content">
+                <div className="skeleton-category"></div>
+                <div className="skeleton-title"></div>
+                <div className="skeleton-text"></div>
+                <div className="skeleton-text short"></div>
+                <div className="skeleton-price-row">
+                  <div className="skeleton-price"></div>
+                  <div className="skeleton-rating"></div>
+                </div>
+                <div className="skeleton-actions">
+                  <div className="skeleton-button"></div>
+                  <div className="skeleton-button small"></div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     );

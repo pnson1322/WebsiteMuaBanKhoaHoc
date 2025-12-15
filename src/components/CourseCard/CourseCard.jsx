@@ -23,42 +23,33 @@ const CourseCard = React.memo(
     onToggleFavorite,
     onAddToCart,
   }) => {
-    // Stable callbacks - không tạo mới mỗi render
+    // Lấy courseId một lần
+    const courseId = course.courseId || course.id;
+
+    // Stable callbacks - chỉ phụ thuộc vào primitive values
     const handleClick = useCallback(() => {
       onViewDetails(course);
-    }, [course, onViewDetails]);
+    }, [onViewDetails, courseId]); // eslint-disable-line
 
     const handleToggleFavorite = useCallback(
       (e) => {
         e.stopPropagation();
-        onToggleFavorite(course.courseId || course.id);
+        onToggleFavorite(courseId);
       },
-      [course.courseId, course.id, onToggleFavorite]
+      [courseId, onToggleFavorite]
     );
 
     const handleAddToCart = useCallback(
       (e) => {
         e.stopPropagation();
-        onAddToCart(
-          course.courseId || course.id,
-          course.title,
-          isPurchased,
-          isInCart
-        );
+        onAddToCart(courseId, course.title, isPurchased, isInCart);
       },
-      [
-        course.courseId,
-        course.id,
-        course.title,
-        isPurchased,
-        isInCart,
-        onAddToCart,
-      ]
+      [courseId, course.title, isPurchased, isInCart, onAddToCart]
     );
 
     const handleViewDetailsClick = useCallback(() => {
       onViewDetails(course);
-    }, [course, onViewDetails]);
+    }, [onViewDetails, courseId]); // eslint-disable-line
 
     return (
       <div className="course-card" onClick={handleClick}>

@@ -6,18 +6,23 @@ export const CourseCardSkeleton = () => {
     <div className="skeleton-card">
       <div className="skeleton-image"></div>
       <div className="skeleton-content">
+        <div className="skeleton-category"></div>
         <div className="skeleton-title"></div>
         <div className="skeleton-description"></div>
-        <div className="skeleton-instructor"></div>
-        <div className="skeleton-stats">
-          <div className="skeleton-stat"></div>
-          <div className="skeleton-stat"></div>
-          <div className="skeleton-stat"></div>
+        <div className="skeleton-description" style={{ width: "70%" }}></div>
+        <div className="skeleton-price-row">
+          <div className="skeleton-price"></div>
+          <div className="skeleton-rating"></div>
         </div>
-        <div className="skeleton-price"></div>
         <div className="skeleton-buttons">
           <div className="skeleton-button"></div>
-          <div className="skeleton-button"></div>
+          <div style={{ display: "flex", gap: "0.75rem" }}>
+            <div className="skeleton-button" style={{ flex: 1 }}></div>
+            <div
+              className="skeleton-button"
+              style={{ width: "42px", flex: "none" }}
+            ></div>
+          </div>
         </div>
       </div>
     </div>

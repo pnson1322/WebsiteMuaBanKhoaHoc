@@ -41,8 +41,13 @@
   border: none;
 }
 
-
-
-
-
-
+.tx-page-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34.6px;
+  height: 35.2px;
+  font-size: 13.33px;
+  color: #64748b;
+  user-select: none;
+}
