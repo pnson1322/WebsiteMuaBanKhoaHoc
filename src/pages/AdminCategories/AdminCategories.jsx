@@ -64,19 +64,23 @@ const AdminCategories = () => {
   };
 
   const handleUpdateCategory = async (event) => {
-    event.preventDefault();
-    if (!editingCategory) return;
+    try {
+      event.preventDefault();
+      if (!editingCategory) return;
 
-    const name = editingName.trim();
-    if (!name) return;
+      const name = editingName.trim();
+      if (!name) return;
 
-    const ok = await categoryAPI.updateCategory(editingCategory.id, name);
-    if (ok) {
-      const data = await categoryAPI.getAll();
-      setCategories(data);
+      const ok = await categoryAPI.updateCategory(editingCategory.id, name);
+      if (ok) {
+        const data = await categoryAPI.getAll();
+        setCategories(data);
+      }
+
+      closeEditModal();
+    } catch (err) {
+      showError("Tên danh mục đã tồn tại hoặc có lỗi hệ thống, vui lòng thử lại");
     }
-
-    closeEditModal();
   };
 
   const openDeleteModal = (category) => {
