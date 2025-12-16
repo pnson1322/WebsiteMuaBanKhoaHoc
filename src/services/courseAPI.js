@@ -37,7 +37,7 @@ export const courseAPI = {
       page,
       pageSize,
       Q,
-      CategoryId,
+      CategoryId: CategoryId && CategoryId !== "Tất cả" ? parseInt(CategoryId) : null,
       SellerId,
       MinPrice,
       MaxPrice,
@@ -47,9 +47,11 @@ export const courseAPI = {
     };
 
     // ❗ Loại bỏ params null để API sạch
-    Object.keys(params).forEach(
-      (key) => params[key] === null && delete params[key]
-    );
+    Object.keys(params).forEach((key) => {
+      if (params[key] === null || params[key] === undefined || params[key] === "") {
+        delete params[key];
+      }
+    });
 
     try {
       // Thử với instance có auth trước (cho logged-in users)
