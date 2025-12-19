@@ -24,3 +24,54 @@
     color: #999;
     font-style: italic;
 }
+
+/* --- Context Menu Styling --- */
+.custom-context-menu-chat {
+    position: absolute;
+    z-index: 9999; /* Đảm bảo nổi lên trên cùng */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e0e0e0;
+    width: 180px;
+    overflow: hidden;
+    animation: fadeIn-chat 0.1s ease-in-out;
+}
+
+.context-menu-item-chat {
+    padding: 10px 15px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
+.context-menu-item-chat:hover {
+    background-color: #f5f5f5;
+}
+
+.context-menu-item-chat.delete-chat {
+    color: #d32f2f; /* Màu đỏ cho nút xóa */
+}
+
+.context-menu-item-chat.delete-chat:hover {
+    background-color: #ffebee;
+}
+
+.context-menu-item-chat .icon-chat {
+    font-size: 16px;
+}
+
+@keyframes fadeIn-chat {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
