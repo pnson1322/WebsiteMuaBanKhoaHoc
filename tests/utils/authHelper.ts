@@ -25,8 +25,10 @@ export async function loginAs(page: Page, role: UserRole) {
     // 2. Khởi tạo LoginPage và thực hiện đăng nhập
     const loginPage = new LoginPage(page);
     await loginPage.goto();
+    const initialUrl = page.url();
     await loginPage.performLogin(user.email, user.password);
 
+    await page.waitForURL((url) => url.toString() !== initialUrl);
     // 3. (Tùy chọn) Verify nhanh là login thành công để test chạy tiếp yên tâm
     // user.expectedResult là text H1 của trang đích (VD: "Chào mừng...")
     if (typeof user.expectedResult === 'string') {
