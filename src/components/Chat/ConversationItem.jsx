@@ -7,9 +7,8 @@ const ConversationItem = React.memo(
 
     return (
       <div
-        className={`conversation-item ${isActive ? "active" : ""} ${
-          isUnread ? "unread" : ""
-        }`}
+        className={`conversation-item ${isActive ? "active" : ""} ${isUnread ? "unread" : ""}`}
+        // Khi click, nó sẽ gửi conversation.raw (đã chứa isBlock mới nhất) sang cha
         onClick={() => onSelect(conversation.raw)}
       >
         <div className="avatar-wrapper">
@@ -32,14 +31,19 @@ const ConversationItem = React.memo(
 
         <div className="content-wrapper">
           <div className="top-row">
-            <h3 className="name">{conversation.studentName}</h3>
+            <h3 className="name">
+              {conversation.studentName}
+            </h3>
             <span className={`time ${isUnread ? "unread-time" : ""}`}>
               {conversation.formattedTime}
             </span>
           </div>
 
           <div className="bottom-row">
-            <p className="message-preview">{conversation.lastMessage}</p>
+            {/* Hiển thị tin nhắn bình thường, không hiện "Đã chặn tin nhắn" */}
+            <p className="message-preview">
+              {conversation.lastMessage}
+            </p>
             {conversation.unreadCount > 0 && (
               <span className="unread-dot"></span>
             )}
@@ -53,17 +57,16 @@ const ConversationItem = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    // Custom check (tùy chọn): Chỉ re-render khi:
-    // 1. ID thay đổi (khác item)
-    // 2. Trạng thái active thay đổi (item này vừa được chọn hoặc vừa bị bỏ chọn)
-    // 3. Số tin nhắn chưa đọc thay đổi
-    // 4. Tin nhắn cuối cùng thay đổi
+    // 🔥 QUAN TRỌNG: Vẫn CẦN giữ đoạn check này.
+    // Tại sao? Dù giao diện không đổi, nhưng dữ liệu `conversation.raw` bên trong đã đổi (isBlock: true/false).
+    // Nếu không check dòng này, component sẽ không re-render -> hàm onClick vẫn giữ dữ liệu cũ (isBlock: false).
+    // Re-render ở đây để đảm bảo khi click vào, MessagePanel nhận được trạng thái mới nhất.
     return (
       prevProps.isActive === nextProps.isActive &&
       prevProps.conversation.id === nextProps.conversation.id &&
-      prevProps.conversation.unreadCount ===
-        nextProps.conversation.unreadCount &&
-      prevProps.conversation.lastMessage === nextProps.conversation.lastMessage
+      prevProps.conversation.unreadCount === nextProps.conversation.unreadCount &&
+      prevProps.conversation.lastMessage === nextProps.conversation.lastMessage &&
+      prevProps.conversation.raw?.isBlock === nextProps.conversation.raw?.isBlock
     );
   }
 );

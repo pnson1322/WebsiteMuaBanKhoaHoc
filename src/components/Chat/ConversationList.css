@@ -28,7 +28,7 @@
 /* --- Context Menu Styling --- */
 .custom-context-menu-chat {
     position: absolute;
-    z-index: 9999; /* Đảm bảo nổi lên trên cùng */
+    z-index: 1000; /* Đảm bảo nổi lên trên cùng */
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -63,6 +63,12 @@
 
 .context-menu-item-chat .icon-chat {
     font-size: 16px;
+}
+
+.menu-divider {
+    height: 1px;
+    background-color: #eee;
+    margin: 4px 0;
 }
 
 @keyframes fadeIn-chat {

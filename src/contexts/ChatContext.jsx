@@ -192,24 +192,6 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
         }
     }, []);
 
-    const sendMessage = useCallback(async (conversationId, content, attachments = []) => {
-        if (!conversationId || !content.trim()) return;
-        try {
-            if (!connectionRef.current || connectionRef.current.state !== signalR.HubConnectionState.Connected) {
-                throw new Error('SignalR not connected');
-            }
-            const dto = {
-                ConversationId: conversationId,
-                Content: content,
-                Attachments: attachments.map(att => ({ FileName: att.name, FileUrl: att.url, FileType: att.type }))
-            };
-            await connectionRef.current.invoke('SendMessage', dto);
-        } catch (error) {
-            console.error('Error sending message:', error);
-            throw error;
-        }
-    }, []);
-
     // Helper update conversation list khi có tin mới
     const updateConversationWithNewMessage = useCallback((message, newConversationData = null) => {
         setConversations(prev => {
@@ -263,6 +245,50 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
             }
         });
     }, [activeCourseFilter]); // ⚠️ QUAN TRỌNG: Thêm activeCourseFilter vào dependency
+
+    // Tìm đến hàm sendMessage và sửa lại:
+
+    const sendMessage = useCallback(async (conversationId, content, attachments = []) => {
+        if (!conversationId || !content.trim()) return;
+
+        // 1. Tạo object message giả lập (Optimistic UI) để hiển thị ngay lập tức
+        const tempMessageId = Date.now().toString(); // ID tạm
+        const tempMessage = {
+            id: tempMessageId,
+            conversationId: conversationId,
+            content: content,
+            createdAt: new Date().toISOString(),
+            senderId: sellerId, // ID của người bán (lấy từ props của ChatProvider)
+            attachments: attachments.map(att => ({ fileName: att.name, fileUrl: att.url, fileType: att.type })),
+            isRead: true
+        };
+
+        try {
+            if (!connectionRef.current || connectionRef.current.state !== signalR.HubConnectionState.Connected) {
+                throw new Error('SignalR not connected');
+            }
+
+            const dto = {
+                ConversationId: conversationId,
+                Content: content,
+                Attachments: attachments.map(att => ({ FileName: att.name, FileUrl: att.url, FileType: att.type }))
+            };
+
+            // Gửi lên server
+            await connectionRef.current.invoke('SendMessage', dto);
+
+            // 🔥 FIX QUAN TRỌNG Ở ĐÂY:
+            // Sau khi gửi thành công (hoặc ngay trước khi gửi), ta gọi hàm update list.
+            // Ta truyền activeConversation vào tham số thứ 2 để nó biết đây là thông tin cuộc hội thoại cần "hồi sinh".
+            if (activeConversationRef.current && activeConversationRef.current.id === conversationId) {
+                updateConversationWithNewMessage(tempMessage, activeConversationRef.current);
+            }
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            throw error;
+        }
+    }, [sellerId, updateConversationWithNewMessage]); // Nhớ thêm sellerId vào dependency
 
     // Handle Receive Message
     const handleNewMessage = useCallback((message) => {
@@ -401,6 +427,8 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
         };
     }, [connection, handleNewMessage, handleNewMessageNotification, loadConversations]);
 
+    // --- ĐÃ XÓA HÀM updateBlockStatus TẠI ĐÂY ---
+
     const value = {
         isConnected,
         conversations,
@@ -411,6 +439,8 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
         onlineUsers,
         activeCourseFilter,
         loadMoreConversations,
+        setConversations,
+        setActiveConversation,
         hasMore,
         loadConversations,
         selectConversation,
@@ -423,6 +453,7 @@ export const ChatProvider = ({ children, sellerId, authToken }) => {
         // EXPORT CÁC GIÁ TRỊ PHÂN TRANG TIN NHẮN
         loadOldMessages,
         hasMoreMessages,
+        // updateBlockStatus, // <--- ĐÃ XÓA DÒNG NÀY
         isMessageLoading
     };
 

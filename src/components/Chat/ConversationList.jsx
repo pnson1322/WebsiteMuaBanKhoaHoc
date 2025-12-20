@@ -1,14 +1,15 @@
-import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react'; // Thêm useEffect
+import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { useChat } from '../../contexts/ChatContext';
 import { useUnreadCount } from '../../contexts/UnreadCountContext';
+import { useToast } from '../../contexts/ToastContext';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import ConversationItem from './ConversationItem';
 import { chatAPI } from '../../services/chatAPI';
+import { blockAPI } from '../../services/blockAPI';
 import './ConversationList.css';
 
 const ConversationList = () => {
-    // 1. Lấy dữ liệu từ Context
     const {
         conversations,
         activeConversation,
@@ -17,31 +18,32 @@ const ConversationList = () => {
         unreadConversationCount,
         loadMoreConversations,
         hasMore,
-        // Giả sử Context có hàm này để reload lại list sạch sẽ. 
-        // Nếu chưa có, bạn nên thêm vào Context hoặc dùng tạm window.location.reload()
-        fetchConversations
+        // 🔥 THÊM: Lấy hàm set state từ Context để cập nhật giao diện ngay lập tức
+        setConversations,
+        setActiveConversation
     } = useChat();
 
     const { refreshUnreadCount } = useUnreadCount();
+    const { showSuccess, showError } = useToast();
 
-    // 2. State quản lý tìm kiếm
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    // --- NEW: State quản lý Context Menu (Chuột phải) ---
+    // 🔥 SỬA: Thêm trạng thái isBlocked vào context menu để biết nên hiện nút "Chặn" hay "Gỡ chặn"
     const [contextMenu, setContextMenu] = useState({
         visible: false,
         x: 0,
         y: 0,
-        conversationId: null
+        conversationId: null,
+        targetUserId: null,
+        isBlocked: false // Lưu trạng thái hiện tại
     });
 
-    // 3. Refs
     const listRef = useRef(null);
     const typingTimeoutRef = useRef(null);
 
-    // 4. Helper: Format thời gian
+    // Helper: Format thời gian
     const formatTime = useCallback((dateString) => {
         if (!dateString) return '';
         try {
@@ -54,7 +56,7 @@ const ConversationList = () => {
         }
     }, []);
 
-    // 5. Map dữ liệu hội thoại
+    // Map dữ liệu hội thoại
     const mappedConversations = useMemo(() => {
         const safeConversations = Array.isArray(conversations) ? conversations : [];
         return safeConversations.map((conv) => ({
@@ -67,66 +69,127 @@ const ConversationList = () => {
             formattedTime: formatTime(conv.lastMessage?.createdAt || conv.lastMessageAt),
             unreadCount: conv.unreadCount || 0,
             isOnline: false,
-            raw: conv
+            // 🔥 Giữ nguyên logic visual, không thêm class mờ/ẩn
+            raw: conv // conv gốc đã chứa isBlock
         }));
     }, [conversations, formatTime]);
 
-    // --- NEW: Xử lý Click chuột phải ---
-    const handleContextMenu = (e, conversationId) => {
-        e.preventDefault(); // Chặn menu mặc định của trình duyệt
+    // --- LOGIC CẬP NHẬT TRẠNG THÁI BLOCK (QUAN TRỌNG) ---
+    const updateBlockStatusLocally = (targetUserId, newStatus) => {
+        // 1. Cập nhật danh sách bên trái (để lần sau click chuột phải nó hiện đúng menu)
+        if (setConversations) {
+            setConversations(prev => prev.map(conv => {
+                if (conv.buyerId === targetUserId) {
+                    return { ...conv, isBlock: newStatus };
+                }
+                return conv;
+            }));
+        }
+
+        // 2. Cập nhật MessagePanel ngay lập tức (để khóa/mở khóa input)
+        // Kiểm tra nếu đang chat đúng với người đó
+        if (activeConversation && activeConversation.buyerId === targetUserId && setActiveConversation) {
+            setActiveConversation(prev => ({ ...prev, isBlock: newStatus }));
+        }
+    };
+
+    const handleBlockUser = async () => {
+        const { targetUserId } = contextMenu;
+        if (!targetUserId) return showError('Không xác định được người dùng.');
+        if (!window.confirm("Chặn người dùng này?")) return;
+
+        try {
+            await blockAPI.blockUser(targetUserId);
+
+            // 🔥 Cập nhật state ngay lập tức
+            updateBlockStatusLocally(targetUserId, true);
+
+            showSuccess('Đã chặn thành công!');
+            setContextMenu({ ...contextMenu, visible: false });
+        } catch (error) {
+            showError('Lỗi khi chặn người dùng.');
+        }
+    };
+
+    const handleUnblockUser = async () => {
+        const { targetUserId } = contextMenu;
+        if (!targetUserId) return showError('Không xác định được người dùng.');
+        if (!window.confirm("Gỡ chặn người dùng này?")) return;
+
+        try {
+            await blockAPI.unblockUser(targetUserId);
+
+            // 🔥 Cập nhật state ngay lập tức
+            updateBlockStatusLocally(targetUserId, false);
+
+            showSuccess('Đã gỡ chặn thành công!');
+            setContextMenu({ ...contextMenu, visible: false });
+        } catch (error) {
+            showError('Lỗi khi gỡ chặn.');
+        }
+    };
+
+    // --- CÁC HÀM KHÁC GIỮ NGUYÊN ---
+
+    const handleSearchResultClick = (item) => {
+        const activeId = item.id || item.conversationId;
+        const existingRawConv = conversations.find(c => c.id === activeId);
+
+        if (existingRawConv) {
+            selectConversation(existingRawConv);
+        } else {
+            const newRawConv = {
+                ...item,
+                id: activeId,
+                buyerName: item.buyerName || item.studentName,
+                buyerAvatar: item.buyerAvatar || item.studentAvatar,
+            };
+            selectConversation(newRawConv);
+        }
+        setSearchQuery('');
+        setSearchResults([]);
+        setTimeout(() => refreshUnreadCount(), 500);
+    };
+
+    // 🔥 SỬA: Lấy trạng thái block hiện tại khi click chuột phải
+    const handleContextMenu = (e, conversationId, targetUserId, currentIsBlock) => {
+        e.preventDefault();
         setContextMenu({
             visible: true,
             x: e.pageX,
             y: e.pageY,
-            conversationId: conversationId
+            conversationId: conversationId,
+            targetUserId: targetUserId,
+            isBlocked: currentIsBlock // Lưu trạng thái để render menu đúng
         });
     };
 
-    // --- NEW: Đóng menu khi click ra ngoài ---
-    useEffect(() => {
-        const handleClickOutside = () => setContextMenu({ ...contextMenu, visible: false });
-        window.addEventListener('click', handleClickOutside);
-        return () => window.removeEventListener('click', handleClickOutside);
-    }, [contextMenu]);
-
-    // --- NEW: Xử lý ẩn cuộc trò chuyện ---
     const handleDeleteConversation = async () => {
         const { conversationId } = contextMenu;
         if (!conversationId) return;
-
-        // Xác nhận người dùng
-        if (!window.confirm("Bạn có chắc chắn muốn ẩn cuộc trò chuyện này?")) return;
-
+        if (!window.confirm("Ẩn cuộc trò chuyện này?")) return;
         try {
-            // 1. Gọi API ẩn
             await chatAPI.deleteConversation(conversationId);
+            if (activeConversation?.id === conversationId) selectConversation(null);
 
-            // 2. Nếu cuộc trò chuyện đang mở bị ẩn -> Reset active conversation
-            if (activeConversation?.id === conversationId) {
-                selectConversation(null);
+            // Xóa khỏi list local để đỡ reload
+            if (setConversations) {
+                setConversations(prev => prev.filter(c => c.id !== conversationId));
             }
 
-            // 3. Refresh lại dữ liệu
-            // Cách tốt nhất: Gọi hàm reload trong Context (nếu có)
-            // Cách tạm thời: Reload trang hoặc lọc thủ công (nhưng vì conversations lấy từ Context nên khó lọc ở đây)
-            alert("Đã ẩn thành công!");
-            window.location.reload(); // Cách đơn giản nhất để đồng bộ lại Context
-
+            showSuccess("Đã ẩn cuộc trò chuyện!");
         } catch (error) {
-            console.error("Failed to delete conversation:", error);
-            alert("Có lỗi xảy ra khi ẩn cuộc trò chuyện.");
+            showError("Lỗi khi ẩn cuộc trò chuyện.");
         }
     };
 
-
-    // 6. LOGIC TÌM KIẾM
+    // Search logic giữ nguyên
     const handleSearchFetch = async (query) => {
         setIsSearching(true);
         try {
             const data = await chatAPI.searchBuyers(query);
             setSearchResults(data);
         } catch (error) {
-            console.error("Lỗi tìm kiếm:", error);
             setSearchResults([]);
         } finally {
             setIsSearching(false);
@@ -143,19 +206,6 @@ const ConversationList = () => {
         }, 500);
     };
 
-    const handleSearchResultClick = (item) => {
-        const conversationToOpen = {
-            id: item.conversationId,
-            buyerId: item.buyerId,
-            buyerName: item.buyerName,
-            buyerAvatar: item.buyerAvatar,
-            courseTitle: item.courseTitle,
-        };
-        selectConversation(conversationToOpen);
-        setSearchQuery('');
-        setSearchResults([]);
-    };
-
     const handleScroll = () => {
         if (listRef.current && !searchQuery) {
             const { scrollTop, scrollHeight, clientHeight } = listRef.current;
@@ -165,14 +215,18 @@ const ConversationList = () => {
         }
     };
 
-    const handleSelectOld = useCallback((rawConv) => {
+    const handleSelectFromItem = useCallback((rawConv) => {
         if (rawConv) {
             selectConversation(rawConv);
-            setTimeout(() => {
-                refreshUnreadCount();
-            }, 1000);
+            setTimeout(() => refreshUnreadCount(), 1000);
         }
     }, [selectConversation, refreshUnreadCount]);
+
+    useEffect(() => {
+        const handleClickOutside = () => setContextMenu({ ...contextMenu, visible: false });
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, [contextMenu]);
 
     return (
         <div className="chat-panel conversation-panel">
@@ -197,27 +251,29 @@ const ConversationList = () => {
                     <div className="search-results-list-chat">
                         <h4 className="search-label-chat">Kết quả tìm kiếm</h4>
                         {searchResults.length === 0 && !isSearching ? (
-                            <div className="empty-search-chat">Không tìm thấy cuộc trò chuyện nào.</div>
+                            <div className="empty-search-chat">Không tìm thấy kết quả.</div>
                         ) : (
                             searchResults.map(item => (
                                 <div
-                                    key={item.conversationId}
+                                    key={item.id || item.conversationId}
                                     className="conversation-item search-result-item-chat"
                                     onClick={() => handleSearchResultClick(item)}
-                                    // Thêm chuột phải cho cả kết quả tìm kiếm nếu muốn
-                                    onContextMenu={(e) => handleContextMenu(e, item.conversationId)}
+                                    // Context menu cho search result
+                                    onContextMenu={(e) => handleContextMenu(e, item.id || item.conversationId, item.buyerId, item.isBlock)}
                                 >
+                                    {/* Render nội dung search result (giữ nguyên code cũ của bạn) */}
                                     <div className="avatar-wrapper">
-                                        <img src={item.buyerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.buyerName)}&background=random&color=fff`} alt="avt" />
+                                        <img src={item.buyerAvatar || `https://ui-avatars.com/api/?name=${item.buyerName}&background=random`} alt="avt" />
                                     </div>
                                     <div className="conversation-info">
                                         <div className="top-row">
                                             <span className="student-name">{item.buyerName}</span>
-                                            {item.lastMessageAt && <span className="time">{formatTime(item.lastMessageAt)}</span>}
                                         </div>
                                         <div className="bottom-row">
-                                            <span className="last-message" style={{ color: '#007bff', fontSize: '0.85rem' }}>
-                                                Khóa học: {item.courseTitle}
+                                            {/* 🔥 SỬA: Hiển thị tên khóa học thay vì text cứng */}
+                                            <span className="msg-course-title" >
+                                                {/* Ưu tiên hiển thị Course Title, nếu không có mới hiện text mặc định */}
+                                                {item.courseTitle || item.courseName || 'Nhấn để chat'}
                                             </span>
                                         </div>
                                     </div>
@@ -231,47 +287,45 @@ const ConversationList = () => {
                             <div className="empty-state">
                                 <div className="empty-img">📭</div>
                                 <h3>Chưa có tin nhắn</h3>
-                                <p>Hộp thư hiện đang trống.</p>
                             </div>
                         ) : (
                             mappedConversations.map((conversation) => (
                                 <div
                                     key={conversation.id}
-                                    onContextMenu={(e) => handleContextMenu(e, conversation.id)}
+                                    // 🔥 TRUYỀN conversation.raw.isBlock vào hàm xử lý chuột phải
+                                    onContextMenu={(e) => handleContextMenu(e, conversation.id, conversation.raw.buyerId, conversation.raw.isBlock)}
                                 >
                                     <ConversationItem
                                         conversation={conversation}
                                         isActive={activeConversation?.id?.toString() === conversation.id?.toString()}
-                                        onSelect={handleSelectOld}
+                                        onSelect={handleSelectFromItem}
                                     />
                                 </div>
                             ))
                         )}
-
                         {loading && conversations.length > 0 && (
-                            <div className="loading-more">
-                                <div className="spinner-small"></div>
-                            </div>
+                            <div className="loading-more"><div className="spinner-small"></div></div>
                         )}
                     </>
                 )}
             </div>
 
-            {/* --- NEW: Context Menu UI --- */}
+            {/* CONTEXT MENU */}
             {contextMenu.visible && (
-                <div
-                    className="custom-context-menu-chat"
-                    style={{
-                        top: `${contextMenu.y}px`,
-                        left: `${contextMenu.x}px`
-                    }}
-                >
-                    <div
-                        className="context-menu-item-chat delete-chat"
-                        onClick={handleDeleteConversation}
-                    >
-                        Ẩn hội thoại
-                    </div>
+                <div className="custom-context-menu-chat" style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}>
+                    <div className="context-menu-item-chat delete-chat" onClick={handleDeleteConversation}>🗑️ Ẩn hội thoại</div>
+                    <div className="menu-divider"></div>
+
+                    {/* 🔥 Logic hiển thị nút Block/Unblock dựa trên trạng thái đã lưu */}
+                    {contextMenu.isBlocked ? (
+                        <div className="context-menu-item-chat unblock-chat" style={{ color: '#28a745' }} onClick={handleUnblockUser}>
+                            🔓 Gỡ chặn
+                        </div>
+                    ) : (
+                        <div className="context-menu-item-chat block-chat" style={{ color: '#d9534f' }} onClick={handleBlockUser}>
+                            🚫 Chặn người này
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Loader } from 'lucide-react';
 import * as signalR from '@microsoft/signalr';
 import { chatAPI } from '../../services/chatAPI'; // Đảm bảo API này hỗ trợ page, pageSize
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import './ChatWidge.css';
 
 const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
@@ -40,6 +41,8 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
     const chatContainerRef = useRef(null);
     const prevScrollHeightRef = useRef(null);
     const lastMessageIdRef = useRef(null);
+
+    const { showSuccess, showError } = useToast();
 
     // --- 1. SYNC REFS ---
     useEffect(() => {
@@ -377,7 +380,8 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
             }
         } catch (error) {
             console.error('❌ Send failed:', error);
-            alert('Gửi tin nhắn thất bại.');
+
+            showError('Bạn đang bị chặn hoặc có lỗi khi gửi tin nhắn.');
             setMessages(prev => prev.filter(m => m.id !== tempId));
             setInputMessage(messageContent);
         }
