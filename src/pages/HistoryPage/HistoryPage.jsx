@@ -1,8 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { ArrowLeft, Clock, Eye, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
+import { useToast } from "../../contexts/ToastContext";
 import { historyAPI } from "../../services/historyAPI";
 import CourseCard from "../../components/CourseCard/CourseCard";
 import "./HistoryPage.css";
@@ -12,7 +19,86 @@ const HistoryPage = () => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const state = useAppState();
-  const { dispatch, actionTypes } = useAppDispatch();
+  const { dispatch, actionTypes, addToCart, removeFromFavorite } =
+    useAppDispatch();
+  const { user, isLoggedIn: isAuth } = useAuth();
+  const { showUnfavorite, showSuccess, showError } = useToast();
+  // === MEMOIZED SETS cho O(1) lookup ===
+  const favoriteSet = useMemo(
+    () => new Set(state.favorites),
+    [state.favorites]
+  );
+  const cartSet = useMemo(() => new Set(state.cart), [state.cart]);
+  const purchasedSet = useMemo(
+    () => new Set(state.purchasedCourses),
+    [state.purchasedCourses]
+  );
+  const showActions = useMemo(
+    () => !isAuth || user?.role === "Buyer",
+    [isAuth, user]
+  );
+  // ===========================
+  //   TOGGLE YÊU THÍCH (ADD/REMOVE)
+  // ===========================
+  const { addToFavorite } = useAppDispatch();
+  const { showFavorite } = useToast();
+  const handleToggleFavorite = useCallback(
+    async (courseId) => {
+      const isFav = favoriteSet.has(courseId);
+      try {
+        if (isFav) {
+          const result = await removeFromFavorite(courseId);
+          if (result.success) {
+            showUnfavorite("💔 Đã bỏ yêu thích");
+          } else {
+            showError("Lỗi khi bỏ yêu thích");
+          }
+        } else {
+          const result = await addToFavorite(courseId);
+          if (result.success) {
+            showFavorite("❤️ Đã thêm vào yêu thích!");
+          } else {
+            showError("Lỗi khi thêm yêu thích");
+          }
+        }
+      } catch (err) {
+        showError("Không thể cập nhật trạng thái yêu thích.");
+      }
+    },
+    [
+      favoriteSet,
+      removeFromFavorite,
+      addToFavorite,
+      showUnfavorite,
+      showFavorite,
+      showError,
+    ]
+  );
+
+  // ===========================
+  //   ADD TO CART
+  // ===========================
+  const handleAddToCart = useCallback(
+    async (courseId, title, isPurchased, isInCart) => {
+      const isLogged = !!user || localStorage.getItem("isLoggedIn") === "true";
+      if (!isLogged) {
+        dispatch({ type: actionTypes.SHOW_LOGIN_POPUP });
+        return;
+      }
+      if (isPurchased) {
+        showError("Bạn đã sở hữu khóa học này rồi!");
+        return;
+      }
+      if (isInCart) {
+        showError("Đã có trong giỏ hàng.");
+        return;
+      }
+      const result = await addToCart(courseId);
+      if (result.success) showSuccess(`🛒 Đã thêm "${title}" vào giỏ hàng!`);
+      else showError("Lỗi khi thêm vào giỏ hàng.");
+    },
+    [user, dispatch, actionTypes, addToCart, showSuccess, showError]
+  );
 
   const [allHistoryCourses, setAllHistoryCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
@@ -287,7 +373,13 @@ const HistoryPage = () => {
                 <CourseCard
                   key={course.id}
                   course={course}
+                  isFavorite={favoriteSet.has(course.id)}
+                  isInCart={cartSet.has(course.id)}
+                  isPurchased={purchasedSet.has(course.id)}
+                  showActions={showActions}
                   onViewDetails={() => handleViewDetails(course)}
+                  onToggleFavorite={handleToggleFavorite}
+                  onAddToCart={handleAddToCart}
                 />
               ))}
             </div>

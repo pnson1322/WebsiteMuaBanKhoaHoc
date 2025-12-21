@@ -23,6 +23,8 @@ import "./LazyLoadCourses.css";
  */
 const LazyLoadCourses = ({ onViewDetails }) => {
   // === LOCAL STATE (không lưu vào Context) ===
+  const [totalCount, setTotalCount] = useState(0);
+
   const [courses, setCourses] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -82,7 +84,35 @@ const LazyLoadCourses = ({ onViewDetails }) => {
           loadedPagesRef.current.clear();
         }
 
-        const data = await courseAPI.getCourses({ page, pageSize });
+        // Xác định CategoryId từ selectedCategory
+        const categoryId =
+          state.selectedCategory && state.selectedCategory !== "Tất cả"
+            ? state.categories?.find(
+                (cat) => cat.name === state.selectedCategory
+              )?.id
+            : null;
+
+        // Xác định MinPrice và MaxPrice từ selectedPriceRange
+        const minPrice =
+          state.selectedPriceRange?.label !== "Tất cả"
+            ? state.selectedPriceRange?.min
+            : null;
+        const maxPrice =
+          state.selectedPriceRange?.label !== "Tất cả" &&
+          state.selectedPriceRange?.max !== Infinity
+            ? state.selectedPriceRange?.max
+            : null;
+
+        // Gọi API với các filter parameters
+        const data = await courseAPI.getCourses({
+          page,
+          pageSize,
+          Q: debouncedSearch?.trim() || null,
+          CategoryId: categoryId,
+          MinPrice: minPrice,
+          MaxPrice: maxPrice,
+        });
+        setTotalCount(data.totalCount ?? data.totalItems ?? 0);
         const normalized = data.items.map((c) => ({ ...c, courseId: c.id }));
 
         loadedPagesRef.current.add(page);
@@ -120,7 +150,13 @@ const LazyLoadCourses = ({ onViewDetails }) => {
         setIsLoadingMore(false);
       }
     },
-    [pageSize]
+    [
+      pageSize,
+      debouncedSearch,
+      state.selectedCategory,
+      state.selectedPriceRange,
+      state.categories,
+    ]
   );
 
   // === LOAD MORE (cho infinite scroll) ===
@@ -141,48 +177,19 @@ const LazyLoadCourses = ({ onViewDetails }) => {
   });
 
   // === INITIAL LOAD ===
+  // Reload khi filter/search thay đổi
   useEffect(() => {
     setCurrentPage(1);
     setHasMore(true);
     loadCourses(1, false);
   }, [loadCourses]);
 
-  // === CLIENT-SIDE FILTER (không dispatch về Context) ===
+  // === CLIENT-SIDE FILTER ===
+  // Không cần filter category, price range, search ở client vì đã filter ở server
+  // Chỉ giữ lại courses từ API (đã được filter sẵn)
   const filteredCourses = useMemo(() => {
-    let result = courses;
-
-    // Search
-    if (debouncedSearch) {
-      const term = debouncedSearch.toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.title?.toLowerCase().includes(term) ||
-          c.description?.toLowerCase().includes(term) ||
-          c.categoryName?.toLowerCase().includes(term)
-      );
-    }
-
-    // Category
-    if (state.selectedCategory !== "Tất cả") {
-      result = result.filter((c) => c.categoryName === state.selectedCategory);
-    }
-
-    // Price range
-    if (state.selectedPriceRange?.label !== "Tất cả") {
-      result = result.filter(
-        (c) =>
-          c.price >= state.selectedPriceRange.min &&
-          c.price <= state.selectedPriceRange.max
-      );
-    }
-
-    return result;
-  }, [
-    courses,
-    debouncedSearch,
-    state.selectedCategory,
-    state.selectedPriceRange,
-  ]);
+    return courses;
+  }, [courses]);
 
   // === STABLE CALLBACKS cho CourseCard ===
   const handleToggleFavorite = useCallback(
@@ -363,8 +370,7 @@ const LazyLoadCourses = ({ onViewDetails }) => {
       {courses.length > 0 && (
         <div className="results-info">
           <p>
-            Hiển thị {filteredCourses.length} trong số {courses.length} khóa học
-            {hasFilters && ` (đã lọc)`}
+            Hiển thị {filteredCourses.length} trong số {totalCount} khóa học
           </p>
         </div>
       )}
@@ -412,7 +418,7 @@ const LazyLoadCourses = ({ onViewDetails }) => {
             )}
             {!hasMore && filteredCourses.length > 0 && (
               <p style={{ color: "#6c757d" }}>
-                ✓ Đã hiển thị tất cả {filteredCourses.length} khóa học
+                ✓ Đã hiển thị tất cả {totalCount} khóa học
               </p>
             )}
           </div>
