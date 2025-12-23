@@ -24,3 +24,65 @@
     color: #999;
     font-style: italic;
 }
+
+/* --- Context Menu Styling --- */
+.custom-context-menu-chat {
+    /* 🔥 SỬA: Đổi absolute thành fixed để vị trí luôn chuẩn theo màn hình */
+    position: fixed; 
+    
+    z-index: 9999; /* Tăng lên cao hẳn để đè lên mọi thứ */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e0e0e0;
+    width: 180px; /* Khớp với kích thước tính toán trong JS */
+    overflow: hidden;
+    animation: fadeIn-chat 0.1s ease-in-out;
+    
+    /* 🔥 THÊM: Reset margin để menu hiện sát chuột */
+    margin: 0; 
+}
+
+.context-menu-item-chat {
+    padding: 10px 15px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
+.context-menu-item-chat:hover {
+    background-color: #f5f5f5;
+}
+
+.context-menu-item-chat.delete-chat {
+    color: #d32f2f; /* Màu đỏ cho nút xóa */
+}
+
+.context-menu-item-chat.delete-chat:hover {
+    background-color: #ffebee;
+}
+
+.context-menu-item-chat .icon-chat {
+    font-size: 16px;
+}
+
+.menu-divider {
+    height: 1px;
+    background-color: #eee;
+    margin: 4px 0;
+}
+
+@keyframes fadeIn-chat {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

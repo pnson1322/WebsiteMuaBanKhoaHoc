@@ -101,4 +101,8 @@ export const chatAPI = {
         return res.data; // Trả về object Conversation
     },
 
+    async deleteConversation(conversationId) {
+        const res = await instance.delete(`/chat/conversations/${conversationId}`);
+        return res.data;
+    }
 };
