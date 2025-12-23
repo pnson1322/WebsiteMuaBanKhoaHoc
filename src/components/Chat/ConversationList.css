@@ -27,15 +27,20 @@
 
 /* --- Context Menu Styling --- */
 .custom-context-menu-chat {
-    position: absolute;
-    z-index: 1000; /* Đảm bảo nổi lên trên cùng */
+    /* 🔥 SỬA: Đổi absolute thành fixed để vị trí luôn chuẩn theo màn hình */
+    position: fixed; 
+    
+    z-index: 9999; /* Tăng lên cao hẳn để đè lên mọi thứ */
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border: 1px solid #e0e0e0;
-    width: 180px;
+    width: 180px; /* Khớp với kích thước tính toán trong JS */
     overflow: hidden;
     animation: fadeIn-chat 0.1s ease-in-out;
+    
+    /* 🔥 THÊM: Reset margin để menu hiện sát chuột */
+    margin: 0; 
 }
 
 .context-menu-item-chat {

@@ -154,13 +154,38 @@ const ConversationList = () => {
     // 🔥 SỬA: Lấy trạng thái block hiện tại khi click chuột phải
     const handleContextMenu = (e, conversationId, targetUserId, currentIsBlock) => {
         e.preventDefault();
+
+        // 1. Kích thước menu (khớp với CSS width: 180px)
+        const menuWidth = 180;
+        const menuHeight = 110; // Ước lượng chiều cao (2 dòng + padding)
+
+        // 2. Lấy kích thước màn hình hiển thị
+        const screenW = window.innerWidth;
+        const screenH = window.innerHeight;
+
+        // 3. Lấy tọa độ chuột (clientX/Y chuẩn hơn pageX/Y khi dùng position: fixed)
+        let x = e.clientX;
+        let y = e.clientY;
+
+        // --- LOGIC CHỐNG TRÀN ---
+
+        // Nếu menu bị tràn bên phải -> Dịch sang bên trái chuột
+        if (x + menuWidth > screenW) {
+            x = x - menuWidth;
+        }
+
+        // Nếu menu bị tràn bên dưới -> Dịch lên trên chuột
+        if (y + menuHeight > screenH) {
+            y = y - menuHeight;
+        }
+
         setContextMenu({
             visible: true,
-            x: e.pageX,
-            y: e.pageY,
+            x: x,
+            y: y,
             conversationId: conversationId,
             targetUserId: targetUserId,
-            isBlocked: currentIsBlock // Lưu trạng thái để render menu đúng
+            isBlocked: currentIsBlock
         });
     };
 
