@@ -4,14 +4,14 @@ import { AdminUsersPage } from '../pages/AdminUsersPage';
 import { loginAs, UserRole } from '../utils/authHelper';
 import { verifyAccessDenied } from '../utils/permissionHelper';
 
-// --- IMPORT DATA TỪ FILE RIÊNG ---
+// --- IMPORT MOCK DATA FROM SEPARATE FILE ---
 import { mockStats, mockDefaultList, mockBuyerList, mockAdminList, mockSellerList } from '../data/mockUserData';
 
 test.describe('Admin User Management', () => {
     let userPage: AdminUsersPage;
 
     test.beforeEach(async ({ page }) => {
-        // 1. Setup Mock API bằng dữ liệu đã import
+        // 1. Setup mock APIs using imported mock data
         await page.route('**/User/statistics', async route => {
             if (route.request().method() === 'GET') {
                 await route.fulfill({
@@ -35,7 +35,6 @@ test.describe('Admin User Management', () => {
                 await route.fallback();
             }
         });
-
 
         await page.route('**/User/role/*', async route => {
             const req = route.request();
@@ -61,8 +60,6 @@ test.describe('Admin User Management', () => {
             await route.fallback();
         });
 
-
-
         await page.route('**/User?*search=*', async route => {
             if (route.request().method() === 'GET') {
                 await route.fulfill({
@@ -74,40 +71,42 @@ test.describe('Admin User Management', () => {
             }
         });
 
-
-        // 2. Đăng nhập & Init Page
+        // 2. Login and initialize page object
         await loginAs(page, 'admin');
         userPage = new AdminUsersPage(page);
         await userPage.goto();
     });
 
-    test('TC01: Nên hiển thị đúng số lượng thống kê (Mock Data)', async () => {
-        // Data lấy từ file mockUserData.ts
+    test('TC01: Should display correct statistic counts (Mock Data)', async () => {
+        // Data sourced from mockUserData.ts
         await expect(userPage.getStatNumberLocator('Người mua'))
             .toHaveText(mockStats.roleCounts.Buyer.toString());
 
         await expect(userPage.getStatNumberLocator('Người bán'))
             .toHaveText(mockStats.roleCounts.Seller.toString());
 
-        // Bạn cũng có thể check luôn Admin và Tổng người dùng nếu muốn
+        // Optional: also verify Admin and Total user counts
         await expect(userPage.getStatNumberLocator('Quản trị viên'))
             .toHaveText(mockStats.roleCounts.Admin.toString());
     });
 
-    test('TC02: Nên hiển thị danh sách người dùng đúng dữ liệu', async ({ page }) => {
-        // Lấy user đầu tiên trong list default để test
+    test('TC02: Should display correct user list data', async ({ page }) => {
+        // Use the first user in the default list for testing
         const testUser = mockDefaultList.items[0];
 
         const row = userPage.getUserRow(testUser.email);
         await expect(row).toBeVisible();
         await expect(row.locator('.users-cell--name')).toHaveText(testUser.fullName);
-        // Lưu ý: Mock trả về "Buyer" (chữ thường đầu), UI hiển thị "BUYER" (uppercase) -> tùy CSS
-        // Nếu CSS dùng text-transform: uppercase thì toHaveText vẫn check text gốc trong DOM
-        // Nếu DOM thực sự là BUYER thì check 'BUYER'
+
+        // Note:
+        // Mock returns role as "Buyer" (capitalized),
+        // UI displays "BUYER" (uppercase) depending on CSS.
+        // If CSS uses text-transform: uppercase, toHaveText still checks the original DOM text.
+        // If DOM text is actually "BUYER", then check against "BUYER".
         await expect(row.locator('.role-badge')).toHaveText('BUYER');
     });
 
-    test('TC03: Xem chi tiết (View Modal) phải hiển thị đúng thông tin', async ({ page }) => {
+    test('TC03: View details modal should display correct information', async ({ page }) => {
         const testUser = mockDefaultList.items[0];
 
         await userPage.clickActionView(testUser.email);
@@ -119,7 +118,7 @@ test.describe('Admin User Management', () => {
         await expect(nameInput).not.toBeEditable();
     });
 
-    test('TC04: Xóa người dùng (Delete Modal) phải hiển thị popup xác nhận', async ({ page }) => {
+    test('TC04: Delete user action should display confirmation modal', async ({ page }) => {
         const testUser = mockDefaultList.items[0];
         await userPage.clickActionDelete(testUser.email);
 
@@ -127,7 +126,7 @@ test.describe('Admin User Management', () => {
         await expect(deleteHeader).toBeVisible();
     });
 
-    test('TC05: Tìm kiếm người dùng hoạt động', async ({ page }) => {
+    test('TC05: Should successfully search active users', async ({ page }) => {
         const keyword = 'An';
         await userPage.searchUser(keyword);
 
@@ -135,21 +134,21 @@ test.describe('Admin User Management', () => {
         await expect(row).toBeVisible();
     });
 
-    test('TC06: Lọc theo Vai trò (Buyer) hiển thị đúng danh sách', async ({ page }) => {
+    test('TC06: Filter by role (Buyer) should display correct user list', async ({ page }) => {
         const [response] = await Promise.all([
             userPage.filterByRole('Buyer')
         ]);
 
-        // 1. KIỂM TRA PHỦ ĐỊNH (Quan trọng nhất theo ý bạn)
-        // Mong đợi: Không tìm thấy badge SELLER nào
+        // 1. NEGATIVE VERIFICATION (Most important as requested)
+        // Expect: No SELLER badges should be found
         await expect(userPage.getRoleBadgeLocator('SELLER')).toHaveCount(0);
 
-        // Mong đợi: Không tìm thấy badge ADMIN nào
+        // Expect: No ADMIN badges should be found
         await expect(userPage.getRoleBadgeLocator('ADMIN')).toHaveCount(0);
 
-        // 2. KIỂM TRA KHẲNG ĐỊNH (Để chắc chắn list không bị rỗng/lỗi)
-        // Mong đợi: Ít nhất 1 dòng BUYER phải xuất hiện
-        // .first() để lấy phần tử đầu tiên, kiểm tra nó hiển thị
+        // 2. POSITIVE VERIFICATION (Ensure the list is not empty or broken)
+        // Expect: At least one BUYER row should be displayed
+        // Use .first() to get the first element and verify visibility
         await expect(userPage.getRoleBadgeLocator('BUYER').first()).toBeVisible();
     });
 });
@@ -160,7 +159,8 @@ test.describe('Admin Access Control - Users Page', () => {
 
     for (const role of unauthorizedRoles) {
         test(`Role "${role}" should NOT access admin users page`, async ({ page }) => {
-            // Vẫn cần mock stats để tránh lỗi console nếu FE gọi API ngầm
+            // Still need to mock stats to prevent console errors
+            // if the frontend implicitly calls statistics APIs
             await page.route('**/*stats*', async route => route.fulfill({ json: mockStats }));
 
             await verifyAccessDenied(page, role, ADMIN_USERS_URL);

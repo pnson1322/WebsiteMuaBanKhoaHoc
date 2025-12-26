@@ -14,27 +14,35 @@ test.describe('EduMart Login & Role Redirect Feature', () => {
         test(`${data.id}: ${data.description}`, async () => {
             console.log(`🚀 Testing case: ${data.id} - Role: ${data.role || 'Buyer'}`);
 
-            // 1. Nhập liệu & Click Login (Hàm này sẽ tự BẮT ĐẦU bấm giờ khi click)
+            // 1. Fill inputs & click Login
+            // (This method automatically STARTS the timer when clicking)
             await loginPage.performLogin(data.email, data.password);
 
-            // 2. Verify (Hàm này sẽ verify UI xong -> KẾT THÚC bấm giờ -> Check < 5s)
+            // 2. Verification
+            // (This method verifies the UI, then STOPS the timer and checks duration < 5s)
             if (data.isSuccess) {
                 await loginPage.verifyLoginSuccess(data.expectedResult as string);
             }
             else if (data["isNativeError"]) {
-                // Với lỗi Native (validation browser), nó hiện tức thì ngay khi click hoặc blur
-                // Code cũ của bạn đang verify getEmailValidationMessage
-                // Nếu muốn đo thời gian lỗi này hiện ra thì hơi khó vì nó không có API chờ
-                // Tuy nhiên, thường native error rất nhanh. Ta có thể bỏ qua đo ở đây hoặc check thủ công.
+                // For Native browser validation errors, they appear immediately
+                // right after click or blur
+                // Your existing code verifies using getEmailValidationMessage
+                // Measuring display time for native errors is difficult
+                // because there is no explicit wait API
+                // Usually native errors appear very fast, so timing can be skipped
+                // or validated manually if needed
 
                 const actualNativeMsg = await loginPage.getEmailValidationMessage();
                 if (actualNativeMsg) {
                     const isMissingAtSymbol = actualNativeMsg.includes('@');
-                    const isMissingKeyword = actualNativeMsg.toLowerCase().includes('missing') ||
+                    const isMissingKeyword =
+                        actualNativeMsg.toLowerCase().includes('missing') ||
                         actualNativeMsg.toLowerCase().includes('thiếu');
+
                     expect(isMissingAtSymbol || isMissingKeyword).toBeTruthy();
                 } else {
-                    // Nếu lỗi native không bắt được mà fallback sang lỗi UI thì hàm này sẽ đo giờ
+                    // If native validation is not captured
+                    // and UI error is shown instead, this method will measure time
                     await loginPage.verifyLoginFail(data.expectedResult, false);
                 }
             }
@@ -45,21 +53,23 @@ test.describe('EduMart Login & Role Redirect Feature', () => {
     }
 });
 
-test.describe('Kiểm tra điều hướng & Popup', () => {
+test.describe('Navigation & Popup Verification', () => {
     let loginPage: LoginPage;
+
     test.beforeEach(async ({ page }) => {
         loginPage = new LoginPage(page);
         await loginPage.goto();
     });
 
-    test('TC_Nav_01: Nhấn "Đăng ký ngay" phải chuyển sang trang Register', async () => {
-        // Hàm này tự bấm giờ khi click
+    test('TC_Nav_01: Clicking "Register now" should navigate to Register page', async () => {
+        // This method automatically starts timing when clicking
         await loginPage.clickRegister();
-        // Hàm này verify xong sẽ check thời gian < 5s
+
+        // This method verifies navigation and checks duration < 5s
         await loginPage.verifyNavigateToRegister();
     });
 
-    test('TC_Nav_02: Nhấn "Quên mật khẩu?" phải mở Popup nhập email', async () => {
+    test('TC_Nav_02: Clicking "Forgot password?" should open the email input popup', async () => {
         await loginPage.clickForgotPassword();
         await loginPage.verifyForgotPasswordPopupOpen();
     });
