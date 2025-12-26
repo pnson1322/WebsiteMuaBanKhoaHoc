@@ -3,46 +3,47 @@ import { test, expect } from '@playwright/test';
 import { AdminCategoriesPage } from '../pages/AdminCategoriesPage';
 import { loginAs, UserRole } from '../utils/authHelper';
 import { verifyAccessDenied } from '../utils/permissionHelper';
-import { setupCategoryMock } from '../utils/mockCategoryHandler'; // Import hàm mock
+import { setupCategoryMock } from '../utils/mockCategoryHandler'; // Import mock setup function
 
 test.describe('Admin Category Management', () => {
     let categoryPage: AdminCategoriesPage;
 
     test.beforeEach(async ({ page }) => {
-        // 1. Gọi hàm setup Mock (Dữ liệu sẽ được reset mới tinh cho mỗi test)
+        // 1. Setup mock data (data will be reset fresh for each test)
         await setupCategoryMock(page);
 
-        // 2. Đăng nhập & Vào trang
+        // 2. Login and navigate to admin categories page
         await loginAs(page, 'admin');
         categoryPage = new AdminCategoriesPage(page);
         await categoryPage.goto();
     });
 
-    test('TC01: Nên thêm mới danh mục thành công', async ({ page }) => {
+    test('TC01: Should successfully add a new category', async ({ page }) => {
         const newCatName = `Auto Test ${Date.now()}`;
         await categoryPage.addCategory(newCatName);
         await expect(categoryPage.nameInput).toBeEmpty();
     });
 
-    test('TC02: Nên sửa tên danh mục thành công', async ({ page }) => {
+    test('TC02: Should successfully edit a category name', async ({ page }) => {
         const oldName = "Lập trình";
 
         const newName = `Coding Updated ${Date.now()}`;
 
         await categoryPage.editCategory(oldName, newName);
 
-        // Lúc này dòng chứa "Lập trình" sẽ thực sự biến mất vì "Coding..." không chứa từ "Lập trình"
+        // At this point, the row containing "Lập trình" should disappear
+        // because the new name no longer includes the old text
         await expect(categoryPage.getCategoryRow(oldName)).toBeHidden();
         await expect(categoryPage.getCategoryRow(newName)).toBeVisible();
     });
 
-    test('TC03: Nên xóa danh mục thành công', async ({ page }) => {
-        const catToDelete = "Thiết kế"; // Có sẵn trong Data/categoryData.ts
+    test('TC03: Should successfully delete a category', async ({ page }) => {
+        const catToDelete = "Thiết kế"; // Predefined in Data/categoryData.ts
         await categoryPage.deleteCategory(catToDelete);
         //await expect(categoryPage.getCategoryRow(catToDelete)).toBeHidden();
     });
 
-    test('TC04: Nên tìm kiếm được danh mục', async ({ page }) => {
+    test('TC04: Should be able to search for a category', async ({ page }) => {
         const uniqueName = "Khác";
         await categoryPage.searchCategory(uniqueName);
         await expect(categoryPage.getCategoryRow(uniqueName)).toBeVisible();
@@ -57,53 +58,53 @@ test.describe('Admin Category Management', () => {
     });
 
     test('TC06: Should NOT allow deleting the "Khác" (default) category', async ({ page }) => {
-        const protectedCategory = 'Khác'; // ID: 1 trong file Data
+        const protectedCategory = 'Khác'; // ID: 1 in mock data
         const row = categoryPage.getCategoryRow(protectedCategory);
 
         await expect(row).toBeVisible();
         await categoryPage.deleteCategory(protectedCategory);
 
-        // Assert: Vẫn còn hiển thị do API trả về 403
+        // Assert: Still visible because API returns 403
         await expect(row).toBeVisible();
     });
 
     test('TC07: Should NOT increase category count when adding a duplicate', async ({ page }) => {
         const duplicateName = "Lập trình";
 
-        // 🔴 FIX: Chờ API lấy danh sách load xong trước khi đếm
-        // Mock handler của bạn trả về 3 item, nên ta đợi ít nhất 1 dòng hiện ra
+        // 🔴 FIX: Wait for the category list API to fully load before counting
+        // The mock handler returns 3 items, so wait until at least one row is visible
         const rowsLocator = page.locator('.cat-row');
         await expect(rowsLocator.first()).toBeVisible();
 
-        // Sau khi chắc chắn đã hiện data, mới bắt đầu đếm
+        // After confirming data is loaded, start counting
         const initialCount = await rowsLocator.count();
-        console.log(`Số lượng ban đầu: ${initialCount}`); // Lúc này sẽ là 3
+        console.log(`Initial count: ${initialCount}`); // Expected: 3
 
-        // Thêm trùng
+        // Attempt to add duplicate
         await categoryPage.nameInput.fill(duplicateName);
         await categoryPage.addButton.click();
 
-        // Chờ response lỗi 400
+        // Wait for 400 error response
         const response = await page.waitForResponse(resp =>
             resp.url().includes('/Category') && resp.status() === 400
         );
         expect(response.ok()).toBeFalsy();
 
-        await page.waitForTimeout(500); // Đợi UI ổn định
+        await page.waitForTimeout(500); // Wait for UI to stabilize
 
         const finalCount = await rowsLocator.count();
         expect(finalCount).toEqual(initialCount);
     });
 });
 
-// Access Control Test vẫn giữ nguyên, có thể dùng lại Mock nếu cần
+// Access Control Tests (reuse mock if necessary)
 test.describe('Admin Access Control', () => {
     const ADMIN_CATEGORY_URL = '/admin-categories';
     const unauthorizedRoles: UserRole[] = ['buyer', 'seller'];
 
     for (const role of unauthorizedRoles) {
         test(`Role "${role}" should NOT access admin categories page`, async ({ page }) => {
-            // Có thể cần mock data ở đây để tránh lỗi 404 nếu trang cố load dữ liệu
+            // Mock data may be required to prevent 404 if the page tries to load data
             await setupCategoryMock(page);
             await verifyAccessDenied(page, role, ADMIN_CATEGORY_URL);
         });

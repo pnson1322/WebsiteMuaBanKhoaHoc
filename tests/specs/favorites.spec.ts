@@ -1,18 +1,18 @@
 import { test, expect } from '@playwright/test';
 import { FavoritesPage } from '../pages/FavoritesPage';
 import { loginAs } from '../utils/authHelper';
-// Import data từ file riêng
+// Import mock data from separate file
 import { initialMockFavorites } from '../data/mockFavoritesData';
 
 test.describe('Buyer Favorites Feature (Mock Data)', () => {
     let favoritesPage: FavoritesPage;
 
-    // Biến này đóng vai trò "Database tạm thời" cho chuỗi test
+    // This variable acts as an in-memory "temporary database" for the test chain
     let currentFavorites: any[] = [];
 
-    // Reset "Database" về trạng thái ban đầu trước khi bắt đầu chuỗi test
+    // Reset the in-memory database to its initial state before the test suite starts
     test.beforeAll(() => {
-        // [QUAN TRỌNG] Deep Copy để không làm hỏng data gốc
+        // [IMPORTANT] Deep copy to avoid mutating original mock data
         currentFavorites = JSON.parse(JSON.stringify(initialMockFavorites));
     });
 
@@ -20,9 +20,9 @@ test.describe('Buyer Favorites Feature (Mock Data)', () => {
         await loginAs(page, 'buyer');
         favoritesPage = new FavoritesPage(page);
 
-        // --- MOCK API (Logic giả lập Server) ---
+        // --- MOCK API (Simulated Server Logic) ---
 
-        // 1. GET: Lấy danh sách (GET /Favorite)
+        // 1. GET: Retrieve favorites list (GET /Favorite)
         await page.route('**/Favorite', async route => {
             if (route.request().method() === 'GET') {
                 await route.fulfill({
@@ -35,33 +35,37 @@ test.describe('Buyer Favorites Feature (Mock Data)', () => {
             }
         });
 
-        // 2. DELETE ALL: Xóa tất cả (DELETE /Favorite/clear)
-        // Lưu ý: Định nghĩa route này trước hoặc dùng string cụ thể để Playwright ưu tiên
+        // 2. DELETE ALL: Clear all favorites (DELETE /Favorite/clear)
+        // Note: This route should be defined before others or use a specific string
+        // to ensure Playwright matches it with higher priority
         await page.route('**/Favorite/clear', async route => {
             if (route.request().method() === 'DELETE') {
-                currentFavorites = []; // Xóa sạch mảng trong bộ nhớ giả
+                currentFavorites = []; // Clear the in-memory array
 
-                // Theo API Spec: Trả về 204 No Content
+                // According to API spec: return 204 No Content
                 await route.fulfill({
                     status: 204
-                    // 204 không có body
+                    // 204 responses have no body
                 });
             } else {
                 await route.fallback();
             }
         });
 
-        // 3. DELETE ONE: Xóa 1 item theo ID (DELETE /Favorite/{courseId})
-        // Sử dụng Regex để chỉ bắt các URL kết thúc bằng số (ID), tránh bắt nhầm 'clear'
+        // 3. DELETE ONE: Remove a single item by ID (DELETE /Favorite/{courseId})
+        // Use regex to only match URLs ending with a numeric ID
+        // to avoid accidentally matching the "clear" endpoint
         await page.route(/\/Favorite\/\d+$/, async route => {
             if (route.request().method() === 'DELETE') {
                 const url = route.request().url();
-                const idToDelete = url.split('/').pop(); // Lấy ID cuối URL
+                const idToDelete = url.split('/').pop(); // Extract ID from URL
 
-                // Logic xóa khỏi mảng bộ nhớ giả
-                currentFavorites = currentFavorites.filter(c => c.courseId.toString() !== idToDelete);
+                // Remove item from in-memory array
+                currentFavorites = currentFavorites.filter(
+                    c => c.courseId.toString() !== idToDelete
+                );
 
-                // Theo API Spec: Trả về message JSON
+                // According to API spec: return JSON message
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
@@ -72,11 +76,11 @@ test.describe('Buyer Favorites Feature (Mock Data)', () => {
             }
         });
 
-        // 4. Mock API Cart (POST /api/Cart/items/{courseId})
+        // 4. Mock Cart API (POST /api/Cart/items/{courseId})
         await page.route('**/api/Cart/items/*', async route => {
             if (route.request().method() === 'POST') {
                 await route.fulfill({
-                    status: 200, // Hoặc 201 tùy backend thực tế, giả lập success
+                    status: 200, // Or 201 depending on actual backend behavior
                     contentType: 'application/json',
                     body: JSON.stringify({ success: true, message: "Added to cart" })
                 });
@@ -85,106 +89,108 @@ test.describe('Buyer Favorites Feature (Mock Data)', () => {
             }
         });
 
-        // --- END MOCK ---
+        // --- END MOCK SETUP ---
 
         await favoritesPage.goto();
     });
 
-    // --- CÁC TEST CASE ---
+    // --- TEST CASES ---
 
-    test('TC_Fav_01: UI - Hiển thị đúng thông tin Card', async () => {
-        // Data gốc có 2 phần tử
+    test('TC_Fav_01: UI - Should display correct card information', async () => {
+        // Initial mock data contains 2 items
         await favoritesPage.verifyCardCount(2);
 
-        // Verify item đầu tiên
+        // Verify first card
         const firstCard = favoritesPage.getCard(0);
-        await expect(firstCard.locator('.course-title')).toHaveText(initialMockFavorites[0].title);
+        await expect(firstCard.locator('.course-title'))
+            .toHaveText(initialMockFavorites[0].title);
     });
 
-    test('TC_Fav_02: Chức năng - Thêm vào giỏ hàng', async () => {
-        // Test nút thêm vào giỏ (gọi API /api/Cart/items/...)
+    test('TC_Fav_02: Functionality - Add course to cart', async () => {
+        // Test add-to-cart button (calls POST /api/Cart/items/...)
         await favoritesPage.addToCart(0);
         await favoritesPage.verifyAddToCartSuccess(0);
     });
 
-    test('TC_Fav_03: Điều hướng - Xem chi tiết', async ({ page }) => {
+    test('TC_Fav_03: Navigation - View course details', async ({ page }) => {
         const courseId = initialMockFavorites[0].courseId;
         await favoritesPage.clickDetailButton(0);
         await expect(page).toHaveURL(new RegExp(`/course/${courseId}`));
     });
 
-    test('TC_Fav_04: Điều hướng - Quay lại', async ({ page }) => {
+    test('TC_Fav_04: Navigation - Go back', async ({ page }) => {
         await page.goto('/');
         await favoritesPage.goto();
         await favoritesPage.goBack();
         await expect(page).toHaveURL('/');
     });
 
-    test('TC_Fav_05: Chức năng - Bỏ thích 1 khóa học', async ({ page }) => {
-        const initialCount = currentFavorites.length; // Đang là 2
+    test('TC_Fav_05: Functionality - Remove a single favorite course', async ({ page }) => {
+        const initialCount = currentFavorites.length; // Expected: 2
 
-        // Xóa item đầu tiên (ID 13)
-        // Hành động này gọi DELETE /Favorite/13 -> Mock trả về message success -> currentFavorites bị filter
+        // Remove the first item (courseId = 13)
+        // This triggers DELETE /Favorite/13 -> mock updates currentFavorites
         await favoritesPage.removeCourse(0);
 
-        // Reload để gọi lại API GET /Favorite -> Mock trả về currentFavorites mới
+        // Reload to trigger GET /Favorite -> returns updated currentFavorites
         await page.reload();
 
-        // Kiểm tra số lượng giảm còn 1
+        // Verify count decreased by 1
         await favoritesPage.verifyCardCount(initialCount - 1);
 
-        // Verify item còn lại là item số 2 (ID 14)
+        // Verify remaining item is the second one (courseId = 14)
         const card = favoritesPage.getCard(0);
-        await expect(card.locator('.course-title')).toHaveText(initialMockFavorites[1].title);
+        await expect(card.locator('.course-title'))
+            .toHaveText(initialMockFavorites[1].title);
     });
 
-    test('TC_Fav_06: Chức năng - Hủy xóa tất cả (Cancel)', async ({ page }) => {
-        // Hiện tại currentFavorites đang còn 1 item (do test TC_Fav_05 chạy trước xóa 1)
-        // Lưu ý: Do test chạy song song hoặc tuần tự, tốt nhất nên check length thực tế
+    test('TC_Fav_06: Functionality - Cancel clear all favorites', async ({ page }) => {
+        // At this point, currentFavorites should contain 1 item
         const countBefore = currentFavorites.length;
 
         page.once('dialog', async dialog => {
-            await dialog.dismiss(); // Bấm Cancel
+            await dialog.dismiss(); // Click Cancel
         });
 
         await favoritesPage.clearAll();
-        // Không reload hoặc reload thì số lượng vẫn phải giữ nguyên vì API clear chưa được gọi thực sự
-        await page.reload();
 
+        // Reload should still show the same data because DELETE was canceled
+        await page.reload();
         await favoritesPage.verifyCardCount(countBefore);
     });
 
-    test('TC_Fav_07: Chức năng - Xóa tất cả (Accept)', async ({ page }) => {
+    test('TC_Fav_07: Functionality - Clear all favorites (Confirm)', async ({ page }) => {
         page.once('dialog', async dialog => {
-            await dialog.accept(); // Bấm OK
+            await dialog.accept(); // Click OK
         });
 
-        // Hành động này gọi DELETE /Favorite/clear -> Mock trả về 204 -> currentFavorites = []
+        // This triggers DELETE /Favorite/clear -> mock sets currentFavorites = []
         await favoritesPage.clearAll();
 
-        // Reload để gọi lại API GET -> Route trả về []
+        // Reload triggers GET /Favorite -> returns empty array
         await page.reload();
-
         await favoritesPage.verifyEmptyState();
     });
 });
 
 test.describe('Buyer Access Control', () => {
-    test('Admin role should NOT access Buyer categories page', async ({ page }) => {
+    test('Admin role should NOT access Buyer favorites page', async ({ page }) => {
         await loginAs(page, 'admin');
         const categoryPage = new FavoritesPage(page);
         await categoryPage.goto();
 
         await expect(categoryPage.accessDeniedMessage).toBeVisible();
-        await expect(categoryPage.accessDeniedMessage).toHaveCSS('color', 'rgb(239, 68, 68)');
+        await expect(categoryPage.accessDeniedMessage)
+            .toHaveCSS('color', 'rgb(239, 68, 68)');
     });
 
-    test('Seller role should NOT access Buyer categories page', async ({ page }) => {
+    test('Seller role should NOT access Buyer favorites page', async ({ page }) => {
         await loginAs(page, 'seller');
         const categoryPage = new FavoritesPage(page);
         await categoryPage.goto();
 
         await expect(categoryPage.accessDeniedMessage).toBeVisible();
-        await expect(categoryPage.accessDeniedMessage).toHaveCSS('color', 'rgb(239, 68, 68)');
+        await expect(categoryPage.accessDeniedMessage)
+            .toHaveCSS('color', 'rgb(239, 68, 68)');
     });
 });
