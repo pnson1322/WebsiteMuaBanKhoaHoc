@@ -8,6 +8,7 @@ import './ChatWidge.css';
 
 const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
     const { user } = useAuth();
+    const [conversation, setConversation] = useState(null);
 
     // UI States
     const [isOpen, setIsOpen] = useState(false);
@@ -92,6 +93,7 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
             if (conv && conv.id) {
                 console.log('✅ Conversation initialized:', conv.id);
                 setConversationId(conv.id);
+                setConversation(conv);
                 // Reset page về 1 khi init
                 setPage(1);
                 setHasMore(true);
@@ -224,7 +226,7 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
                 transport: signalR.HttpTransportType.WebSockets
             })
             .withAutomaticReconnect()
-            .configureLogging(signalR.LogLevel.Information)
+            .configureLogging(signalR.LogLevel.Warning)
             .build();
 
         setConnection(newConnection);
@@ -394,6 +396,9 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
         }
     };
 
+    const avatarUrl = conversation?.sellerAvatar ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(teacherName)}&background=random&color=fff`;
+
     if (!user) return null;
 
     return (
@@ -406,15 +411,15 @@ const ChatWidget = ({ teacherId, teacherName = "Giảng viên", courseId }) => {
                 <div className="chat-window">
                     <div className="chat-header">
                         <div className="chat-header-info">
-                            <div className="teacher-avatar">{teacherName.charAt(0).toUpperCase()}</div>
+                            <img
+                                src={avatarUrl}
+                                alt={teacherName}
+                                className="teacher-avatar"
+                                style={{ objectFit: 'cover' }}
+                            />
                             <div>
                                 <h4>{teacherName}</h4>
-                                <div style={{ display: 'flex', alignItems: 'center', fontSize: '12px' }}>
-                                    <span className={`status-indicator ${isTeacherActive ? 'status-online' : 'status-offline'}`}></span>
-                                    <span style={{ color: isTeacherActive ? '#2ecc71' : '#95a5a6' }}>
-                                        {isTeacherActive ? 'Đang hoạt động' : 'Ngoại tuyến'}
-                                    </span>
-                                </div>
+
                             </div>
                         </div>
                     </div>

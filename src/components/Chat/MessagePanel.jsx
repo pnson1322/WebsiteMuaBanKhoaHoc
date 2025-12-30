@@ -169,9 +169,7 @@ const MessagePanel = () => {
           </div>
           <div className="msg-user-info">
             <h3 className="msg-user-name">{studentName}</h3>
-            <span className={`msg-user-status ${isOnline ? "online" : ""}`}>
-              {isOnline ? "Đang hoạt động" : "Ngoại tuyến"}
-            </span>
+
           </div>
         </div>
         {courseName && (

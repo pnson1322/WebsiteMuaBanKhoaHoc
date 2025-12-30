@@ -32,7 +32,7 @@ const SellerChat = () => {
 
     if (!isLoggedIn || !sellerId || !accessToken) {
         console.log('Auth state:', { isLoggedIn, user, loading, accessToken });
-        console.log('Token in localStorage:', localStorage.getItem('accessToken'));
+        //  console.log('Token in localStorage:', localStorage.getItem('accessToken'));
         return (
             <div className="chat-loading">
                 <p>Vui lòng đăng nhập để sử dụng chat</p>
