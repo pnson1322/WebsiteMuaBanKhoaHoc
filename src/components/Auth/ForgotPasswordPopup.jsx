@@ -35,7 +35,7 @@ const ForgotPasswordPopup = ({ onClose }) => {
       alert(`OTP đã được gửi tới email: ${forgotEmail}`);
       setStep(2);
     } catch (err) {
-      alert(err.response?.data?.message || "Có lỗi xảy ra!");
+      alert(err.response?.data?.message || "Vui lòng nhập đúng email!");
     } finally {
       setLoading(false);
     }
