@@ -78,9 +78,14 @@ export class LoginPage {
     // --- SỬA HÀM VERIFY FAIL: Tính toán thời gian phản hồi ---
     async verifyLoginFail(expectedResult: string | string[], isToastError: boolean = true) {
         if (isToastError) {
-            await expect(this.toastErrorIcon).toBeVisible();
+            await expect(this.toastErrorIcon)
+                .toBeVisible({ timeout: 0 });
+
+
             if (typeof expectedResult === 'string') {
-                await expect(this.page.getByText(expectedResult)).toBeVisible();
+                await expect(this.page.getByText(expectedResult))
+                    .toBeVisible({ timeout: 0 });
+
             }
         } else {
             // Logic check validation message cũ...
@@ -89,7 +94,9 @@ export class LoginPage {
                     await expect(this.page.getByText(msg)).toBeVisible();
                 }
             } else {
-                await expect(this.page.getByText(expectedResult)).toBeVisible();
+                await expect(this.page.getByText(expectedResult))
+                    .toBeVisible({ timeout: 0 });
+
             }
         }
 

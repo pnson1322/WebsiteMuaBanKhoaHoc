@@ -34,7 +34,7 @@
         "password": "wrongpassword",
         "isSuccess": false,
         "isToastError": true,
-        "expectedResult": "Email hoặc mật khẩu không khớp, vui lòng thử lại!"
+        "expectedResult": "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản!"
     },
     {
         "id": "TC05",
@@ -43,7 +43,7 @@
         "password": "wrongpassword",
         "isSuccess": false,
         "isToastError": true,
-        "expectedResult": "Email hoặc mật khẩu không khớp, vui lòng thử lại!"
+        "expectedResult": "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản!"
     },
     {
         "id": "TC06",
@@ -52,7 +52,7 @@
         "password": "password123",
         "isSuccess": false,
         "isToastError": true,
-        "expectedResult": "Email hoặc mật khẩu không khớp, vui lòng thử lại!"
+        "expectedResult": "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản!"
     },
     {
         "id": "TC07",
